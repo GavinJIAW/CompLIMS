@@ -1,0 +1,356 @@
+[
+  {
+    "key": "fiber",
+    "name": "纤维信息块",
+    "type": "single",
+    "number": "B",
+    "element": [
+      {
+        "key": "fiber_category",
+        "name": "纤维类别",
+        "sort": 1,
+        "type": "select",
+        "unit": null,
+        "number": "B1",
+        "options": [],
+        "required": false,
+        "level_code": "RM",
+        "placeholder": null,
+        "options_allow_create": false
+      },
+      {
+        "key": "fiber_chemical_type",
+        "name": "纤维化学类型",
+        "sort": 1,
+        "type": "select",
+        "unit": null,
+        "number": "B2",
+        "options": [],
+        "required": false,
+        "level_code": "O",
+        "placeholder": null,
+        "options_allow_create": false
+      }
+    ]
+  },
+  {
+    "key": "identifier",
+    "name": "复合材料标识",
+    "type": "single",
+    "number": "A",
+    "element": [
+      {
+        "key": "material_identifier",
+        "name": "材料标识符",
+        "sort": 1,
+        "type": "string",
+        "unit": null,
+        "number": "A1",
+        "options": [],
+        "required": false,
+        "level_code": "ET",
+        "placeholder": null,
+        "options_allow_create": false
+      },
+      {
+        "key": "A14",
+        "name": "A14",
+        "sort": 1,
+        "type": "string",
+        "unit": null,
+        "number": "A14",
+        "options": [],
+        "required": false,
+        "level_code": "O",
+        "placeholder": null,
+        "options_allow_create": false
+      },
+      {
+        "key": "A15",
+        "name": "A15",
+        "sort": 1,
+        "type": "string",
+        "unit": null,
+        "number": "A15",
+        "options": [],
+        "required": false,
+        "level_code": "O",
+        "placeholder": null,
+        "options_allow_create": false
+      },
+      {
+        "key": "data_source_identifier",
+        "name": "数据来源",
+        "sort": 2,
+        "type": "string",
+        "unit": null,
+        "number": "A2",
+        "options": [],
+        "required": false,
+        "level_code": "ET",
+        "placeholder": null,
+        "options_allow_create": false
+      },
+      {
+        "key": "material_name",
+        "name": "材料名称",
+        "sort": 3,
+        "type": "string",
+        "unit": null,
+        "number": "A3",
+        "options": [],
+        "required": false,
+        "level_code": "O",
+        "placeholder": null,
+        "options_allow_create": false
+      },
+      {
+        "key": "material_category",
+        "name": "材料类别",
+        "sort": 4,
+        "type": "string",
+        "unit": null,
+        "number": "A4",
+        "options": [],
+        "required": false,
+        "level_code": "O",
+        "placeholder": null,
+        "options_allow_create": false
+      },
+      {
+        "key": "material_subcategory",
+        "name": "材料子类",
+        "sort": 5,
+        "type": "string",
+        "unit": null,
+        "number": "A5",
+        "options": [],
+        "required": false,
+        "level_code": "O",
+        "placeholder": null,
+        "options_allow_create": false
+      },
+      {
+        "key": "material_form",
+        "name": "材料形式",
+        "sort": 6,
+        "type": "string",
+        "unit": null,
+        "number": "A6",
+        "options": [],
+        "required": false,
+        "level_code": "EM",
+        "placeholder": null,
+        "options_allow_create": false
+      },
+      {
+        "key": "matrix_category",
+        "name": "基体类别",
+        "sort": 7,
+        "type": "string",
+        "unit": null,
+        "number": "A7",
+        "options": [],
+        "required": false,
+        "level_code": "O",
+        "placeholder": null,
+        "options_allow_create": false
+      },
+      {
+        "key": "reinforcement_category",
+        "name": "增强体类别",
+        "sort": 8,
+        "type": "select",
+        "unit": null,
+        "number": "A8",
+        "options": [
+          {
+            "item": "纤维",
+            "sort": 1,
+            "element": [
+              {
+                "key": "纤维",
+                "name": "纤维",
+                "sort": 8,
+                "type": "select",
+                "unit": null,
+                "number": "A8-1",
+                "options": [
+                  {
+                    "item": "连续",
+                    "sort": 1
+                  },
+                  {
+                    "item": "非连续, 长",
+                    "sort": 2
+                  },
+                  {
+                    "item": "非连续, 短",
+                    "sort": 3
+                  },
+                  {
+                    "item": "切段",
+                    "sort": 4
+                  },
+                  {
+                    "item": "研磨",
+                    "sort": 5
+                  },
+                  {
+                    "item": "晶须",
+                    "sort": 6
+                  },
+                  {
+                    "item": "浆状",
+                    "sort": 7
+                  }
+                ],
+                "required": false,
+                "level_code": "O",
+                "placeholder": null,
+                "options_allow_create": true
+              }
+            ]
+          },
+          {
+            "item": "填料",
+            "sort": 2,
+            "element": [
+              {
+                "key": "填料",
+                "name": "填料",
+                "sort": 8,
+                "type": "select",
+                "unit": null,
+                "number": "A8-2",
+                "options": [
+                  {
+                    "item": "微粒",
+                    "sort": 1
+                  },
+                  {
+                    "item": "薄片",
+                    "sort": 2
+                  },
+                  {
+                    "item": "空心球体",
+                    "sort": 3
+                  },
+                  {
+                    "item": "空心圆柱体",
+                    "sort": 4
+                  }
+                ],
+                "required": false,
+                "level_code": "O",
+                "placeholder": null,
+                "options_allow_create": false
+              }
+            ]
+          },
+          {
+            "item": "芯材",
+            "sort": 3,
+            "element": [
+              {
+                "key": "芯材",
+                "name": "芯材",
+                "sort": 8,
+                "type": "select",
+                "unit": null,
+                "number": "A8-3",
+                "options": [
+                  {
+                    "item": "蜂窝",
+                    "sort": 1
+                  },
+                  {
+                    "item": "闭孔泡沫",
+                    "sort": 2
+                  },
+                  {
+                    "item": "开孔泡沫",
+                    "sort": 3
+                  }
+                ],
+                "required": false,
+                "level_code": "O",
+                "placeholder": null,
+                "options_allow_create": false
+              }
+            ]
+          }
+        ],
+        "required": false,
+        "level_code": "EM",
+        "placeholder": null,
+        "options_allow_create": false
+      },
+      {
+        "key": "A9",
+        "name": "A9",
+        "sort": 9,
+        "type": "string",
+        "unit": null,
+        "number": "A9",
+        "options": [],
+        "required": false,
+        "level_code": "O",
+        "placeholder": null,
+        "options_allow_create": false
+      },
+      {
+        "key": "A10",
+        "name": "A10",
+        "sort": 10,
+        "type": "string",
+        "unit": null,
+        "number": "A10",
+        "options": [],
+        "required": false,
+        "level_code": "O",
+        "placeholder": null,
+        "options_allow_create": false
+      },
+      {
+        "key": "A11",
+        "name": "A11",
+        "sort": 11,
+        "type": "string",
+        "unit": null,
+        "number": "A11",
+        "options": [],
+        "required": false,
+        "level_code": "O",
+        "placeholder": null,
+        "options_allow_create": false
+      },
+      {
+        "key": "A12",
+        "name": "A12",
+        "sort": 12,
+        "type": "string",
+        "unit": null,
+        "number": "A12",
+        "options": [],
+        "required": false,
+        "level_code": "O",
+        "placeholder": null,
+        "options_allow_create": false
+      },
+      {
+        "key": "A13",
+        "name": "A13",
+        "sort": 13,
+        "type": "string",
+        "unit": null,
+        "number": "A13",
+        "options": [],
+        "required": false,
+        "level_code": "O",
+        "placeholder": null,
+        "options_allow_create": false
+      }
+    ]
+  }
+]

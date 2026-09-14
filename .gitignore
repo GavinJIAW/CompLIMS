@@ -1,0 +1,54 @@
+# Local credentials and machine-specific configuration
+.env
+.env.*
+!.env.example
+src/backend/conf/env.py
+src/backend/coreadmin/system/fixtures/init_users.json
+src/backend/coreadmin/system/fixtures/init_systemconfig.json
+credentials.json
+credentials.local.*
+*.pem
+*.key
+*.p12
+*.pfx
+# Dependencies and Python caches
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+env/
+ENV/
+__pypackages__/
+# Runtime, build and test output
+logs/
+*.log
+media/
+dist/
+coverage/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+# Editors and OS state
+.idea/
+workspace.xml
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+# Local databases, backups and temporary files
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.sql
+*.bak
+*.backup
+*.tmp
+*.temp
+*.swp
+*.swo
+backups/
+# Django migrations and design documents are source, not runtime data.
