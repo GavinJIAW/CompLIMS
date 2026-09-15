@@ -1,60 +1,33 @@
 <template>
-	<div class="login-container flex z-10">
-		<div class="login-left">
-			<div class="login-left-logo">
-<!--        <div v-if="siteLogo">-->
-<!--          <img :src="siteLogo" />-->
-<!--        </div>-->
-				<div class="login-left-logo-text">
-					<span>{{ getSystemConfig['login.site_title'] || getThemeConfig.globalViceTitle }}</span>
-					<span class="login-left-logo-text-msg" style="margin-top: 5px;">{{
-						getSystemConfig['login.site_name'] || getThemeConfig.globalViceTitleMsg }}</span>
-				</div>
-			</div>
-		</div>
-		<div class="login-right flex z-10">
-			<div class="login-right-warp flex-margin">
-<!--				<span class="login-right-warp-one"></span>-->
-<!--				<span class="login-right-warp-two"></span>-->
-				<div class="login-right-warp-mian">
-					<div class="login-right-warp-main-title">
-            {{userInfos.pwd_change_count===0?'初次登录修改密码':'欢迎登录'}}
-          </div>
-					<div class="login-right-warp-main-form">
-						<div v-if="!state.isScan">
-							<el-tabs v-model="state.tabsActiveName">
-                <el-tab-pane :label="$t('message.label.changePwd')" name="changePwd"  v-if="userInfos.pwd_change_count===0">
-                  <ChangePwd />
-                </el-tab-pane>
-								<el-tab-pane :label="$t('message.label.one1')" name="account" v-else>
-									<Account />
-								</el-tab-pane>
-
-								<!-- TODO 手机号码登录未接入，展示隐藏 -->
-								<!-- <el-tab-pane :label="$t('message.label.two2')" name="mobile">
-									<Mobile />
-								</el-tab-pane> -->
-							</el-tabs>
-						</div>
-<!--            <OAuth2 />-->
-
-            <!--						<Scan v-if="state.isScan" />-->
-<!--						<div class="login-content-main-sacn" @click="state.isScan = !state.isScan">-->
-<!--							<i class="iconfont" :class="state.isScan ? 'icon-diannao1' : 'icon-barcode-qr'"></i>-->
-<!--							<div class="login-content-main-sacn-delta"></div>-->
-<!--						</div>-->
-					</div>
-				</div>
-			</div>
-		</div>
-
-	</div>
-<!--	<div v-if="siteBg">-->
-<!--		<img :src="siteBg" class="loginBg fixed inset-0 z-1 w-full h-full" />-->
-<!--	</div>-->
-	<div v-if="siteBg" class="login-left-bg">
-		<img :src="siteBg" />
-	</div>
+  <main class="login-entry">
+    <section class="login-brand" :aria-label="$t('message.loginPresentation.productName')">
+      <div class="login-brand-content">
+        <BrandLogo :src="siteLogo" />
+        <p class="login-product">{{ $t('message.loginPresentation.productName') }}</p>
+        <h2>{{ getSystemConfig['login.site_title'] || getThemeConfig.globalViceTitle }}</h2>
+        <p class="login-description">{{ getSystemConfig['login.site_name'] || getThemeConfig.globalViceTitleMsg || $t('message.loginPresentation.description') }}</p>
+        <el-image v-if="siteBg" :src="siteBg" fit="cover" class="login-brand-image" alt="">
+          <template #error><span class="login-background-fallback" aria-hidden="true"></span></template>
+        </el-image>
+      </div>
+    </section>
+    <section class="login-panel" aria-labelledby="login-title">
+      <div class="login-panel-content">
+        <h1 id="login-title">{{ userInfos.pwd_change_count === 0 ? $t('message.loginPresentation.firstPasswordTitle') : $t('message.loginPresentation.title') }}</h1>
+        <div v-if="!state.isScan">
+          <el-tabs v-model="state.tabsActiveName">
+            <el-tab-pane :label="$t('message.label.changePwd')" name="changePwd" v-if="userInfos.pwd_change_count===0">
+              <ChangePwd />
+            </el-tab-pane>
+            <el-tab-pane :label="$t('message.label.one1')" name="account" v-else>
+              <Account />
+            </el-tab-pane>
+            <!-- Mobile, QR and OAuth remain unexposed. -->
+          </el-tabs>
+        </div>
+      </div>
+    </section>
+  </main>
 </template>
 
 <script setup lang="ts" name="loginIndex">
@@ -62,9 +35,7 @@ import {defineAsyncComponent, onMounted, reactive, computed, watch} from 'vue';
 import { storeToRefs } from 'pinia';
 import { useThemeConfig } from '/@/stores/themeConfig';
 import { NextLoading } from '/@/utils/loading';
-import logoMini from '/@/assets/logo.png';
-import loginMain from '/@/assets/login-main.svg';
-import loginBg from '/src/assets/login-bg.png';
+import BrandLogo from '/@/layout/logo/BrandLogo.vue';
 import { SystemConfigStore } from '/@/stores/systemConfig'
 import { getBaseURL } from "/@/utils/baseUrl";
 // 引入组件
@@ -111,14 +82,14 @@ const siteLogo = computed(() => {
 	if (!_.isEmpty(getSystemConfig.value['login.site_logo'])) {
 		return getSystemConfig.value['login.site_logo']
 	}
-	return logoMini
+	return undefined
 });
 
 const siteBg = computed(() => {
 	if (!_.isEmpty(getSystemConfig.value['login.login_background'])) {
 		return getSystemConfig.value['login.login_background']
 	}
-  return loginBg
+  return undefined
 });
 
 // 页面加载时
@@ -128,248 +99,79 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
-.login-container {
-	height: 100%;
-	background: var(--el-color-white);
-
-	.login-left {
-		flex: 1;
-		position: relative;
-		background-color: rgba(211, 239, 255, 1);
-		margin-right: 100px;
-
-		.login-left-logo {
-			display: flex;
-			align-items: center;
-			position: absolute;
-			top: 50px;
-			left: 80px;
-			z-index: 1;
-			animation: logoAnimation 0.3s ease;
-
-			img {
-				width: 80px;
-				height: 80px;
-			}
-
-			.login-left-logo-text {
-				display: flex;
-				flex-direction: column;
-
-				span {
-					margin-left: 10px;
-					font-size: 20px;
-					//color: var(--el-color-primary);
-					color: #1e1e1e;
-				}
-
-				.login-left-logo-text-msg {
-					font-size: 30px;
-					//color: var(--el-color-primary);
-					color: #1e1e1e;
-				}
-			}
-		}
-
-		.login-left-img {
-			position: absolute;
-			top: 50%;
-			left: 50%;
-			transform: translate(-50%, -50%);
-			width: 100%;
-			height: 52%;
-
-			img {
-				width: 100%;
-				height: 100%;
-				animation: error-num 0.6s ease;
-			}
-		}
-
-		.login-left-waves {
-			position: absolute;
-			top: 0;
-			right: -100px;
-		}
-	}
-
-	.login-right {
-		width: 700px;
-
-		.login-right-warp {
-			//border: 1px solid var(--el-color-primary-light-3);
-			border-radius: 3px;
-			width: 500px;
-			height: 500px;
-			position: relative;
-			overflow: hidden;
-			//background-color: var(--el-color-white);
-
-			.login-right-warp-one,
-			.login-right-warp-two {
-				position: absolute;
-				display: block;
-				width: inherit;
-				height: inherit;
-
-				&::before,
-				&::after {
-					content: '';
-					position: absolute;
-					z-index: 1;
-				}
-			}
-
-			.login-right-warp-one {
-				&::before {
-					filter: hue-rotate(0deg);
-					top: 0px;
-					left: 0;
-					width: 100%;
-					height: 3px;
-					background: linear-gradient(90deg, transparent, var(--el-color-primary));
-					animation: loginLeft 3s linear infinite;
-				}
-
-				&::after {
-					filter: hue-rotate(60deg);
-					top: -100%;
-					right: 2px;
-					width: 3px;
-					height: 100%;
-					background: linear-gradient(180deg, transparent, var(--el-color-primary));
-					animation: loginTop 3s linear infinite;
-					animation-delay: 0.7s;
-				}
-			}
-
-			.login-right-warp-two {
-				&::before {
-					filter: hue-rotate(120deg);
-					bottom: 2px;
-					right: -100%;
-					width: 100%;
-					height: 3px;
-					background: linear-gradient(270deg, transparent, var(--el-color-primary));
-					animation: loginRight 3s linear infinite;
-					animation-delay: 1.4s;
-				}
-
-				&::after {
-					filter: hue-rotate(300deg);
-					bottom: -100%;
-					left: 0px;
-					width: 3px;
-					height: 100%;
-					background: linear-gradient(360deg, transparent, var(--el-color-primary));
-					animation: loginBottom 3s linear infinite;
-					animation-delay: 2.1s;
-				}
-			}
-
-			.login-right-warp-mian {
-				display: flex;
-				flex-direction: column;
-				height: 100%;
-
-				.login-right-warp-main-title {
-					height: 130px;
-					line-height: 130px;
-					font-size: 32px;
-          font-weight: 600;
-					text-align: center;
-					letter-spacing: 3px;
-					animation: logoAnimation 0.3s ease;
-					animation-delay: 0.3s;
-					color: var(--el-text-color-primary);
-				}
-
-				.login-right-warp-main-form {
-					flex: 1;
-					padding: 0 50px 50px;
-
-					.login-content-main-sacn {
-						position: absolute;
-						top: 2px;
-						right: 12px;
-						width: 50px;
-						height: 50px;
-						overflow: hidden;
-						cursor: pointer;
-						transition: all ease 0.3s;
-						color: var(--el-color-primary);
-
-						&-delta {
-							position: absolute;
-							width: 35px;
-							height: 70px;
-							z-index: 2;
-							top: 2px;
-							right: 21px;
-							background: var(--el-color-white);
-							transform: rotate(-45deg);
-						}
-
-						&:hover {
-							opacity: 1;
-							transition: all ease 0.3s;
-							color: var(--el-color-primary) !important;
-						}
-
-						i {
-							width: 47px;
-							height: 50px;
-							display: inline-block;
-							font-size: 48px;
-							position: absolute;
-							right: 1px;
-							top: 0px;
-						}
-					}
-				}
-			}
-		}
-	}
-
-	.login-authorization {
-		position: absolute;
-		bottom: 30px;
-		left: 0;
-		right: 0;
-		text-align: center;
-
-		p {
-			font-size: 14px;
-			color: rgba(0, 0, 0, 0.5);
-		}
-
-		a {
-			color: var(--el-color-primary);
-			margin: 0 5px;
-		}
-	}
+.login-entry {
+  height: 100%;
+  min-width: 0;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: 52% 48%;
+  color: var(--lims-text-regular);
+  background: var(--lims-background-card);
 }
-
-.login-left-bg {
-	position: absolute;
-	top: 0;
-	bottom: 0;
-	left: 0;
-	width: calc(100%);
-	z-index: 0;
-
-	img {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-	}
+.login-brand, .login-panel {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--lims-space-6) * 2);
 }
-
-.login-right-warp {
-	background-color: var(--el-color-white);
-	z-index: 1;
-	// existing styles...
+.login-brand {
+  background: var(--lims-background-page);
+  border-right: var(--lims-border-width) solid var(--lims-border-default);
 }
-
-
+.login-brand-content {
+  width: 100%;
+  max-width: 520px;
+  --lims-logo-width: min(300px, calc(100vw - 80px));
+  overflow-wrap: anywhere;
+  h2 {
+    margin: var(--lims-space-2) 0;
+    font-size: var(--lims-type-section-title-size);
+    line-height: var(--lims-type-section-title-line-height);
+    font-weight: var(--lims-type-section-title-weight);
+    color: var(--lims-text-primary);
+  }
+}
+.login-product {
+  margin-top: var(--lims-space-6);
+  font-size: var(--lims-type-metric-size);
+  line-height: var(--lims-type-metric-line-height);
+  font-weight: var(--lims-type-page-title-weight);
+  color: var(--lims-text-primary);
+}
+.login-description {
+  line-height: var(--lims-type-section-title-line-height);
+  color: var(--lims-text-secondary);
+}
+.login-brand-image {
+  display: block;
+  width: 100%;
+  height: 220px;
+  margin-top: var(--lims-space-8);
+  border-radius: var(--lims-radius-card);
+}
+.login-background-fallback { width: 100%; height: 100%; background: var(--lims-background-page); }
+.login-panel-content {
+  width: 100%;
+  max-width: 400px;
+  margin-block: auto;
+  h1 {
+    margin-bottom: var(--lims-space-6);
+    font-size: var(--lims-type-page-title-size);
+    line-height: var(--lims-type-page-title-line-height);
+    font-weight: var(--lims-type-page-title-weight);
+    color: var(--lims-text-primary);
+  }
+}
+@media (min-width: 1000px) and (max-width: 1399px) {
+  .login-entry { grid-template-columns: 48% 52%; }
+}
+@media (max-width: 999px) {
+  .login-entry { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; }
+  .login-brand, .login-panel { padding: var(--lims-space-6) var(--lims-space-8); }
+  .login-brand { border-right: 0; border-bottom: var(--lims-border-width) solid var(--lims-border-default); }
+  .login-brand-content { max-width: 400px; --lims-logo-width: min(220px, calc(100vw - 80px)); }
+  .login-product { margin-top: var(--lims-space-3); font-size: var(--lims-type-page-title-size); }
+  .login-brand-image { height: 120px; margin-top: var(--lims-space-4); }
+}
 </style>

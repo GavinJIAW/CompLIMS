@@ -1,0 +1,49 @@
+.login-content-form {
+  margin-top: var(--lims-space-4);
+  :deep(.el-form-item), :deep(.el-form-item:last-of-type) {
+    margin-bottom: var(--lims-space-6) !important;
+  }
+  :deep(.el-form-item__label) {
+    color: var(--lims-text-regular);
+    font-size: var(--lims-type-form-label-size);
+    line-height: var(--lims-type-form-label-line-height);
+    padding-bottom: var(--lims-space-2);
+  }
+  :deep(.el-form-item__error) {
+    position: static;
+    font-size: var(--lims-type-helper-size);
+    line-height: var(--lims-type-helper-line-height);
+    padding-top: var(--lims-space-1);
+    color: var(--lims-danger);
+  }
+  :deep(.el-form-item__content) { align-content: flex-start; }
+  .login-content-password {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--lims-control-default);
+    height: var(--lims-control-default);
+    padding: 0;
+    border: 0;
+    border-radius: var(--lims-radius-button);
+    background: transparent;
+    color: var(--lims-text-secondary);
+    cursor: pointer;
+    &:hover { background: var(--lims-background-hover); color: var(--lims-text-primary); }
+    &:focus-visible { outline: var(--lims-focus-width) solid var(--lims-focus-ring); outline-offset: var(--lims-focus-offset); }
+  }
+  .login-content-captcha {
+    width: 100%;
+    height: var(--lims-control-comfortable);
+    padding: 0;
+    background: var(--lims-brand-plate);
+    overflow: hidden;
+    :deep(.el-image) { height: 100%; width: 100%; }
+  }
+  .login-content-submit {
+    width: 100%;
+    min-height: var(--lims-control-comfortable);
+    font-weight: var(--lims-type-form-label-weight);
+  }
+}
+.login-apply { text-align: center; }

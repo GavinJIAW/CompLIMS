@@ -1,5 +1,20 @@
 // 定义内容
 export default {
+	loginPresentation: {
+		productName: 'CompLIMS',
+		description: '複合材料力學性能測試實驗室管理系統',
+		firstPasswordTitle: '首次登入修改密碼',
+		title: '登入',
+		username: '使用者名稱',
+		password: '密碼',
+		newPassword: '新密碼',
+		confirmPassword: '確認新密碼',
+		captcha: '驗證碼',
+		refreshCaptcha: '重新整理驗證碼',
+		showPassword: '顯示密碼',
+		hidePassword: '隱藏密碼',
+		apply: '申請試用',
+	},
 	label: {
 		one1: '用戶名登入',
 		two2: '手機號登入',

@@ -1,6 +1,6 @@
 <template>
-	<el-form ref="formRef" size="large" class="login-content-form" :model="state.ruleForm" :rules="rules" @keyup.enter="loginClick">
-		<el-form-item class="login-animation1" prop="username">
+	<el-form ref="formRef" size="large" label-position="top" class="login-content-form" :model="state.ruleForm" :rules="rules" @keyup.enter="loginClick">
+		<el-form-item class="login-animation1" prop="username" :label="$t('message.loginPresentation.username')">
 			<el-input type="text" :placeholder="$t('message.account.accountPlaceholder1')" v-model="ruleForm.username"
 				clearable autocomplete="off">
 				<template #prefix>
@@ -8,21 +8,21 @@
 				</template>
 			</el-input>
 		</el-form-item>
-		<el-form-item class="login-animation2" prop="password">
+		<el-form-item class="login-animation2" prop="password" :label="$t('message.loginPresentation.password')">
 			<el-input :type="isShowPassword ? 'text' : 'password'" :placeholder="$t('message.account.accountPlaceholder2')"
 				v-model="ruleForm.password">
 				<template #prefix>
 					<el-icon class="el-input__icon"><ele-Unlock /></el-icon>
 				</template>
 				<template #suffix>
-					<i class="iconfont el-input__icon login-content-password"
+					<button type="button" class="iconfont el-input__icon login-content-password" :aria-label="$t(isShowPassword ? 'message.loginPresentation.hidePassword' : 'message.loginPresentation.showPassword')" :aria-pressed="isShowPassword" @keyup.enter.stop
 						:class="isShowPassword ? 'icon-yincangmima' : 'icon-xianshimima'"
 						@click="isShowPassword = !isShowPassword">
-					</i>
+					</button>
 				</template>
 			</el-input>
 		</el-form-item>
-		<el-form-item class="login-animation3" v-if="isShowCaptcha" prop="captcha">
+		<el-form-item class="login-animation3" v-if="isShowCaptcha" prop="captcha" :label="$t('message.loginPresentation.captcha')">
 			<el-col :span="15">
 				<el-input type="text" maxlength="4" :placeholder="$t('message.account.accountPlaceholder3')"
 					v-model="ruleForm.captcha" clearable autocomplete="off">
@@ -33,22 +33,22 @@
 			</el-col>
 			<el-col :span="1"></el-col>
 			<el-col :span="8">
-				<el-button class="login-content-captcha">
-					<el-image :src="ruleForm.captchaImgBase" @click="refreshCaptcha" />
+				<el-button class="login-content-captcha" :aria-label="$t('message.loginPresentation.refreshCaptcha')" @click="refreshCaptcha" @keyup.enter.stop>
+					<el-image :src="ruleForm.captchaImgBase" :alt="$t('message.loginPresentation.captcha')" />
 				</el-button>
 			</el-col>
 		</el-form-item>
 		<el-form-item class="login-animation4">
-			<el-button type="primary" class="login-content-submit" round @click="loginClick"
+			<el-button type="primary" class="login-content-submit" @click="loginClick"
 				:loading="loading.signIn">
 				<span>{{ $t('message.account.accountBtnText') }}</span>
 			</el-button>
 		</el-form-item>
 	</el-form>
   <!--      申请试用-->
-  <div style="text-align: center" v-if="showApply()">
+  <div class="login-apply" v-if="showApply()">
     <el-button class="login-content-apply" link type="primary" plain round @click="applyBtnClick">
-      <span>申请试用</span>
+      <span>{{ $t('message.loginPresentation.apply') }}</span>
     </el-button>
   </div>
 </template>
@@ -234,41 +234,5 @@ export default defineComponent({
 </script>
 
 <style scoped lang="scss">
-.login-content-form {
-	margin-top: 20px;
-
-	@for $i from 1 through 4 {
-		.login-animation#{$i} {
-			opacity: 0;
-			animation-name: error-num;
-			animation-duration: 0.5s;
-			animation-fill-mode: forwards;
-			animation-delay: calc($i/10) + s;
-		}
-	}
-
-	.login-content-password {
-		display: inline-block;
-		width: 20px;
-		cursor: pointer;
-
-		&:hover {
-			color: #909399;
-		}
-	}
-
-	.login-content-captcha {
-		width: 100%;
-		padding: 0;
-		font-weight: bold;
-		letter-spacing: 5px;
-	}
-
-	.login-content-submit {
-		width: 100%;
-		letter-spacing: 2px;
-		font-weight: 800;
-		margin-top: 15px;
-	}
-}
+@import './form.scss';
 </style>

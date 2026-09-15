@@ -1,5 +1,20 @@
 // 定义内容
 export default {
+	loginPresentation: {
+		productName: 'CompLIMS',
+		description: '复合材料力学性能测试实验室管理系统',
+		firstPasswordTitle: '首次登录修改密码',
+		title: '登录',
+		username: '用户名',
+		password: '密码',
+		newPassword: '新密码',
+		confirmPassword: '确认新密码',
+		captcha: '验证码',
+		refreshCaptcha: '刷新验证码',
+		showPassword: '显示密码',
+		hidePassword: '隐藏密码',
+		apply: '申请试用',
+	},
 	label: {
 		one1: '账号密码登录',
 		two2: '手机号登录',

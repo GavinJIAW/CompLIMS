@@ -1,5 +1,20 @@
 // 定义内容
 export default {
+	loginPresentation: {
+		productName: 'CompLIMS',
+		description: 'Composite Materials Mechanical Testing Laboratory Management System',
+		firstPasswordTitle: 'Change password on first sign-in',
+		title: 'Sign in',
+		username: 'Username',
+		password: 'Password',
+		newPassword: 'New password',
+		confirmPassword: 'Confirm new password',
+		captcha: 'Verification code',
+		refreshCaptcha: 'Refresh verification code',
+		showPassword: 'Show password',
+		hidePassword: 'Hide password',
+		apply: 'Apply for a trial',
+	},
 	label: {
 		one1: 'User name login',
 		two2: 'Mobile number',

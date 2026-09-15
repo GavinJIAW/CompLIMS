@@ -8,6 +8,8 @@
 
 > B2 实施状态（2026-09-15）：Shell 已接入 240/64px Sidebar、56px Header、36px Tabs 与集中 layout.scss；BrandLogo 展开使用完整原图展示视窗，折叠使用用户提供并确认的 compact logo 运行时副本，配置图片失败时回退正式原图。空 Footer 不再占位，Header 原有工具保留并分组，菜单搜索仅整理浮层样式。四种 Layout 控制骨架、菜单/路由契约和 FastCrud 页面结构保持；下文初次评估中的尺寸与品牌缺失描述为历史基线。
 
+> B4A 实施状态：Login 已采用 Brand Area + Login Form，复用完整 BrandLogo，保留 site_logo/site_title/site_name/login_background 配置覆盖；未配置背景时使用中性 surface，移除未使用且缺失的 login-main.svg 导入。401/404 已采用本地状态码排版和共享 Token 样式，不再使用原插画或无效 height calc 绑定；路由、原按钮操作及登录/首次改密脚本保持。下文相关旧界面描述为历史基线；浏览器与认证流程 UAT 尚待完成，不以静态检查代替。
+
 ### FastCrud CRUD Layout Freeze — 实施最高约束
 
 现有 FastCrud System CRUD 页面保持原始结构。`index.vue / crud.tsx / api.ts` 及 FastCrud 自动生成的 **Search、Actionbar、Toolbar、Table、Pagination、Form、Dialog** 属于保留框架，不进行结构性 Layout 重写。本规则限制下文所有视觉、组件与实施建议；不能以统一 UI 为理由突破。
