@@ -219,3 +219,11 @@
     color: var(--lims-action-primary);
   }
 }
+
+// Keep the legacy narrow-screen layout lock legible on both themes.
+@media screen and (max-width: 1000px) {
+  .layout-drawer-content-flex::after {
+    background: var(--lims-background-overlay);
+    color: var(--lims-text-regular);
+  }
+}

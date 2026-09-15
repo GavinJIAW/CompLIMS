@@ -68,7 +68,7 @@
 </template>
 
 <script lang="ts" setup name="user">
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, watch } from 'vue';
 import { useExpose, useCrud } from '@fast-crud/fast-crud';
 import { Md5 } from 'ts-md5';
 import { createCrudOptions } from './crud';
@@ -79,9 +79,37 @@ import { getDeptInfoById, resetPwd } from './api';
 import { warningNotification, successNotification } from '/@/utils/message';
 import { HeadDeptInfoType } from '../../types';
 import {getBaseURL} from '/@/utils/baseUrl';
+import { useThemeConfig } from '/@/stores/themeConfig';
 
 let deptCountChart: ECharts;
 let deptSexChart: ECharts;
+// ECharts canvas needs resolved colors; update presentation without refetching statistics.
+const themeStore = useThemeConfig();
+const applyChartTheme = () => {
+	if (!deptCountChart || !deptSexChart) return;
+	const styles = getComputedStyle(document.documentElement);
+	const token = (name: string) => styles.getPropertyValue(`--lims-${name}`).trim();
+	const text = token('text-regular');
+	const secondary = token('text-secondary');
+	const border = token('border-default');
+	const tooltip = {
+		backgroundColor: token('background-overlay'),
+		borderColor: border,
+		textStyle: { color: text },
+	};
+	deptCountChart.setOption({
+		textStyle: { color: text },
+		tooltip,
+		xAxis: { axisLabel: { color: secondary }, axisLine: { lineStyle: { color: border } }, axisTick: { lineStyle: { color: border } } },
+		yAxis: { axisLabel: { color: secondary }, axisLine: { lineStyle: { color: border } }, splitLine: { lineStyle: { color: token('chart-grid') } } },
+	});
+	deptSexChart.setOption({
+		textStyle: { color: text },
+		tooltip,
+		legend: { textStyle: { color: text }, inactiveColor: token('text-disabled') },
+	});
+};
+watch(() => themeStore.themeConfig.isIsDark, applyChartTheme, { flush: 'post' });
 
 // crud组件的ref
 const crudRef = ref();
@@ -205,6 +233,7 @@ const getDeptInfo = async () => {
 		deptInfo.value = res.data;
 		initDeptCountBarChart();
 		initDeptSexPieChart();
+		applyChartTheme();
 	}
 };
 

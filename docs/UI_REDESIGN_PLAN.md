@@ -2,13 +2,19 @@
 
 > 2026-09-14 · 视觉体系与重构规划，非代码实施。
 > 推荐 **Direction B — Industrial / Engineering Precision（工业工程精密型）**；Logo 原始品牌橙 **#FF6900**；建议 **6 个 UI Batch**。
-> 本文为 UI 开发前的设计决策基线，与根目录 `AGENTS.md` 配套。已纳入 FastCrud CRUD Layout Freeze；本次仅整理文档，不修改源码、不开始 UI B1A 或 P0。报告当前路径为 `docs/UI_REDESIGN_PLAN.md`。
+> 本文为 UI 开发前的设计决策基线，与根目录 `AGENTS.md` 配套。已纳入 FastCrud CRUD Layout Freeze；初版仅整理文档；后续实施状态见下方记录，P0 不属于 UI 批次。报告当前路径为 `docs/UI_REDESIGN_PLAN.md`。
 
-> B1A 实施状态（2026-09-15）：已建立根部 Light/Dark token、排版与 Element Plus/FastCrud 基础皮肤，移除专用 FastCrud 旧高度规则与 reset 硬编码颜色；下文初次源码评估为历史基线。App/store/cache 迁移、页面布局和后续批次仍未实施，构建通过不代表浏览器视觉验收。
+> B1A 实施状态（2026-09-15）：已建立根部 Light/Dark token、排版与 Element Plus/FastCrud 基础皮肤，移除专用 FastCrud 旧高度规则与 reset 硬编码颜色；下文初次源码评估为历史基线。这是 B1A 当时的范围记录；后续页面批次见下方状态。App/store/cache 迁移未实施，构建通过不代表浏览器视觉验收。
 
 > B2 实施状态（2026-09-15）：Shell 已接入 240/64px Sidebar、56px Header、36px Tabs 与集中 layout.scss；BrandLogo 展开使用完整原图展示视窗，折叠使用用户提供并确认的 compact logo 运行时副本，配置图片失败时回退正式原图。空 Footer 不再占位，Header 原有工具保留并分组，菜单搜索仅整理浮层样式。四种 Layout 控制骨架、菜单/路由契约和 FastCrud 页面结构保持；下文初次评估中的尺寸与品牌缺失描述为历史基线。
 
-> B4A 实施状态：Login 已采用 Brand Area + Login Form，复用完整 BrandLogo，保留 site_logo/site_title/site_name/login_background 配置覆盖；未配置背景时使用中性 surface，移除未使用且缺失的 login-main.svg 导入。401/404 已采用本地状态码排版和共享 Token 样式，不再使用原插画或无效 height calc 绑定；路由、原按钮操作及登录/首次改密脚本保持。下文相关旧界面描述为历史基线；浏览器与认证流程 UAT 尚待完成，不以静态检查代替。
+> B4A 实施状态：Login 已采用 Brand Area + Login Form，复用完整 BrandLogo，保留 site_logo/site_title/site_name/login_background 配置覆盖；未配置背景时使用中性 surface，移除未使用且缺失的 login-main.svg 导入。401/404 已采用本地状态码排版和共享 Token 样式，不再使用原插画或无效 height calc 绑定；路由、原按钮操作及登录/首次改密脚本保持。下文相关旧界面描述为历史基线；B4A 后续已由用户验收，未实际执行的首次改密不据此补记通过。
+
+> 当前集成基线：B1A、B2、B3、B4A、B4B、B5 与独立 Motion Fix 已由用户验收并合并 main（`b554194`）。正常页面过渡为 300ms，Drawer/Overlay 为 240ms；Reduced Motion 保留零时长并中和透明/位移瞬态。
+>
+> B6 当前实施：Dept 统计图的图例、坐标、网格及 tooltip 接入既有 token，复用图表实例只更新主题呈现，不重新请求统计数据；窄屏布局设置遮罩接入 token。Build Before/After 均通过，保留既有 chunk-size 与 Sass deprecation warning。代表页已检查 1366/1440/1920/1000 视口，125% 缩放抽查无页面横溢；Normal Motion 采样为页面 300ms、Drawer/Overlay 240ms，Reduced Motion 的 Drawer 入场为 0s/opacity 1/transform none，页面最终状态无偏移。B6 审计状态为 PARTIAL：Login Dark、部分插件/Date-Time/通知浮层与完整键盘路径尚未完成，不把抽查当作全量 UAT。
+>
+> B6 保留项：`home/backup`、demo/template 仍可能被动态组件解析或有实际路由用途；旧图标保留兼容。`theme/media/` 在当前工作区存在但被历史 `media/` 忽略规则排除跟踪，干净克隆的资源完整性须另行核验；本批没有修改忽略规则或批量补入资源。授权保存、配置保存、文件/头像上传、个人资料保存和密码修改未作为本轮只读 UI 审计执行；无正常入口的插件视图不记通过。
 
 ### FastCrud CRUD Layout Freeze — 实施最高约束
 
