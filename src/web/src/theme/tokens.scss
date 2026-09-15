@@ -221,6 +221,8 @@ html[data-theme='dark'] {
   --lims-focus-offset: 2px;
   --lims-motion-fast: 120ms;
   --lims-motion-normal: 160ms;
+  --lims-motion-overlay: 240ms;
+  --lims-motion-overlay-fast: 180ms;
 }
 
 :root {
@@ -260,5 +262,7 @@ html[data-theme='dark'] {
   :root {
     --lims-motion-fast: 0ms;
     --lims-motion-normal: 0ms;
+    --lims-motion-overlay: 0ms;
+    --lims-motion-overlay-fast: 0ms;
   }
 }

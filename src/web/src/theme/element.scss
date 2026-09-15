@@ -485,3 +485,23 @@
 @media (prefers-reduced-motion: reduce) {
   .el-skeleton.is-animated .el-skeleton__item { animation: none; }
 }
+
+// Drawer motion is distinct from control hover/focus motion, including Teleports.
+.el-overlay.is-drawer {
+  --el-transition-duration: var(--lims-motion-overlay);
+  --el-transition-duration-fast: var(--lims-motion-overlay-fast);
+}
+@media (prefers-reduced-motion: reduce) {
+  .el-overlay.is-drawer,
+  .el-overlay.is-drawer .el-drawer {
+    transition: none;
+    animation: none;
+  }
+  // Element Plus sets a transparent mask and directional transform on these states.
+  .el-overlay.is-drawer.el-drawer-fade-enter-from,
+  .el-overlay.is-drawer.el-drawer-fade-leave-to {
+    background-color: var(--el-overlay-color-lighter) !important;
+    opacity: 1;
+    .el-drawer { transform: none; opacity: 1; }
+  }
+}

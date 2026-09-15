@@ -145,3 +145,16 @@
 		left: -5px;
 	}
 }
+
+// Zero-duration page transitions must not render an invisible or displaced frame.
+@media (prefers-reduced-motion: reduce) {
+  .slide-right-enter-from,
+  .slide-right-leave-to,
+  .slide-left-enter-from,
+  .slide-left-leave-to,
+  .opacitys-enter-from,
+  .opacitys-leave-to {
+    opacity: 1;
+    transform: none;
+  }
+}
