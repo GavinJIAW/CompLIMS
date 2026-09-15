@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="config-values">
     <el-row :gutter="20">
       <el-col :span="4">变量标题</el-col>
       <el-col :span="4">变量名</el-col>
@@ -7,7 +7,7 @@
       <el-col :span="2" :offset="1">是否前端配置</el-col>
       <el-col :span="3" >操作</el-col>
     </el-row>
-    <el-form ref="formRef" :model="formData" label-width="0px" label-position="left" style="margin-top: 20px">
+    <el-form ref="formRef" :model="formData" label-width="0px" label-position="left" style="margin-top: var(--lims-space-4)">
       <el-form-item
           :prop="['array'].indexOf(item.form_item_type_label) > -1 ? '' : item.key"
           :key="index"
@@ -15,11 +15,11 @@
           v-for="(item, index) in formList"
       >
         <el-col :span="4">
-          <el-input v-if="item.edit" v-model="item.title" style="display: inline-block; width: 200px" placeholder="请输入标题"></el-input>
+          <el-input v-if="item.edit" v-model="item.title" style="width: 100%" placeholder="请输入标题"></el-input>
           <span v-else>{{ item.title }}</span>
         </el-col>
         <el-col :span="4" >
-          <el-input v-if="item.edit" v-model="item.new_key" style="width: 200px" placeholder="请输入变量key">
+          <el-input v-if="item.edit" v-model="item.new_key" style="width: 100%" placeholder="请输入变量key">
             <template slot="prepend">
               <span style="padding: 0px 5px">{{ editableTabsItem.key }}</span>
             </template>
@@ -375,7 +375,17 @@ watch(
 );
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+.config-values {
+  min-width: 0;
+  overflow-x: auto;
+  > .el-row, > .el-form { min-width: 720px; }
+  > .el-row { margin: 0 !important; padding: var(--lims-space-3) 0; background: var(--lims-background-table-header); color: var(--lims-text-primary); font-weight: var(--lims-type-form-label-weight); border-bottom: var(--lims-border-width) solid var(--lims-border-default); }
+  :deep(.el-form-item) { padding-block: var(--lims-space-3); border-bottom: var(--lims-border-width) solid var(--lims-border-light); }
+  :deep(.el-form-item__content > .el-col) { min-width: 0; padding-inline: var(--lims-space-2); overflow-wrap: anywhere; }
+  :deep(.el-form-item__content > .el-col:last-child) { display: flex; flex-wrap: wrap; gap: var(--lims-space-1); }
+  :deep(.el-form-item__content > .el-col:last-child .el-button) { margin-left: 0; }
+}
 :deep(.el-upload-list--picture-card){
   text-align: center;
 }

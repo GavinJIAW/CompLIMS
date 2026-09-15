@@ -11,12 +11,12 @@
 		<template #header>
 			<div>
 				当前授权角色：
-				<el-tag style="margin-right: 20px">{{ RoleDrawer.roleName }}</el-tag>
+				<el-tag style="margin-right: var(--lims-space-4)">{{ RoleDrawer.roleName }}</el-tag>
 				授权人员：
 				<el-button size="small" :icon="UserFilled" @click="handleUsers">{{ RoleDrawer.users.length }}</el-button>
 			</div>
 		</template>
-		<splitpanes class="default-theme" style="height: 100%">
+		<splitpanes class="default-theme role-permission-panes" style="height: 100%">
 			<pane min-size="20" size="22">
 				<div class="pane-box">
 					<MenuTreeCom />
@@ -65,12 +65,17 @@ const handleUsers = () => {
 
 <style lang="scss" scoped>
 .pane-box {
-	width: 100vw; /* 视口宽度 */
-	height: 100vh; /* 视口高度 */
-	max-width: 100%; /* 确保不超过父元素的宽度 */
-	max-height: 100%; /* 确保不超过父元素的高度 */
-	overflow: auto; /* 当内容超出容器尺寸时显示滚动条 */
-	padding: 10px;
-	background-color: #fff;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--lims-space-4);
+  background: var(--lims-background-card);
+  border: var(--lims-border-width) solid var(--lims-border-default);
+  border-radius: var(--lims-radius-card);
 }
+.role-permission-panes :deep(.splitpanes__pane) { background: var(--lims-background-card); }
+.role-permission-panes :deep(.splitpanes__splitter) { background: var(--lims-background-overlay); border-color: var(--lims-border-default); }
+.role-permission-panes :deep(.el-tree-node__content) { min-height: 36px; }
 </style>

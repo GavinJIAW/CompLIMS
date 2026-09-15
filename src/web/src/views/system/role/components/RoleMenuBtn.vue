@@ -1,13 +1,13 @@
 <template>
 	<div class="pccm-item" v-if="RoleMenuBtn.$state.length > 0">
 		<div class="menu-form-alert">
-			<div style="display:flex;  align-items: center; white-space: nowrap; margin-bottom: 10px;">
+			<div style="display:flex; flex-wrap: wrap; align-items: center; gap: var(--lims-space-2); margin-bottom: var(--lims-space-3);">
 				<span>默认接口权限:</span>
 				<el-select 
 					v-model="default_selectBtn.data_range" 
 					@change="defaulthandlePermissionRangeChange" 
 					placeholder="请选择"
-					style="margin-left: 5px; width: 250px; min-width: 250px;"
+					style="width: 250px; max-width: 100%;"
 				>
 					<el-option v-for="item in dataPermissionRange" :key="item.value" :label="item.label" :value="item.value" />
 				</el-select>
@@ -24,7 +24,7 @@
 					:render-after-expand="false"
 					show-checkbox
 					class="dialog-tree"
-					style="margin-left: 15px; width: AUTO; min-width: 250px; margin-top: 0;"
+					style="width: 250px; max-width: 100%; margin-top: 0;"
 				/>
 
 			</div>
@@ -241,22 +241,22 @@ onMounted(async () => {
 .pccm-item {
 	margin-bottom: 10px;
 	.menu-form-alert {
-		color: #fff;
+		color: var(--lims-text-regular);
 		line-height: 24px;
 		padding: 8px 16px;
 		margin-bottom: 20px;
 		border-radius: 4px;
-		background-color: var(--el-color-primary);
+		background-color: var(--lims-background-hover);
 	}
 }
 
 .el-checkbox {
-	width: 20%;
+	width: auto; max-width: 100%; height: auto; min-height: 32px; margin-right: var(--lims-space-6);
 }
 .btn-item {
 	display: flex;
 	align-items: center;
-	justify-content: center; /* 水平居中 */
+	justify-content: flex-start; white-space: normal; overflow-wrap: anywhere;
 	.el-icon {
 		margin-left: 5px;
 	}

@@ -159,9 +159,9 @@ defineExpose({ fetchData });
 	height: 100%;
 	.ctc-title {
 		font-size: 16px;
-		font-weight: 900;
+		font-weight: var(--lims-type-card-title-weight);
 		padding-bottom: 10px;
-		border-bottom: 1px solid #dcdfe6;
+		border-bottom: var(--lims-border-width) solid var(--lims-border-default);
 	}
 	.ctc-head {
 		height: 35px;

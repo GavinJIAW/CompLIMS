@@ -610,7 +610,7 @@ src/web/src/utils/theme.ts # 现有：主题应用/兼容收敛入口
 | home/index.vue；home/backup/index.vue | 同哈希655行静态演示 | KPI误导、重复维护 | 工作台任务化；核对component后再清理backup |
 | views/system/demo；views/template | demo路由与VIEWSETNAME占位模板 | 不应冒充业务 | 保留模板用途，删除前查动态引用/生成链 |
 | user/index.vue | Tailwind字体粗细混杂、树缩进38、头像50px | 与其他管理页不一致 | 统一排版/头像/缩进，保留组织筛选 |
-| role/components/RoleDrawer.vue | pane 100vw/100vh、padding10、#fff | 嵌套视口、暗色风险 | 父容器自适应/surface，授权逻辑不变 |
+| role/components/RoleDrawer.vue | B5：pane 已改为父容器尺寸、token surface/border/spacing | 保留80% Drawer和splitpanes，仍需授权写操作人工回归 | 授权逻辑不变；不调整权限模型 |
 | components/table/index.vue | 自有分页/工具条、primary删除、固定stripe | 与FastCrud体验不一致 | 统一视觉，不立即换契约 |
 | components/fileSelector/index.vue521行 | 行内布局、嵌套弹层、选择上传集中 | 维护/回归成本高 | 先壳后纯展示，保留v-model/事件 |
 | avatarSelector；cropper；fileSelector | 相近裁剪/图片能力 | 可能重复但契约不同 | 不凭名称合并，先核对事件和用例 |

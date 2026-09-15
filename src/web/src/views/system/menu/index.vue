@@ -130,22 +130,23 @@ onMounted(() => {
 
 	.el-col {
 		height: 100%;
-		padding: 10px 0;
+		padding: var(--lims-space-2) 0;
 		box-sizing: border-box;
 	}
 }
 
 .menu-box {
 	height: 100%;
-	padding: 10px;
-	background-color: var(--el-fill-color-blank);;
+	padding: var(--lims-space-4);
+	background-color: var(--lims-background-card);
 	box-sizing: border-box;
 }
 
 .menu-left-box {
 	position: relative;
-	border-radius: 0 8px 8px 0;
-	margin-right: 10px;
+	border: var(--lims-border-width) solid var(--lims-border-default);
+  border-radius: var(--lims-radius-card);
+	margin-right: var(--lims-space-4);
 }
 
 .menu-right-box {

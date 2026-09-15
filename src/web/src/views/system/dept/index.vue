@@ -121,7 +121,7 @@ onMounted(() => {
 
 	.el-col {
 		height: 100%;
-		padding: 10px 0;
+		padding: var(--lims-space-2) 0;
 		box-sizing: border-box;
 	}
 }
@@ -133,13 +133,14 @@ onMounted(() => {
 }
 
 .dept-left {
-	background-color: var(--el-fill-color-blank);;
-	border-radius: 0 8px 8px 0;
-	padding: 10px;
+	background-color: var(--lims-background-card);
+	border: var(--lims-border-width) solid var(--lims-border-default);
+  border-radius: var(--lims-radius-card);
+	padding: var(--lims-space-4);
 }
 
 .dept-table {
-	margin-left: 10px;
+	margin-left: var(--lims-space-4);
 	padding-bottom: 10px;
 }
 </style>

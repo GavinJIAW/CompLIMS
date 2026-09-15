@@ -132,7 +132,7 @@ onMounted(() => {
   height: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, .5);
+  background-color: var(--lims-overlay-mask);
   z-index: 9999;
 }
 

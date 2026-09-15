@@ -1,5 +1,5 @@
 <template>
-	<el-card>
+	<el-card class="system-config">
 		<div>
 			<el-header>
 				<div class="yxt-flex-between">
@@ -73,10 +73,12 @@ onMounted(() => {
 });
 </script>
 
-<style>
-/*用 flex  两边对齐*/
-.yxt-flex-between {
-	display: flex;
-	justify-content: space-between;
+<style scoped lang="scss">
+.system-config {
+  min-width: 0;
+  :deep(.el-header) { height: auto; padding: 0 0 var(--lims-space-4); }
+  .yxt-flex-between { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--lims-space-3); }
+  :deep(.el-tabs--border-card) { box-shadow: none; border-color: var(--lims-border-default); }
+  :deep(.el-tabs__content) { padding: var(--lims-space-4); }
 }
 </style>

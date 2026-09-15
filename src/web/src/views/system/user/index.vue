@@ -3,7 +3,7 @@
     <el-row class="mx-2">
       <el-col xs="24" :sm="8" :md="6" :lg="4" :xl="4" class="p-1">
         <el-card :body-style="{ height: '100%' }">
-          <p class="font-mono font-black text-center text-xl pb-5">
+          <p class="user-tree-title">
             组织列表
             <el-tooltip effect="dark" :content="content" placement="right">
               <el-icon>
@@ -12,11 +12,11 @@
             </el-tooltip>
           </p>
           <el-input v-model="filterText" :placeholder="placeholder"/>
-          <el-tree ref="treeRef" class="font-mono font-bold leading-6 text-7xl" :data="data" :props="treeProps"
+          <el-tree ref="treeRef" class="user-dept-tree" :data="data" :props="treeProps"
                    :filter-node-method="filterNode" icon="ArrowRightBold" :indent="38" highlight-current @node-click="onTreeNodeClick">
             <template #default="{ node, data }">
               <element-tree-line :node="node" :showLabelLine="false" :indent="32">
-					<span v-if="data.status" class="text-center font-black font-normal">
+					<span v-if="data.status" class="user-tree-label">
 						<SvgIcon name="iconfont icon-shouye" color="var(--el-color-primary)"/>&nbsp;{{ node.label }}
 					</span>
                 <span v-else color="var(--el-color-primary)"> <SvgIcon name="iconfont icon-shouye"/>&nbsp;{{
@@ -144,6 +144,10 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+.user-tree-title { font-size: var(--lims-type-card-title-size); font-weight: var(--lims-type-card-title-weight); color: var(--lims-text-primary); margin-bottom: var(--lims-space-4); }
+.user-dept-tree { margin-top: var(--lims-space-3); font-size: var(--lims-type-form-value-size); font-weight: 400; overflow: auto; max-height: calc(100% - 80px); }
+.user-dept-tree :deep(.el-tree-node__content) { min-height: 36px; }
+.user-tree-label { font-family: inherit; font-weight: 400; }
 .el-row {
   height: 100%;
 

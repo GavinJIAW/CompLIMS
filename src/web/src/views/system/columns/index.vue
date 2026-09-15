@@ -106,19 +106,19 @@ const handleClick = (type: string, record: any) => {
 	}
 	.columns-box {
 		height: 100%;
-		padding: 10px;
-		background-color: #fff;
+		padding: var(--lims-space-3);
+		background-color: var(--lims-background-card);
 		box-sizing: border-box;
 	}
 	.columns-left {
-		border-radius: 0 8px 8px 0;
+		border-radius: var(--lims-radius-card);
 	}
 	.columns-center {
 		border-radius: 8px;
 	}
 	.columns-right {
 		position: relative;
-		border-radius: 8px 0 0 8px;
+		border-radius: var(--lims-radius-card);
 	}
 }
 </style>

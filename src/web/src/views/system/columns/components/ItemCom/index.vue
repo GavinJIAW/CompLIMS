@@ -103,10 +103,10 @@ onMounted(() => {
 
 	.item-com-title {
 		font-size: 16px;
-		font-weight: 900;
+		font-weight: var(--lims-type-card-title-weight);
 		padding-bottom: 10px;
 		margin-bottom: 10px;
-		border-bottom: 1px solid #dcdfe6;
+		border-bottom: var(--lims-border-width) solid var(--lims-border-default);
 	}
 	.item-com-list {
 		width: 100%;
@@ -118,16 +118,16 @@ onMounted(() => {
 			padding: 10px 16px;
 			border-radius: 8px;
 			cursor: pointer;
-			transition: all 500ms;
+
 		}
 		.active {
 			color: var(--el-color-primary);
 			background-color: var(--el-color-primary-light-8);
-			transition: all 500ms;
+
 		}
 		.item-com-item:hover {
 			color: var(--el-color-primary);
-			transition: all 500ms;
+
 		}
 	}
 	.item-com-pagination {

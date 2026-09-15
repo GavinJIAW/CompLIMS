@@ -2,11 +2,11 @@
 	<el-input v-model="filterVal" :prefix-icon="Search" placeholder="请输入组织名称" />
 	<div class="dept-tree-com">
 		<div class="tc-head">
-			<el-icon size="16" color="#606266" class="tc-head-icon">
+			<el-icon size="16" color="var(--lims-text-secondary)" class="tc-head-icon">
 				<HomeFilled />
 			</el-icon>
 			<span class="tc-head-txt">组织架构</span>
-			<el-icon size="16" color="#606266" @click="() => (showTotalNum = !showTotalNum)" class="tc-head-icon">
+			<el-icon size="16" color="var(--lims-text-secondary)" @click="() => (showTotalNum = !showTotalNum)" class="tc-head-icon">
 				<View v-show="!showTotalNum" />
 				<Hide v-show="showTotalNum" />
 			</el-icon>
@@ -209,7 +209,7 @@ defineExpose({
 	display: flex;
 	align-items: center;
 	margin-left: -8px;
-	color: #606266;
+	color: var(--lims-text-primary);
 	font-weight: 600;
 
 	.tc-head-txt {
@@ -245,12 +245,12 @@ defineExpose({
 <style lang="scss">
 .dept-tree-com {
 	height: calc(100% - 60px);
-	padding: 20px;
+	padding: var(--lims-space-2);
 	box-sizing: border-box;
 	overflow-y: auto;
 
 	.el-tree-node__content {
-		height: 32px !important;
+		height: 36px !important;
 	}
 
 	.el-tree .el-tree-node__expand-icon svg {

@@ -2,7 +2,7 @@
 	<el-input v-model="filterVal" :prefix-icon="Search" placeholder="请输入菜单名称" />
 	<div class="menu-tree-com">
 		<div class="mtc-head">
-			<el-icon size="16" color="#606266" class="mtc-head-icon">
+			<el-icon size="16" color="var(--lims-text-secondary)" class="mtc-head-icon">
 				<Menu />
 			</el-icon>
 			菜单列表
@@ -217,7 +217,7 @@ defineExpose({
 		display: flex;
 		align-items: center;
 		margin-left: -8px;
-		color: #606266;
+		color: var(--lims-text-primary);
 		font-weight: 600;
 
 		.mtc-head-icon {
@@ -256,12 +256,12 @@ defineExpose({
 <style lang="scss">
 .menu-tree-com {
 	height: calc(100% - 60px);
-	padding: 20px;
+	padding: var(--lims-space-2);
 	box-sizing: border-box;
 	overflow-y: auto;
 
 	.el-tree-node__content {
-		height: 32px !important;
+		height: 36px !important;
 	}
 
 	.el-tree .el-tree-node__expand-icon svg {
