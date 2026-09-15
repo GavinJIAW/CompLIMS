@@ -98,7 +98,7 @@
 
 | 场景 | 展示规范 |
 |---|---|
-| 展开Sidebar | 品牌区80px；可见图形约152×49px，按内容约3.1:1显示；CompLIMS作为独立产品文字，不改公司字标 |
+| 展开Sidebar | 品牌区64px；可见图形约152×49px，按内容约3.1:1显示；仅显示完整Applus+ Laboratories Logo，不显示第二行产品名，不改公司字标 |
 | 折叠Sidebar | 64px栏中居中展示约32px的用户确认紧凑Logo；Tooltip显示CompLIMS，不重复显示产品文字 |
 | 紧凑资产 | 源文件docs/compact-logo.png保留不变；运行时使用S/assets/compact-logo.png等字节副本，不重绘、不改色 |
 | Login | 可见完整Logo宽280–320px；保证Laboratories可读 |
@@ -263,7 +263,7 @@ Element Plus主色映射action-primary，Logo映射brand-primary。`primary-ligh
 ```text
 ┌──────────────────┬─────────────────────────────────────────┐
 │ Company Brand    │ 56px Header：折叠 / Breadcrumb / Tools   │
-│ + CompLIMS       ├─────────────────────────────────────────┤
+│                  ├─────────────────────────────────────────┤
 │                  │ 36px TabsView（保留现有多任务行为）       │
 │ Dynamic Sidebar  ├─────────────────────────────────────────┤
 │                  │ 现有 fs-page / fs-crud 原生内容           │
@@ -287,7 +287,7 @@ Sidebar240px/折叠64px，主区域min-width:0，外边距24px。Header56px、Ta
 
 ## 10. Sidebar
 
-品牌区80px，只有菜单区域纵滚。一级40px高，左右16px，图标20px，图文gap12px，字体14/500；二级36px，文字起点增加24px。保留三级递归支持，未来IA尽量两级，不能UI强行裁掉三级。
+品牌区64px，只有菜单区域纵滚。一级40px高，左右16px，图标20px，图文gap12px，字体14/500；二级36px，文字起点增加24px。保留三级递归支持，未来IA尽量两级，不能UI强行裁掉三级。
 
 Active=selected底+4px橙标记+action-primary文字；Hover=background-hover。当前祖先仅适度加粗，不把所有祖先涂成同等强激活。折叠64px内图标居中，Tooltip全名，点击/键盘可开子菜单浮层，仍保留激活形状。
 

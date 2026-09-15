@@ -1,7 +1,6 @@
 <template>
   <div class="layout-logo">
     <BrandLogo :compact="!setShowLogo" :src="siteLogo" />
-    <span v-if="setShowLogo" class="layout-logo-product">CompLIMS</span>
   </div>
 </template>
 
@@ -35,11 +34,5 @@ const siteLogo = computed(() => systemConfig.value['login.site_logo'] || undefin
   color: var(--lims-text-primary);
   font-family: inherit;
 
-  .layout-logo-product {
-    font-size: var(--lims-type-helper-size);
-    line-height: var(--lims-type-caption-line-height);
-    font-weight: 500;
-    letter-spacing: .04em;
-  }
 }
 </style>
