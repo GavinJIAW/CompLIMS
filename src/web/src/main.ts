@@ -7,7 +7,7 @@ import other from '/@/utils/other';
 import '/@/assets/style/tailwind.css'; // 先引入tailwind css, 以免element-plus冲突
 import ElementPlus from 'element-plus';
 import 'element-plus/dist/index.css';
-import '/@/theme/index.scss';
+
 import mitt from 'mitt';
 import VueGridLayout from 'vue-grid-layout';
 import piniaPersist from 'pinia-plugin-persist';
@@ -34,6 +34,8 @@ import 'vxe-table/lib/style.css'
 
 import '/@/assets/style/reset.scss';
 import 'element-tree-line/dist/style.css'
+// App theme follows vendor and compatibility styles.
+import '/@/theme/index.scss';
 
 let forIconfont = analyzingIconForIconfont(iconfont); //解析class
 iconList.addIcon(forIconfont.list); // 添加iconfont icon

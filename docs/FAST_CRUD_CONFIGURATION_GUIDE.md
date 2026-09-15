@@ -242,11 +242,11 @@ Recommended：复用传输入口，页面仅配置经确认的文件类型/数�
 
 ## 16. Theme / Global SCSS Boundary
 
-Current：main.ts 引入 Element Plus CSS、theme/index.scss、VXE CSS、assets/style/reset.scss 等；settings.ts 引入 FastCrud 与 fast-extends 的 dist/style.css。实际级联需以构建结果和浏览器 computed styles 验证，不能只凭入口文本顺序断言。
+Current（B1A）：main.ts 将 theme/index.scss 放在 vendor/兼容样式入口之后；settings.ts 仍引入 FastCrud 与 fast-extends 的 dist/style.css。theme/index.scss 已接入 tokens.scss、semantic.scss、typography.scss、element.scss 与 fastCrud.scss；实际运行级联仍需浏览器 computed styles 验证。
 
-Current：真实专用文件为 `src/web/src/theme/fastCrud.scss`。其现内容只有 fs-page 白底、10px 圆角和 88vh!important；theme/index.scss 及 src 的引用搜索未发现接入。不能称为已生效的统一 FastCrud 主题。活动 reset.scss 则对 fs-crud-container 的表头颜色与 placeholder 做硬编码覆盖。
+Current（B1A）：`src/web/src/theme/fastCrud.scss` 已改为引用 token 的 surface、原生区域间距和表格密度，并由 theme/index.scss 接入；旧 88vh 高度规则及 reset.scss 的硬编码颜色已移除。原生 CRUD 结构、配置与请求生命周期未修改。
 
-Recommended：延用 UI 方案的 theme 目录与未来 tokens，改写专用样式后才接入；不要直接导入上述旧高度规则。设计 token 尚属计划，本文不声称已有完整 Light/Dark 视觉标准实施。
+Current（B1A）：Light/Dark token 已定义于 html 根部，沿用 data-theme=dark，供 Teleport 继承。semantic.scss 中仅 --el-color-primary 及其已使用派生别名用 !important 隔离旧 inline 配色写入，当前基础组件使用批准的交互色；旧自定义配色值未删除，store/cache 的协调留 B1B。基础接入不等于全站明暗视觉验收完成。
 
 | 层级 | 允许职责 |
 | --- | --- |
@@ -288,7 +288,7 @@ Current：本次通过 `rg --files src/web/src -g crud.tsx` 重新枚举，并�
 | search.disabled 与 show 混杂 | areas/crud.tsx、operationLog/crud.tsx | 不猜测等价；问题验证与行为修复单独处理 |
 | 广泛 any 与手动 ID/日期转换 | role/crud.tsx、commonCrud.ts 等 | 后续类型工作围绕真实契约，不伴随 UI 改写 |
 | 两种 request 封装 | utils/service.ts、utils/request.ts | 不按名称替换；当前 CRUD api.ts 使用 service |
-| 表面样式与主题接入未统一 | theme/fastCrud.scss、assets/style/reset.scss | 按 UI 方案渐进接入，不声称既有皮肤已完成 |
+| 基础皮肤已接入，页面级兼容待验证 | theme/fastCrud.scss、theme/semantic.scss | B1A 仅基础层；不把构建通过当作完整视觉验收 |
 | 成功提示依赖 code 2000 | settings.ts、service.ts | 特殊返回契约须明确适配，不全局放宽判断 |
 
 这些发现只定位维护风险，不授权源代码清理。

@@ -1,8 +1,15 @@
 @import './app.scss';
 @import 'common/transition.scss';
 @import './other.scss';
-@import './element.scss';
+
 @import './media/media.scss';
 @import './waves.scss';
 @import './dark.scss';
 @import './fa/css/font-awesome.min.css';
+
+// Foundation follows legacy styles; root tokens also reach Teleport overlays.
+@import './tokens.scss';
+@import './semantic.scss';
+@import './typography.scss';
+@import './element.scss';
+@import './fastCrud.scss';

@@ -4,6 +4,8 @@
 > 推荐 **Direction B — Industrial / Engineering Precision（工业工程精密型）**；Logo 原始品牌橙 **#FF6900**；建议 **6 个 UI Batch**。
 > 本文为 UI 开发前的设计决策基线，与根目录 `AGENTS.md` 配套。已纳入 FastCrud CRUD Layout Freeze；本次仅整理文档，不修改源码、不开始 UI B1A 或 P0。报告当前路径为 `docs/UI_REDESIGN_PLAN.md`。
 
+> B1A 实施状态（2026-09-15）：已建立根部 Light/Dark token、排版与 Element Plus/FastCrud 基础皮肤，移除专用 FastCrud 旧高度规则与 reset 硬编码颜色；下文初次源码评估为历史基线。App/store/cache 迁移、页面布局和后续批次仍未实施，构建通过不代表浏览器视觉验收。
+
 ### FastCrud CRUD Layout Freeze — 实施最高约束
 
 现有 FastCrud System CRUD 页面保持原始结构。`index.vue / crud.tsx / api.ts` 及 FastCrud 自动生成的 **Search、Actionbar、Toolbar、Table、Pagination、Form、Dialog** 属于保留框架，不进行结构性 Layout 重写。本规则限制下文所有视觉、组件与实施建议；不能以统一 UI 为理由突破。
@@ -528,7 +530,7 @@ settings当前文本居中可通过允许的column alignment局部优化；字�
 
 **Add/Import/Export全部保持Actionbar原位置**，不搬到PageHeader或另一操作栏，不重建Toolbar/Pagination/CRUD Dialog/Form。保留原native slots、columnSetDisabled、wrapper、exposed methods和hooks。纯CSS也不能通过order/absolute定位等方式变相搬移区域。现有Search布局/折叠逻辑不改，Table的列宽/对齐/密度可改；Form只改外观和col/span。
 
-本地docs/FastCrud-doc可查API，最终以锁定版本实现为准。`theme/fastCrud.scss`在theme/index.scss和源码引用中未发现接入，不能声称其88vh已对全站生效；未来先改写再引入，不能直接导入旧白底样式。
+本地docs/FastCrud-doc可查API，最终以锁定版本实现为准。B1A 已将 `theme/fastCrud.scss` 改为 token 皮肤并在 theme/index.scss 接入，未引入原 88vh 高度；当前仍保持原生布局。
 
 ## 26. Reusable Components
 
@@ -589,8 +591,8 @@ src/web/src/utils/theme.ts # 现有：主题应用/兼容收敛入口
 | stores/themeConfig.ts；setings.vue；App.vue | 颜色store、内联CSS、缓存多来源 | token被覆盖 | 集中适配、旧值兼容 |
 | App.vue | themeConfigVersion变化时Local.clear+reload | UI发布影响其他存储 | 单独测试白名单迁移，不动认证逻辑 |
 | theme/dark.scss | !important、--el-fill-colo、旧选择器 | 暗色/升级失配风险 | 明暗token+实测替代补丁 |
-| theme/fastCrud.scss | 白底、10px圆角、88vh!important，未找到引用 | 接入后可能破坏布局 | 改写再接入，不能把死样式当已生效 |
-| assets/style/reset.scss | thead #606266、placeholder #dcdfe6 | 暗色冲突、低对比 | 合并组件适配 |
+| theme/fastCrud.scss | B1A已替换旧白底/圆角/88vh并接入token | 页面级视觉仍需验收 | 保持原生布局，不扩大到CRUD重写 |
+| assets/style/reset.scss | B1A已移除表头/placeholder硬编码覆盖 | 由统一组件token承接 | 后续页面按实际渲染验收 |
 | theme/element.scss | 菜单全局220/64px、56行高；form末项22/18px；图标距5px | 密度混杂、覆盖过宽 | 宿主class+token |
 | theme/app.scss；personal/index.vue | 逐像素工具类、mb6/mb18/mt35/gutter35 | 间距无尺度 | 渐进替换，保留兼容 |
 | layout/main/*.vue；component/main.vue | 多布局包装重复，双scrollbar/硬编码高度 | 页头叠加后滚动/分页问题 | 先默认布局试点 |

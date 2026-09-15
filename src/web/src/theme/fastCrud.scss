@@ -1,5 +1,40 @@
+// Visual skin only: native positioning, flex, scrolling and lifecycle remain untouched.
 .fs-page {
-  background-color: rgb(255, 255, 255);
-    border-radius: 10px;
-    height: 88vh !important;
+  color: var(--lims-text-regular);
+  background-color: var(--lims-background-card);
+  border-radius: var(--lims-radius-card);
+}
+.fs-page .fs-page-header { border-color: var(--lims-border-default); }
+.fs-page .fs-page-header > .title {
+  color: var(--lims-text-primary);
+  font-size: var(--lims-type-card-title-size);
+  font-weight: var(--lims-type-card-title-weight);
+}
+.fs-crud-container {
+  .fs-search { color: var(--lims-text-regular); }
+  .fs-toolbar .fs-button { margin-left: var(--lims-space-2); }
+  .fs-actionbar .fs-button { margin: var(--lims-space-1); }
+  .el-table .el-table__cell {
+    height: var(--lims-row-default);
+    padding-top: var(--lims-space-2);
+    padding-bottom: var(--lims-space-2);
+  }
+  .el-table .cell {
+    line-height: var(--lims-type-table-line-height);
+    padding-inline: var(--lims-space-3);
+  }
+  .el-table--small .el-table__cell {
+    height: var(--lims-row-compact);
+    padding-top: var(--lims-space-1);
+    padding-bottom: var(--lims-space-1);
+  }
+  .el-table--large .el-table__cell {
+    height: var(--lims-row-comfortable);
+    padding-top: var(--lims-space-3);
+    padding-bottom: var(--lims-space-3);
+  }
+  .fs-crud-pagination {
+    color: var(--lims-text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
 }

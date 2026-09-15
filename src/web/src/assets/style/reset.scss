@@ -1,9 +1,2 @@
-.fs-crud-container {
-	.el-table thead {
-		color: #606266;
-	}
-	.el-input__inner::placeholder {
-		color: #dcdfe6;
-		font-size: 12px;
-	}
-}
+// FastCrud surface and placeholder overrides now live in theme/element.scss
+// and theme/fastCrud.scss. Keep this compatibility entry free of palette values.

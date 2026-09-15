@@ -1,0 +1,67 @@
+// Opt-in roles avoid changing existing page heading structure.
+.lims-type-page-title {
+  font-size: var(--lims-type-page-title-size);
+  line-height: var(--lims-type-page-title-line-height);
+  font-weight: var(--lims-type-page-title-weight);
+}
+.lims-type-section-title {
+  font-size: var(--lims-type-section-title-size);
+  line-height: var(--lims-type-section-title-line-height);
+  font-weight: var(--lims-type-section-title-weight);
+}
+.lims-type-card-title {
+  font-size: var(--lims-type-card-title-size);
+  line-height: var(--lims-type-card-title-line-height);
+  font-weight: var(--lims-type-card-title-weight);
+}
+.lims-type-table {
+  font-size: var(--lims-type-table-size);
+  line-height: var(--lims-type-table-line-height);
+  font-weight: var(--lims-type-table-weight);
+}
+.lims-type-form-label {
+  font-size: var(--lims-type-form-label-size);
+  line-height: var(--lims-type-form-label-line-height);
+  font-weight: var(--lims-type-form-label-weight);
+}
+.lims-type-form-value {
+  font-size: var(--lims-type-form-value-size);
+  line-height: var(--lims-type-form-value-line-height);
+  font-weight: var(--lims-type-form-value-weight);
+}
+.lims-type-helper {
+  font-size: var(--lims-type-helper-size);
+  line-height: var(--lims-type-helper-line-height);
+  font-weight: var(--lims-type-helper-weight);
+}
+.lims-type-caption {
+  font-size: var(--lims-type-caption-size);
+  line-height: var(--lims-type-caption-line-height);
+  font-weight: var(--lims-type-caption-weight);
+}
+.lims-type-numeric {
+  font-size: var(--lims-type-numeric-size);
+  line-height: var(--lims-type-numeric-line-height);
+  font-weight: var(--lims-type-numeric-weight);
+}
+.lims-type-metric {
+  font-size: var(--lims-type-metric-size);
+  line-height: var(--lims-type-metric-line-height);
+  font-weight: var(--lims-type-metric-weight);
+}
+
+.lims-type-numeric { font-variant-numeric: tabular-nums lining-nums; }
+.lims-code { font-family: var(--lims-font-code); }
+
+html, body, #app {
+  font-family: var(--lims-font-family);
+  color: var(--lims-text-regular);
+  font-size: var(--lims-type-table-size);
+  background-color: var(--lims-background-page);
+}
+
+// Restore visible keyboard focus after the legacy reset; never suppress it globally.
+:focus-visible {
+  outline: var(--lims-focus-width) solid var(--lims-focus-ring);
+  outline-offset: var(--lims-focus-offset);
+}

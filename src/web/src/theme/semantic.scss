@@ -1,0 +1,86 @@
+// Root-scoped aliases are inherited by body-level Teleport overlays.
+// The existing settings writer stores --el-color-primary* inline. Only these
+// aliases are important until B1B reconciles that writer/cache; no storage is changed.
+:root {
+  color-scheme: light;
+  --el-color-primary: var(--lims-action-primary) !important;
+  --el-color-primary-dark-2: var(--lims-action-primary-active) !important;
+  --el-color-primary-light-3: var(--lims-primary-light-3) !important;
+  --el-color-primary-light-5: var(--lims-primary-light-5) !important;
+  --el-color-primary-light-7: var(--lims-primary-light-7) !important;
+  --el-color-primary-light-8: var(--lims-primary-light-8) !important;
+  --el-color-primary-light-9: var(--lims-primary-light-9) !important;
+  --el-color-success: var(--lims-success);
+  --el-color-success-dark-2: var(--lims-success-dark-2);
+  --el-color-success-light-3: var(--lims-success-light-3);
+  --el-color-success-light-5: var(--lims-success-light-5);
+  --el-color-success-light-7: var(--lims-success-light-7);
+  --el-color-success-light-8: var(--lims-success-light-8);
+  --el-color-success-light-9: var(--lims-success-light-9);
+  --el-color-warning: var(--lims-warning);
+  --el-color-warning-dark-2: var(--lims-warning-dark-2);
+  --el-color-warning-light-3: var(--lims-warning-light-3);
+  --el-color-warning-light-5: var(--lims-warning-light-5);
+  --el-color-warning-light-7: var(--lims-warning-light-7);
+  --el-color-warning-light-8: var(--lims-warning-light-8);
+  --el-color-warning-light-9: var(--lims-warning-light-9);
+  --el-color-danger: var(--lims-danger);
+  --el-color-danger-dark-2: var(--lims-danger-dark-2);
+  --el-color-danger-light-3: var(--lims-danger-light-3);
+  --el-color-danger-light-5: var(--lims-danger-light-5);
+  --el-color-danger-light-7: var(--lims-danger-light-7);
+  --el-color-danger-light-8: var(--lims-danger-light-8);
+  --el-color-danger-light-9: var(--lims-danger-light-9);
+  --el-color-info: var(--lims-info);
+  --el-color-info-dark-2: var(--lims-info-dark-2);
+  --el-color-info-light-3: var(--lims-info-light-3);
+  --el-color-info-light-5: var(--lims-info-light-5);
+  --el-color-info-light-7: var(--lims-info-light-7);
+  --el-color-info-light-8: var(--lims-info-light-8);
+  --el-color-info-light-9: var(--lims-info-light-9);
+  --el-font-family: var(--lims-font-family);
+  --el-component-size: var(--lims-control-default);
+  --el-component-size-small: var(--lims-control-compact);
+  --el-component-size-large: var(--lims-control-comfortable);
+  --el-font-size-base: var(--lims-type-table-size);
+  --el-font-size-small: var(--lims-type-helper-size);
+  --el-text-color-primary: var(--lims-text-primary);
+  --el-text-color-regular: var(--lims-text-regular);
+  --el-text-color-secondary: var(--lims-text-secondary);
+  --el-text-color-placeholder: var(--lims-text-secondary);
+  --el-text-color-disabled: var(--lims-text-disabled);
+  --el-bg-color: var(--lims-background-card);
+  --el-bg-color-page: var(--lims-background-page);
+  --el-bg-color-overlay: var(--lims-background-overlay);
+  --el-fill-color: var(--lims-background-hover);
+  --el-fill-color-light: var(--lims-background-hover);
+  --el-fill-color-lighter: var(--lims-background-page);
+  --el-fill-color-extra-light: var(--lims-background-page);
+  --el-fill-color-dark: var(--lims-border-default);
+  --el-fill-color-darker: var(--lims-border-strong);
+  --el-fill-color-blank: var(--lims-background-card);
+  --el-border-color: var(--lims-border-strong);
+  --el-border-color-light: var(--lims-border-default);
+  --el-border-color-lighter: var(--lims-border-light);
+  --el-border-color-extra-light: var(--lims-border-light);
+  --el-border-color-dark: var(--lims-border-strong);
+  --el-border-color-darker: var(--lims-border-strong);
+  --el-disabled-bg-color: var(--lims-background-disabled);
+  --el-disabled-text-color: var(--lims-text-disabled);
+  --el-disabled-border-color: var(--lims-border-default);
+  --el-border-radius-base: var(--lims-radius-input);
+  --el-border-radius-small: var(--lims-radius-tag);
+  --el-box-shadow: var(--lims-shadow-overlay);
+  --el-box-shadow-light: var(--lims-shadow-overlay);
+  --el-box-shadow-lighter: var(--lims-shadow-overlay);
+  --el-box-shadow-dark: var(--lims-shadow-overlay);
+  --el-mask-color: var(--lims-overlay-mask);
+  --el-mask-color-extra-light: var(--lims-overlay-mask);
+  --el-overlay-color: var(--lims-overlay-mask);
+  --el-overlay-color-light: var(--lims-overlay-mask);
+  --el-overlay-color-lighter: var(--lims-overlay-mask);
+  --el-transition-duration: var(--lims-motion-normal);
+  --el-transition-duration-fast: var(--lims-motion-fast);
+}
+
+html[data-theme='dark'] { color-scheme: dark; }
