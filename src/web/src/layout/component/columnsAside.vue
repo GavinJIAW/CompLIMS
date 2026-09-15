@@ -195,11 +195,11 @@ watch(
 .layout-columns-aside {
 	width: 70px;
 	height: 100%;
-	background: var(--next-bg-columnsMenuBar);
+	background: var(--lims-background-sidebar);
 	ul {
 		position: relative;
 		.layout-columns-active {
-			color: var(--next-bg-columnsMenuBarColor) !important;
+			color: var(--lims-text-regular) !important;
 			transition: 0.3s ease-in-out;
 		}
 		.layout-columns-hover {
@@ -209,7 +209,7 @@ watch(
 			}
 		}
 		li {
-			color: var(--next-bg-columnsMenuBarColor);
+			color: var(--lims-text-regular);
 			width: 100%;
 			height: 50px;
 			text-align: center;
@@ -244,12 +244,12 @@ watch(
 			}
 			a {
 				text-decoration: none;
-				color: var(--next-bg-columnsMenuBarColor);
+				color: var(--lims-text-regular);
 			}
 		}
 		.columns-round {
-			background: var(--el-color-primary);
-			color: var(--el-color-white);
+			background: var(--lims-background-selected);
+			color: var(--lims-action-primary);
 			position: absolute;
 			left: 50%;
 			top: 2px;

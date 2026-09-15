@@ -1,5 +1,5 @@
 <template>
-	<el-menu
+	<el-menu class="lims-nav-menu"
 		router
 		:default-active="state.defaultActive"
 		background-color="transparent"
@@ -8,18 +8,18 @@
 		:collapse-transition="false"
 	>
 		<template v-for="val in menuLists">
-			<el-sub-menu :index="val.path" v-if="val.children && val.children.length > 0" :key="val.path">
+			<el-sub-menu popper-class="lims-menu-popper" :index="val.path" v-if="val.children && val.children.length > 0" :key="val.path">
 				<template #title>
-					<SvgIcon :name="val.meta.icon" />
-					<span>{{ $t(val.meta.title) }}</span>
+					<SvgIcon :name="val.meta.icon" :size="20" />
+					<span :title="$t(val.meta.title)">{{ $t(val.meta.title) }}</span>
 				</template>
 				<SubItem :chil="val.children" />
 			</el-sub-menu>
 			<template v-else>
 				<el-menu-item :index="val.path" :key="val.path">
-					<SvgIcon :name="val.meta.icon" />
+					<SvgIcon :name="val.meta.icon" :size="20" />
 					<template #title v-if="!val.meta.isLink || (val.meta.isLink && val.meta.isIframe)">
-						<span>{{ $t(val.meta.title) }}</span>
+						<span :title="$t(val.meta.title)">{{ $t(val.meta.title) }}</span>
 					</template>
 					<template #title v-else>
 						<a class="w100" @click.prevent="onALinkClick(val)">{{ $t(val.meta.title) }}</a>
@@ -93,7 +93,7 @@ onBeforeRouteUpdate((to) => {
 watch(
 	themeConfig.value,
 	() => {
-		document.body.clientWidth <= 1000 ? (state.isCollapse = false) : (state.isCollapse = themeConfig.value.isCollapse);
+		document.body.clientWidth < 1000 ? (state.isCollapse = false) : (state.isCollapse = themeConfig.value.isCollapse);
 	},
 	{
 		immediate: true,

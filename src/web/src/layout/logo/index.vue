@@ -1,96 +1,50 @@
 <template>
-	<div class="layout-logo" v-if="setShowLogo" @click="onThemeConfigChange">
-<!--		<img :src="siteLogo" class="layout-logo-medium-img" />-->
-<!--		<span style="font-size: x-large">{{ getSystemConfig['login.site_title'] || themeConfig.globalTitle }}</span>-->
-	</div>
-<!--	<div class="layout-logo-size" v-else @click="onThemeConfigChange">-->
-<!--		<img :src="siteLogo" class="layout-logo-size-img" />-->
-<!--	</div>-->
+  <button class="layout-logo" type="button" @click="onThemeConfigChange" :aria-label="'CompLIMS'" :title="'CompLIMS'">
+    <BrandLogo :compact="!setShowLogo" :src="siteLogo" />
+    <span v-if="setShowLogo" class="layout-logo-product">CompLIMS</span>
+  </button>
 </template>
 
 <script setup lang="ts" name="layoutLogo">
 import { computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useThemeConfig } from '/@/stores/themeConfig';
-import logoMini from '/@/assets/logo.png';
-import { SystemConfigStore } from "/@/stores/systemConfig";
-import _ from "lodash-es";
-// 定义变量内容
-const storesThemeConfig = useThemeConfig();
-const { themeConfig } = storeToRefs(storesThemeConfig);
-
-// 设置 logo 的显示。classic 经典布局默认显示 logo
+import { SystemConfigStore } from '/@/stores/systemConfig';
+import BrandLogo from './BrandLogo.vue';
+const { themeConfig } = storeToRefs(useThemeConfig());
+const { systemConfig } = storeToRefs(SystemConfigStore());
 const setShowLogo = computed(() => {
-	let { isCollapse, layout } = themeConfig.value;
-	return !isCollapse || layout === 'classic' || document.body.clientWidth < 1000;
+  const { isCollapse, layout } = themeConfig.value;
+  return !isCollapse || layout === 'classic' || layout === 'transverse' || document.body.clientWidth < 1000;
 });
-// logo 点击实现菜单展开/收起
+// Preserve the existing logo shortcut; Header remains the explicit collapse control.
 const onThemeConfigChange = () => {
-	if (themeConfig.value.layout === 'transverse') return false;
-	themeConfig.value.isCollapse = !themeConfig.value.isCollapse;
+  if (themeConfig.value.layout === 'transverse') return;
+  themeConfig.value.isCollapse = !themeConfig.value.isCollapse;
 };
-
-const systemConfigStore = SystemConfigStore()
-const { systemConfig } = storeToRefs(systemConfigStore)
-const getSystemConfig = computed(() => {
-	return systemConfig.value
-})
-
-const siteLogo = computed(() => {
-	if (!_.isEmpty(getSystemConfig.value['login.site_logo'])) {
-		return getSystemConfig.value['login.site_logo']
-	}
-	return logoMini
-});
-
+const siteLogo = computed(() => systemConfig.value['login.site_logo'] || undefined);
 </script>
 
 <style scoped lang="scss">
 .layout-logo {
-	width: 220px;
-	height: 50px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	box-shadow: rgb(0 21 41 / 2%) 0px 1px 4px;
-	color: var(--el-color-primary);
-	font-size: 16px;
-	cursor: pointer;
-	animation: logoAnimation 0.3s ease-in-out;
-
-	span {
-		white-space: nowrap;
-		display: inline-block;
-	}
-
-	&:hover {
-		span {
-			color: var(--color-primary-light-2);
-		}
-	}
-
-	&-medium-img {
-		width: 40px;
-		margin-right: 5px;
-	}
-}
-
-.layout-logo-size {
-	width: 100%;
-	height: 50px;
-	display: flex;
-	cursor: pointer;
-	animation: logoAnimation 0.3s ease-in-out;
-
-	&-img {
-		width: 40px;
-		margin: auto;
-	}
-
-	&:hover {
-		img {
-			animation: logoAnimation 0.3s ease-in-out;
-		}
-	}
+  width: 100%;
+  height: var(--lims-shell-brand-height);
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--lims-text-primary);
+  font-family: inherit;
+  cursor: pointer;
+  .layout-logo-product {
+    font-size: var(--lims-type-helper-size);
+    line-height: var(--lims-type-caption-line-height);
+    font-weight: 600;
+    letter-spacing: .04em;
+  }
 }
 </style>

@@ -591,8 +591,8 @@ watch(
 
 <style scoped lang="scss">
 .layout-navbars-tagsview {
-	background-color: var(--el-color-white);
-	border-bottom: 1px solid var(--next-border-color-light);
+	background-color: var(--lims-background-header);
+	border-bottom: 1px solid var(--lims-border-default);
 	position: relative;
 	z-index: 9;
 	:deep(.el-scrollbar__wrap) {
@@ -721,6 +721,6 @@ watch(
 	}
 }
 .layout-navbars-tagsview-shadow {
-	box-shadow: rgb(0 21 41 / 4%) 0px 1px 4px;
+	box-shadow: none;
 }
 </style>

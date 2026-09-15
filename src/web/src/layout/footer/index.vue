@@ -1,24 +1,15 @@
 <template>
-	<div class="layout-footer pb5 pt2">
-		<div class="layout-footer-warp">
-			<div></div>
-		</div>
-	</div>
+  <footer v-if="$slots.default" class="layout-footer"><slot /></footer>
 </template>
 
 <script setup lang="ts" name="layoutFooter">
-// 此处需有内容（注释也得），否则缓存将失败
+// Keep the existing isFooter gate; no empty footer footprint or fabricated metadata.
 </script>
 
 <style scoped lang="scss">
 .layout-footer {
-	width: 100%;
-	display: flex;
-	&-warp {
-		margin: auto;
-		color: var(--el-text-color-secondary);
-		text-align: center;
-		animation: error-num 0.3s ease;
-	}
+  padding: var(--lims-space-2) var(--lims-space-4);
+  color: var(--lims-text-secondary);
+  text-align: center;
 }
 </style>

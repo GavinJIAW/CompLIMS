@@ -1,7 +1,30 @@
 <template>
 	<div class="layout-navbars-breadcrumb-user pr15" :style="{ flex: layoutUserFlexNum }">
+    <button type="button" class="layout-navbars-breadcrumb-user-icon" :aria-label="$t('message.user.title2')" @click="onSearchClick">
+      <el-icon :title="$t('message.user.title2')">
+        <ele-Search/>
+      </el-icon>
+    </button>
+		<button type="button" class="layout-navbars-breadcrumb-user-icon" :aria-label="$t('message.user.title3')" @click="onLayoutSetingClick">
+			<i class="icon-skin iconfont" :title="$t('message.user.title3')"></i>
+		</button>
+		<div class="layout-navbars-breadcrumb-user-icon" tabindex="0">
+			<el-popover placement="bottom" trigger="hover" transition="el-zoom-in-top" :width="300" :persistent="false">
+				<template #reference>
+					<el-badge :value="messageCenter.unread" :hidden="messageCenter.unread === 0">
+						<el-icon :title="$t('message.user.title4')">
+							<ele-Bell />
+						</el-icon>
+					</el-badge>
+				</template>
+				<template #default>
+					<UserNews />
+				</template>
+			</el-popover>
+		</div>
+		<div class="lims-header-preferences">
 		<el-dropdown :show-timeout="70" :hide-timeout="50" trigger="click" @command="onComponentSizeChange">
-			<div class="layout-navbars-breadcrumb-user-icon">
+			<div class="layout-navbars-breadcrumb-user-icon" tabindex="0">
 				<i class="iconfont icon-ziti" :title="$t('message.user.title0')"></i>
 			</div>
 			<template #dropdown>
@@ -13,7 +36,7 @@
 			</template>
 		</el-dropdown>
 		<el-dropdown :show-timeout="70" :hide-timeout="50" trigger="click" @command="onLanguageChange">
-			<div class="layout-navbars-breadcrumb-user-icon">
+			<div class="layout-navbars-breadcrumb-user-icon" tabindex="0">
 				<i
 					class="iconfont"
 					:class="state.disabledI18n === 'en' ? 'icon-fuhao-yingwen' : 'icon-fuhao-zhongwen'"
@@ -28,39 +51,17 @@
 				</el-dropdown-menu>
 			</template>
 		</el-dropdown>
-    <div class="layout-navbars-breadcrumb-user-icon" @click="onSearchClick">
-      <el-icon :title="$t('message.user.title2')">
-        <ele-Search/>
-      </el-icon>
-    </div>
-		<div class="layout-navbars-breadcrumb-user-icon" @click="onLayoutSetingClick">
-			<i class="icon-skin iconfont" :title="$t('message.user.title3')"></i>
-		</div>
-		<div class="layout-navbars-breadcrumb-user-icon">
-			<el-popover placement="bottom" trigger="hover" transition="el-zoom-in-top" :width="300" :persistent="false">
-				<template #reference>
-					<el-badge :value="messageCenter.unread" :hidden="messageCenter.unread === 0">
-						<el-icon :title="$t('message.user.title4')">
-							<ele-Bell />
-						</el-icon>
-					</el-badge>
-				</template>
-				<template #default>
-					<UserNews />
-				</template>
-			</el-popover>
-		</div>
-		<div class="layout-navbars-breadcrumb-user-icon mr10" @click="onScreenfullClick">
+		<button type="button" class="layout-navbars-breadcrumb-user-icon" :aria-label="state.isScreenfull ? $t('message.user.title6') : $t('message.user.title5')" @click="onScreenfullClick">
 			<i
 				class="iconfont"
 				:title="state.isScreenfull ? $t('message.user.title6') : $t('message.user.title5')"
 				:class="!state.isScreenfull ? 'icon-fullscreen' : 'icon-tuichuquanping'"
 			></i>
+		</button>
 		</div>
-		<div></div>
 		<el-dropdown :show-timeout="70" :hide-timeout="50" @command="onHandleCommandClick">
 			<span class="layout-navbars-breadcrumb-user-link">
-				<span v-if="isSocketOpen">
+				<span>
 					<el-badge is-dot class="item" :class="{ 'online-status': isSocketOpen, 'online-down': !isSocketOpen }">
 						<img :src="userInfos.avatar || headerImage" class="layout-navbars-breadcrumb-user-link-photo mr5" />
 					</el-badge>

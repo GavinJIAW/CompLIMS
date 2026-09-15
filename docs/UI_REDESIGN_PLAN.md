@@ -6,6 +6,8 @@
 
 > B1A 实施状态（2026-09-15）：已建立根部 Light/Dark token、排版与 Element Plus/FastCrud 基础皮肤，移除专用 FastCrud 旧高度规则与 reset 硬编码颜色；下文初次源码评估为历史基线。App/store/cache 迁移、页面布局和后续批次仍未实施，构建通过不代表浏览器视觉验收。
 
+> B2 实施状态（2026-09-15）：Shell 已接入 240/64px Sidebar、56px Header、36px Tabs 与集中 layout.scss；BrandLogo 使用原图展示视窗及 CL 产品缩写，配置图片失败时回退正式原图。空 Footer 不再占位，Header 原有工具保留并分组，菜单搜索仅整理浮层样式。四种 Layout 控制骨架、菜单/路由契约和 FastCrud 页面结构保持；下文初次评估中的尺寸与品牌缺失描述为历史基线。
+
 ### FastCrud CRUD Layout Freeze — 实施最高约束
 
 现有 FastCrud System CRUD 页面保持原始结构。`index.vue / crud.tsx / api.ts` 及 FastCrud 自动生成的 **Search、Actionbar、Toolbar、Table、Pagination、Form、Dialog** 属于保留框架，不进行结构性 Layout 重写。本规则限制下文所有视觉、组件与实施建议；不能以统一 UI 为理由突破。

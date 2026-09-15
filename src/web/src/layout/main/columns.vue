@@ -1,5 +1,5 @@
 <template>
-	<el-container class="layout-container">
+	<el-container class="layout-container lims-shell" :class="{ 'lims-shell-fixed': themeConfig.isFixedHeader }">
 		<ColumnsAside />
 		<el-container class="layout-columns-warp layout-container-view h100">
 			<LayoutAside />

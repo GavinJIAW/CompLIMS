@@ -43,7 +43,7 @@ const setCollapseStyle = computed(() => {
 	const asideBrTheme = ['#FFFFFF', '#FFF', '#fff', '#ffffff'];
 	const asideBrColor = asideBrTheme.includes(menuBar) ? 'layout-el-aside-br-color' : '';
 	// 判断是否是手机端
-	if (state.clientWidth <= 1000) {
+	if (state.clientWidth < 1000) {
 		if (isCollapse) {
 			document.body.setAttribute('class', 'el-popup-parent--hidden');
 			const asideEle = document.querySelector('.layout-container') as HTMLElement;

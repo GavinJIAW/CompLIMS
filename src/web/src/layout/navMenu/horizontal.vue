@@ -6,7 +6,7 @@
              background-color="transparent"
              mode="horizontal">
 				<template v-for="(val,index) in menuLists">
-					<el-sub-menu :index="val.path" v-if="val.children && val.children.length > 0" :key="val.path">
+					<el-sub-menu popper-class="lims-menu-popper" :index="val.path" v-if="val.children && val.children.length > 0" :key="val.path">
 						<template #title>
 							<SvgIcon :name="val.meta.icon" />
 							<span>{{ $t(val.meta.title) }}</span>
@@ -14,7 +14,7 @@
 						<SubItem :chil="val.children" />
 					</el-sub-menu>
 					<template v-else>
-						<el-menu-item :index="val.path" :key="val.path" style="--el-menu-active-color: #fff" @click="onToRouteClick(val,index)">
+						<el-menu-item :index="val.path" :key="val.path" style="--el-menu-active-color: var(--lims-action-primary)" @click="onToRouteClick(val,index)">
 							<template #title v-if="!val.meta.isLink || (val.meta.isLink && val.meta.isIframe)">
 								<SvgIcon :name="val.meta.icon" />
 								{{ $t(val.meta.title) }}

@@ -100,25 +100,12 @@ defineExpose({
 
 <style scoped lang="scss">
 .layout-search-dialog {
-	position: relative;
-	:deep(.el-dialog) {
-		.el-dialog__header,
-		.el-dialog__body {
-			display: none;
-		}
-		.el-dialog__footer {
-			position: absolute;
-			left: 50%;
-			transform: translateX(-50%);
-			top: -53vh;
-		}
-	}
-	:deep(.el-autocomplete) {
-		width: 560px;
-		position: absolute;
-		top: 150px;
-		left: 50%;
-		transform: translateX(-50%);
-	}
+  :deep(.el-dialog) {
+    width: 560px;
+    max-width: calc(100vw - var(--lims-space-8));
+    .el-dialog__header, .el-dialog__body { display: none; }
+    .el-dialog__footer { padding: var(--lims-space-4); }
+  }
+  :deep(.el-autocomplete) { width: 100%; }
 }
 </style>

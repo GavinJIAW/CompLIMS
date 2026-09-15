@@ -1,9 +1,9 @@
 <template>
 	<template v-for="val in chils">
-		<el-sub-menu :index="val.path" :key="val.path" v-if="val.children && val.children.length > 0">
+		<el-sub-menu popper-class="lims-menu-popper" :index="val.path" :key="val.path" v-if="val.children && val.children.length > 0">
 			<template #title>
-				<SvgIcon :name="val.meta.icon" />
-				<span>{{ $t(val.meta.title) }}</span>
+				<SvgIcon :name="val.meta.icon" :size="20" />
+				<span :title="$t(val.meta.title)">{{ $t(val.meta.title) }}</span>
 			</template>
 			<sub-item :chil="val.children" />
 		</el-sub-menu>
@@ -11,12 +11,12 @@
       <a v-if="val.name==='templateCenter'" href="#/templateCenter" target="_blank">
         <el-menu-item   :key="val.path">
           <template v-if="!val.meta.isLink || (val.meta.isLink && val.meta.isIframe)">
-            <SvgIcon :name="val.meta.icon" />
-            <span>{{ $t(val.meta.title) }}</span>
+            <SvgIcon :name="val.meta.icon" :size="20" />
+            <span :title="$t(val.meta.title)">{{ $t(val.meta.title) }}</span>
           </template>
           <template v-else>
             <a class="w100" @click.prevent="onALinkClick(val)">
-              <SvgIcon :name="val.meta.icon" />
+              <SvgIcon :name="val.meta.icon" :size="20" />
               {{ $t(val.meta.title) }}
             </a>
           </template>
@@ -24,12 +24,12 @@
       </a>
 			<el-menu-item v-else :index="val.path" :key="val.path">
 				<template v-if="!val.meta.isLink || (val.meta.isLink && val.meta.isIframe)">
-					<SvgIcon :name="val.meta.icon" />
-					<span>{{ $t(val.meta.title) }}</span>
+					<SvgIcon :name="val.meta.icon" :size="20" />
+					<span :title="$t(val.meta.title)">{{ $t(val.meta.title) }}</span>
 				</template>
 				<template v-else>
 					<a class="w100" @click.prevent="onALinkClick(val)">
-						<SvgIcon :name="val.meta.icon" />
+						<SvgIcon :name="val.meta.icon" :size="20" />
 						{{ $t(val.meta.title) }}
 					</a>
 				</template>

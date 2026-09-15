@@ -1,5 +1,5 @@
 <template>
-	<el-container class="layout-container">
+	<el-container class="layout-container lims-shell" :class="{ 'lims-shell-fixed': themeConfig.isFixedHeader }">
 		<LayoutAside />
 		<el-container class="layout-container-view h100">
 			<el-scrollbar ref="layoutScrollbarRef" class="layout-backtop">

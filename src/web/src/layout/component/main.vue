@@ -1,6 +1,6 @@
 <template>
 	<el-main class="layout-main"
-		:style="isFixedHeader ? `height: calc(100% - ${setMainHeight})` : `minHeight: calc(100% - ${setMainHeight})`">
+		:style="isFixedHeader ? `height: calc(100% - ${setMainHeight})` : `min-height: calc(100% - ${setMainHeight})`">
 		<el-scrollbar ref="layoutMainScrollbarRef" class="layout-main-scroll layout-backtop-header-fixed"
 			wrap-class="layout-main-scroll" view-class="layout-main-scroll">
 			<LayoutParentView />
@@ -47,8 +47,8 @@ const setBacktopClass = computed(() => {
 const setMainHeight = computed(() => {
 	if (isTagsViewCurrenFull.value) return '0px';
 	const { isTagsview, layout } = themeConfig.value;
-	if (isTagsview && layout !== 'classic') return '85px';
-	else return '51px';
+	if (layout === 'classic') return isTagsview ? 'var(--lims-shell-tabs-height)' : '0px';
+	return isTagsview ? 'var(--lims-shell-header-stack)' : 'var(--lims-shell-header-height)';
 });
 // 页面加载前
 onMounted(() => {
