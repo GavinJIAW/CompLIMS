@@ -3,7 +3,6 @@
     <section class="login-brand" :aria-label="$t('message.loginPresentation.productName')">
       <div class="login-brand-content">
         <BrandLogo class="login-brand-logo" :src="siteLogo" />
-        <p class="login-product">{{ $t('message.loginPresentation.productName') }}</p>
         <h2>{{ getSystemConfig['login.site_title'] || getThemeConfig.globalViceTitle }}</h2>
         <p class="login-description">{{ getSystemConfig['login.site_name'] || getThemeConfig.globalViceTitleMsg || $t('message.loginPresentation.description') }}</p>
         <el-image v-if="siteBg" :src="siteBg" fit="cover" class="login-brand-image" alt="">
@@ -144,13 +143,6 @@ onMounted(() => {
     }
   }
 }
-.login-product {
-  margin-top: var(--lims-space-6);
-  font-size: var(--lims-type-metric-size);
-  line-height: var(--lims-type-metric-line-height);
-  font-weight: var(--lims-type-page-title-weight);
-  color: var(--lims-text-primary);
-}
 .login-description {
   line-height: var(--lims-type-section-title-line-height);
   color: var(--lims-text-secondary);
@@ -183,7 +175,6 @@ onMounted(() => {
   .login-brand, .login-panel { padding: var(--lims-space-6) var(--lims-space-8); }
   .login-brand { border-right: 0; border-bottom: var(--lims-border-width) solid var(--lims-border-default); }
   .login-brand-content { max-width: 400px; --lims-logo-width: min(220px, calc(100vw - 80px)); }
-  .login-product { margin-top: var(--lims-space-3); font-size: var(--lims-type-page-title-size); }
   .login-brand-image { height: 120px; margin-top: var(--lims-space-4); }
 }
 </style>

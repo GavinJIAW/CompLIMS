@@ -9,7 +9,7 @@
 				</template>
 			</el-input>
 		</el-form-item>
-		<el-form-item class="login-animation2" prop="password" :label="$t('message.loginPresentation.newPassword')">
+		<el-form-item class="login-animation2 login-validation-long" prop="password" :label="$t('message.loginPresentation.newPassword')">
 			<el-input :type="isShowPassword ? 'text' : 'password'"
 				:placeholder="$t('message.account.accountPlaceholder4')" v-model="ruleForm.password">
 				<template #prefix>

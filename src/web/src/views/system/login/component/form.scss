@@ -1,7 +1,11 @@
 .login-content-form {
   margin-top: var(--lims-space-4);
   :deep(.el-form-item), :deep(.el-form-item:last-of-type) {
-    margin-bottom: var(--lims-space-6) !important;
+    margin-bottom: calc(var(--lims-type-helper-line-height) + var(--lims-space-1) + var(--lims-space-2)) !important;
+  }
+  // Reserve two lines only for the existing password-complexity message.
+  :deep(.el-form-item.login-validation-long) {
+    margin-bottom: calc(var(--lims-type-helper-line-height) * 2 + var(--lims-space-1) + var(--lims-space-2)) !important;
   }
   :deep(.el-form-item__label) {
     color: var(--lims-text-regular);
@@ -10,7 +14,12 @@
     padding-bottom: var(--lims-space-2);
   }
   :deep(.el-form-item__error) {
-    position: static;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
     font-size: var(--lims-type-helper-size);
     line-height: var(--lims-type-helper-line-height);
     padding-top: var(--lims-space-1);

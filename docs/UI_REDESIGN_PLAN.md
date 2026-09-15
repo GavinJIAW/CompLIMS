@@ -435,7 +435,7 @@ PageHeader：工作台 + 当前用户上下文
 
 ## 19. Login
 
-采用**Brand Area + Login Form**：1440/1920左右约52%/48%，1366约48%/52%；表单max-width400px、左右安全区≥32px，品牌区padding48px，浅灰背景。完整Logo可见宽280–320px，下24px放CompLIMS与“复合材料力学性能测试实验室管理系统”。可用极淡token工程网格，不用无关插画、3D、玻璃或大渐变，不添加未提供的认证标志。
+采用**Brand Area + Login Form**：1440/1920左右约52%/48%，1366约48%/52%；表单max-width400px、左右安全区≥32px，品牌区padding48px，浅灰背景。完整Logo可见宽280–320px；Login Brand Area不再单独显示CompLIMS，完整Applus+ Laboratories Logo后直接展示配置驱动的标题/描述，保留现有fallback。可用极淡token工程网格，不用无关插画、3D、玻璃或大渐变，不添加未提供的认证标志。
 
 表单标题“登录”，可见用户名/密码label、40px控件、24px间距、密码开关有可访问名称。验证码遵循base.captcha_state，保留刷新/校验/参数。保留Loading、Enter、错误提示、密码处理、token、redirect和首次改密；首次改密只换内容与标题，不跳新流程。
 
