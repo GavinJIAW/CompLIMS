@@ -339,7 +339,7 @@ const uploadImg = (data: any) => {
   dd { margin: 0; }
 }
 .personal-roles { display: flex; flex-wrap: wrap; gap: var(--lims-space-2); }
-.personal-sections { display: grid; grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); gap: var(--lims-space-6); align-items: start; }
+.personal-sections { display: grid; grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); gap: var(--lims-space-6); align-items: stretch; }
 .profile-form {
   margin-top: var(--lims-space-6);
   max-width: 800px;
