@@ -233,7 +233,7 @@
 			margin: 0 auto !important;
 			position: absolute;
 			.el-dialog__body {
-				padding: 20px !important;
+				padding: var(--lims-form-wrapper-body-padding, 20px) !important;
 			}
 		}
 	}

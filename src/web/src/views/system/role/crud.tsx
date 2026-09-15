@@ -161,7 +161,7 @@ export const createCrudOptions = function ({ crudExpose, context }: CreateCrudOp
 					search: { show: false },
 					type: 'number',
 					column: {
-						align: 'center',
+						align: 'right',
 						minWidth: 90,
 						sortable: 'custom',
 					},

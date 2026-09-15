@@ -244,7 +244,7 @@ Recommended：复用传输入口，页面仅配置经确认的文件类型/数�
 
 Current（B1A）：main.ts 将 theme/index.scss 放在 vendor/兼容样式入口之后；settings.ts 仍引入 FastCrud 与 fast-extends 的 dist/style.css。theme/index.scss 已接入 tokens.scss、semantic.scss、typography.scss、element.scss 与 fastCrud.scss；实际运行级联仍需浏览器 computed styles 验证。
 
-Current（B1A）：`src/web/src/theme/fastCrud.scss` 已改为引用 token 的 surface、原生区域间距和表格密度，并由 theme/index.scss 接入；旧 88vh 高度规则及 reset.scss 的硬编码颜色已移除。原生 CRUD 结构、配置与请求生命周期未修改。
+Current（B3）：`src/web/src/theme/fastCrud.scss` 在 B1A 基础上统一原生 Search/Actionbar/Toolbar 间距、表格密度、分页、表单帮助/校验及 Teleport 表单浮层，均引用现有 Light/Dark token。element.scss 仅为 FastCrud Dialog 提供局部 body padding 变量入口；Role 的排序数值列改为右对齐。原生 CRUD 结构、权限、请求与值转换保持；旧 88vh 规则未恢复。此处记录实现事实，不代表人工 UAT 已通过。
 
 Current（B1A）：Light/Dark token 已定义于 html 根部，沿用 data-theme=dark，供 Teleport 继承。semantic.scss 中仅 --el-color-primary 及其已使用派生别名用 !important 隔离旧 inline 配色写入，当前基础组件使用批准的交互色；旧自定义配色值未删除，store/cache 的协调留 B1B。基础接入不等于全站明暗视觉验收完成。
 

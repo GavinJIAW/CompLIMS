@@ -1,4 +1,4 @@
-// Visual skin only: native positioning, flex, scrolling and lifecycle remain untouched.
+// Visual skin only. FastCrud owns positioning, wrapping, scrolling and lifecycle.
 .fs-page {
   color: var(--lims-text-regular);
   background-color: var(--lims-background-card);
@@ -10,31 +10,152 @@
   font-size: var(--lims-type-card-title-size);
   font-weight: var(--lims-type-card-title-weight);
 }
+
 .fs-crud-container {
-  .fs-search { color: var(--lims-text-regular); }
+  .fs-crud-header { padding-block: var(--lims-space-3); }
+  .fs-crud-header .fs-crud-search { padding-bottom: var(--lims-space-2); }
+  .fs-search {
+    color: var(--lims-text-regular);
+    border-bottom: var(--lims-border-width) solid var(--lims-border-light);
+    padding-bottom: var(--lims-space-2);
+  }
+  // Keep native field widths and the collapsed-row height budget unchanged.
+  .fs-search .fs-search-form .el-form-item {
+    margin-block: var(--lims-space-1);
+  }
+  .fs-search .fs-search-form .el-form-item:last-of-type {
+    margin-bottom: var(--lims-space-1) !important; // Legacy Element last-item rule.
+  }
+  .fs-search .fs-search-buttons-group .fs-button,
+  .fs-search .fs-search-buttons .fs-button {
+    margin-inline: var(--lims-space-1);
+  }
+  .fs-search .fs-search-btns .fs-button { margin-right: var(--lims-space-2); }
+  .fs-crud-header .fs-crud-toolbar { margin-right: var(--lims-space-2); }
   .fs-toolbar .fs-button { margin-left: var(--lims-space-2); }
   .fs-actionbar .fs-button { margin: var(--lims-space-1); }
+  // Button type/link/plain/disabled/loading remain controlled by component props.
+  .fs-toolbar .fs-icon {
+    font-size: var(--lims-space-4);
+    width: var(--lims-space-4);
+    height: var(--lims-space-4);
+  }
+  .fs-toolbar .el-button:focus-visible,
+  .fs-actionbar .el-button:focus-visible,
+  .fs-search .el-button:focus-visible {
+    outline: var(--lims-focus-width) solid var(--lims-focus-ring);
+    outline-offset: var(--lims-focus-offset);
+  }
+
+  .el-table {
+    font-variant-numeric: tabular-nums;
+  }
   .el-table .el-table__cell {
     height: var(--lims-row-default);
-    padding-top: var(--lims-space-2);
-    padding-bottom: var(--lims-space-2);
+    padding-block: var(--lims-space-1);
   }
   .el-table .cell {
     line-height: var(--lims-type-table-line-height);
     padding-inline: var(--lims-space-3);
   }
+  .el-table th.el-table__cell {
+    color: var(--lims-text-primary);
+    background-color: var(--lims-background-table-header);
+    font-weight: var(--lims-type-card-title-weight);
+  }
+  // Native fixed cells inherit the table surface. Current rows keep selection on hover.
+  .el-table .el-table__body tr.fs-current-row,
+  .el-table .el-table__body tr.current-row {
+    --el-table-row-hover-bg-color: var(--lims-background-selected);
+  }
+  .el-table .fs-current-row > td.el-table__cell,
+  .el-table .current-row > td.el-table__cell {
+    background-color: var(--lims-background-selected);
+  }
   .el-table--small .el-table__cell {
     height: var(--lims-row-compact);
-    padding-top: var(--lims-space-1);
-    padding-bottom: var(--lims-space-1);
+    padding-block: var(--lims-space-1);
   }
   .el-table--large .el-table__cell {
     height: var(--lims-row-comfortable);
-    padding-top: var(--lims-space-3);
-    padding-bottom: var(--lims-space-3);
+    padding-block: var(--lims-space-2);
   }
+  .el-table__empty-text {
+    color: var(--lims-text-secondary);
+    font-size: var(--lims-type-table-size);
+    line-height: var(--lims-type-table-line-height);
+    padding-block: var(--lims-space-6);
+  }
+  .fs-crud-footer { padding-block: var(--lims-space-4); }
   .fs-crud-pagination {
     color: var(--lims-text-secondary);
     font-variant-numeric: tabular-nums;
+    .fs-pagination-left { margin-right: var(--lims-space-2); }
+    .el-pagination {
+      --el-pagination-button-height: var(--lims-control-default);
+      --el-pagination-button-width: var(--lims-control-default);
+      --el-pagination-button-disabled-bg-color: var(--lims-background-disabled);
+      --el-pagination-text-color: var(--lims-text-regular);
+      gap: var(--lims-space-2);
+    }
+    .el-pagination--small {
+      --el-pagination-button-height: var(--lims-control-compact);
+      --el-pagination-button-width: var(--lims-control-compact);
+    }
+  }
+}
+
+// Native form wrappers are teleported outside fs-crud; use their own host class.
+.fs-form-wrapper {
+  --lims-form-wrapper-body-padding: var(--lims-space-6);
+  color: var(--lims-text-regular);
+  .el-dialog__header, .el-drawer__header {
+    border-bottom-color: var(--lims-border-default);
+  }
+  .fs-form-header {
+    color: var(--lims-text-primary);
+    font-size: var(--lims-type-section-title-size);
+    line-height: var(--lims-type-section-title-line-height);
+    font-weight: var(--lims-type-section-title-weight);
+  }
+  .fs-form-header .fs-form-header-right { color: var(--lims-text-secondary); }
+  .el-drawer__body { padding: var(--lims-form-wrapper-body-padding); }
+  .fs-form-footer-btns { margin-top: var(--lims-space-6); }
+  .fs-form-footer-btns > * { margin-left: var(--lims-space-2); }
+  .el-dialog__footer, .el-drawer__footer { padding-top: var(--lims-space-4); }
+}
+.fs-form {
+  color: var(--lims-text-regular);
+  .el-form-item { margin-bottom: var(--lims-space-6); }
+  .el-form-item:last-of-type {
+    margin-bottom: var(--lims-space-6) !important; // Legacy Element last-item rule.
+  }
+  .el-form-item__label {
+    color: var(--lims-text-regular);
+    font-size: var(--lims-type-form-label-size);
+    font-weight: var(--lims-type-form-label-weight);
+  }
+  .el-form-item__error {
+    color: var(--lims-danger);
+    font-size: var(--lims-type-helper-size);
+    line-height: var(--lims-type-caption-line-height);
+  }
+}
+.fs-form .fs-form-helper {
+  color: var(--lims-text-secondary);
+  font-size: var(--lims-type-helper-size);
+  line-height: var(--lims-type-helper-line-height);
+  margin-top: var(--lims-space-1);
+  margin-bottom: var(--lims-space-2);
+}
+.fs-form-wrapper-view .fs-form-item-render {
+  font-size: var(--lims-type-form-value-size);
+  line-height: var(--lims-type-form-value-line-height);
+}
+.fs-crud-container, .fs-form-wrapper {
+  .el-loading-mask { background-color: var(--lims-overlay-mask); }
+  .el-loading-spinner .el-loading-text {
+    color: var(--lims-text-primary);
+    font-size: var(--lims-type-helper-size);
   }
 }
