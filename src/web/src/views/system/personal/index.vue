@@ -1,87 +1,43 @@
 <template>
-	<div class="personal layout-pd">
-		<el-row>
-			<!-- 个人信息 -->
-			<el-col :xs="24" :sm="24">
-				<el-card shadow="hover" header="个人信息">
-					<div class="personal-user">
-						<div class="personal-user-left">
-							<avatarSelector v-model="selectImgVisible" @uploadImg="uploadImg" ref="avatarSelectorRef"></avatarSelector>
-						</div>
-						<div class="personal-user-right">
-							<el-row>
-								<el-col :span="24" class="personal-title mb18"
-									>{{ currentTime }}，{{ state.personalForm.username }}，生活变的再糟糕，也不妨碍我变得更好！
-								</el-col>
-								<el-col :span="24">
-									<el-row>
-										<el-col :xs="24" :sm="8" class="personal-item mb6">
-											<div class="personal-item-label">昵称：</div>
-											<div class="personal-item-value">{{ state.personalForm.name }}</div>
-										</el-col>
-										<el-col :xs="24" :sm="16" class="personal-item mb6">
-											<div class="personal-item-label">组织：</div>
-											<div class="personal-item-value">
-												<el-tag>{{ state.personalForm.dept_info.dept_name }}</el-tag>
-											</div>
-										</el-col>
-									</el-row>
-								</el-col>
-								<el-col :span="24">
-									<el-row>
-										<el-col :xs="24" :sm="24" class="personal-item mb6">
-											<div class="personal-item-label">角色：</div>
-											<div class="personal-item-value">
-												<el-tag v-for="(item, index) in state.personalForm.role_info" :key="index" style="margin-right: 5px;">{{ item.name }}</el-tag>
-											</div>
-										</el-col>
-									</el-row>
-								</el-col>
-							</el-row>
-						</div>
-					</div>
-				</el-card>
-			</el-col>
-
-			<!-- 消息通知 -->
-<!--			<el-col :xs="24" :sm="8" class="pl15 personal-info">-->
-<!--				<el-card shadow="hover">-->
-<!--					<template #header>-->
-<!--						<span>消息通知</span>-->
-<!--						<span class="personal-info-more" @click="msgMore">更多</span>-->
-<!--					</template>-->
-<!--					<div class="personal-info-box">-->
-<!--						<ul class="personal-info-ul">-->
-<!--							<li v-for="(v, k) in state.newsInfoList" :key="k" class="personal-info-li">-->
-<!--								<div class="personal-info-li-title">[{{ v.creator_name }},{{ v.create_datetime }}] {{ v.title }}</div>-->
-<!--							</li>-->
-<!--						</ul>-->
-<!--					</div>-->
-<!--				</el-card>-->
-<!--			</el-col>-->
-
-			<!-- 更新信息 -->
-			<el-col :span="24">
-				<el-card shadow="hover" class="mt15 personal-edit" header="更新信息">
-					<div class="personal-edit-title">基本信息</div>
-					<el-form :model="state.personalForm" ref="userInfoFormRef" :rules="rules" size="default" label-width="50px" class="mt35 mb35">
-						<el-row :gutter="35">
-							<el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="4" class="mb20">
+  <div class="personal-center">
+    <h1>{{ $t('message.workbench.personalTitle') }}</h1>
+    <section class="personal-panel personal-identity">
+      <div class="personal-avatar">
+        <avatarSelector v-model="selectImgVisible" @uploadImg="uploadImg" ref="avatarSelectorRef" />
+        <p>{{ $t('message.workbench.avatarHint') }}</p>
+      </div>
+      <div class="personal-identity-content">
+        <h2>{{ state.personalForm.name || state.personalForm.username || '—' }}</h2>
+        <p class="personal-username">{{ state.personalForm.username }}</p>
+        <dl class="personal-context">
+          <div><dt>{{ $t('message.workbench.organization') }}</dt><dd>{{ state.personalForm.dept_info.dept_name || '—' }}</dd></div>
+          <div><dt>{{ $t('message.workbench.roles') }}</dt><dd class="personal-roles">
+            <el-tag v-for="(item, index) in state.personalForm.role_info" :key="index" type="info" effect="plain">{{ item.name }}</el-tag>
+          </dd></div>
+        </dl>
+      </div>
+    </section>
+    <div class="personal-sections">
+      <section class="personal-panel" aria-labelledby="profile-title">
+        <h2 id="profile-title">{{ $t('message.workbench.profile') }}</h2>
+        <el-form :model="state.personalForm" ref="userInfoFormRef" :rules="rules" size="default" label-position="top" class="profile-form">
+						<el-row :gutter="24">
+							<el-col :xs="24" :sm="12">
 								<el-form-item label="昵称" prop="name">
 									<el-input v-model="state.personalForm.name" placeholder="请输入昵称" clearable></el-input>
 								</el-form-item>
 							</el-col>
-							<el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="4" class="mb20">
+							<el-col :xs="24" :sm="12">
 								<el-form-item label="邮箱">
 									<el-input v-model="state.personalForm.email" placeholder="请输入邮箱" clearable></el-input>
 								</el-form-item>
 							</el-col>
-							<el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="4" class="mb20">
+							<el-col :xs="24" :sm="12">
 								<el-form-item label="手机" prop="mobile">
 									<el-input v-model="state.personalForm.mobile" placeholder="请输入手机" clearable></el-input>
 								</el-form-item>
 							</el-col>
-							<el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="4" class="mb20">
+							<el-col :xs="24" :sm="12">
 								<el-form-item label="性别">
 									<el-select v-model="state.personalForm.gender" placeholder="请选择性别" clearable class="w100">
 <!--										<el-option label="男" :value="1"></el-option>-->
@@ -103,52 +59,27 @@
 							</el-col>
 						</el-row>
 					</el-form>
-					<div class="personal-edit-title mb15">账号安全</div>
-					<div class="personal-edit-safe-box">
-						<div class="personal-edit-safe-item">
-							<div class="personal-edit-safe-item-left">
-								<div class="personal-edit-safe-item-left-label">账户密码</div>
-								<div class="personal-edit-safe-item-left-value">当前密码强度：强</div>
-							</div>
-							<div class="personal-edit-safe-item-right">
-								<el-button text type="primary" @click="passwordFormShow = true">立即修改</el-button>
-							</div>
-						</div>
-					</div>
-					<div class="personal-edit-safe-box">
-						<div class="personal-edit-safe-item">
-							<div class="personal-edit-safe-item-left">
-								<div class="personal-edit-safe-item-left-label">密保手机</div>
-								<div class="personal-edit-safe-item-left-value">已绑定手机：{{ state.personalForm.mobile }}</div>
-							</div>
-							<div class="personal-edit-safe-item-right">
-								<!--                <el-button text type="primary">立即修改</el-button>-->
-							</div>
-						</div>
-					</div>
-
-					<div class="personal-edit-safe-box">
-						<div class="personal-edit-safe-item">
-							<div class="personal-edit-safe-item-left">
-								<div class="personal-edit-safe-item-left-label">绑定邮箱</div>
-								<div class="personal-edit-safe-item-left-value">已绑定邮箱：{{ state.personalForm.email }}</div>
-							</div>
-							<div class="personal-edit-safe-item-right">
-								<!--                <el-button text type="primary">立即设置</el-button>-->
-							</div>
-						</div>
-					</div>
-				</el-card>
-			</el-col>
-		</el-row>
-		<!--    密码修改-->
-		<el-dialog v-model="passwordFormShow" title="密码修改">
+      </section>
+      <section class="personal-panel" aria-labelledby="security-title">
+        <h2 id="security-title">{{ $t('message.workbench.security') }}</h2>
+        <div class="personal-security-item">
+          <h3>{{ $t('message.workbench.password') }}</h3>
+          <p>{{ $t('message.workbench.passwordHint') }}</p>
+          <el-button @click="passwordFormShow = true">{{ $t('message.workbench.changePassword') }}</el-button>
+        </div>
+        <dl class="personal-security-details">
+          <div><dt>{{ $t('message.workbench.mobile') }}</dt><dd>{{ state.personalForm.mobile || '—' }}</dd></div>
+          <div><dt>{{ $t('message.workbench.email') }}</dt><dd>{{ state.personalForm.email || '—' }}</dd></div>
+        </dl>
+      </section>
+    </div>
+    <el-dialog v-model="passwordFormShow" title="密码修改" class="personal-password-dialog">
 			<el-form
 				ref="userPasswordFormRef"
 				:model="userPasswordInfo"
 				required-asterisk
 				label-width="100px"
-				label-position="left"
+				label-position="top"
 				:rules="passwordRules"
 				center
 			>
@@ -168,7 +99,7 @@
 				</span>
 			</template>
 		</el-dialog>
-	</div>
+  </div>
 </template>
 
 <script setup lang="ts" name="personal">
@@ -369,165 +300,73 @@ const uploadImg = (data: any) => {
 </script>
 
 <style scoped lang="scss">
-@import '/@/theme/mixins/index.scss';
-.personal {
-	.personal-user {
-		height: 130px;
-		display: flex;
-		align-items: center;
-		.personal-user-left {
-			width: 100px;
-			height: 130px;
-			border-radius: 3px;
-			:deep(.el-upload) {
-				height: 100%;
-			}
-			.personal-user-left-upload {
-				img {
-					width: 100%;
-					height: 100%;
-					border-radius: 3px;
-				}
-				&:hover {
-					img {
-						animation: logoAnimation 0.3s ease-in-out;
-					}
-				}
-			}
-		}
-		.personal-user-right {
-			flex: 1;
-			padding: 0 15px;
-			.personal-title {
-				font-size: 18px;
-				@include text-ellipsis(1);
-			}
-			.personal-item {
-				display: flex;
-				align-items: center;
-				font-size: 13px;
-				.personal-item-label {
-					color: var(--el-text-color-secondary);
-					@include text-ellipsis(1);
-				}
-				.personal-item-value {
-					@include text-ellipsis(1);
-				}
-			}
-		}
-	}
-	.personal-info {
-		.personal-info-more {
-			float: right;
-			color: var(--el-text-color-secondary);
-			font-size: 13px;
-			&:hover {
-				color: var(--el-color-primary);
-				cursor: pointer;
-			}
-		}
-		.personal-info-box {
-			height: 130px;
-			overflow: hidden;
-			.personal-info-ul {
-				list-style: none;
-				.personal-info-li {
-					font-size: 13px;
-					padding-bottom: 10px;
-					.personal-info-li-title {
-						display: inline-block;
-						@include text-ellipsis(1);
-						color: var(--el-text-color-secondary);
-						text-decoration: none;
-					}
-					& a:hover {
-						color: var(--el-color-primary);
-						cursor: pointer;
-					}
-				}
-			}
-		}
-	}
-	.personal-recommend-row {
-		.personal-recommend-col {
-			.personal-recommend {
-				position: relative;
-				height: 100px;
-				border-radius: 3px;
-				overflow: hidden;
-				cursor: pointer;
-				&:hover {
-					i {
-						right: 0px !important;
-						bottom: 0px !important;
-						transition: all ease 0.3s;
-					}
-				}
-				i {
-					position: absolute;
-					right: -10px;
-					bottom: -10px;
-					font-size: 70px;
-					transform: rotate(-30deg);
-					transition: all ease 0.3s;
-				}
-				.personal-recommend-auto {
-					padding: 15px;
-					position: absolute;
-					left: 0;
-					top: 5%;
-					color: var(--next-color-white);
-					.personal-recommend-msg {
-						font-size: 12px;
-						margin-top: 10px;
-					}
-				}
-			}
-		}
-	}
-	.personal-edit {
-		.personal-edit-title {
-			position: relative;
-			padding-left: 10px;
-			color: var(--el-text-color-regular);
-			&::after {
-				content: '';
-				width: 2px;
-				height: 10px;
-				position: absolute;
-				left: 0;
-				top: 50%;
-				transform: translateY(-50%);
-				background: var(--el-color-primary);
-			}
-		}
-		.personal-edit-safe-box {
-			border-bottom: 1px solid var(--el-border-color-light, #ebeef5);
-			padding: 15px 0;
-			.personal-edit-safe-item {
-				width: 100%;
-				display: flex;
-				align-items: center;
-				justify-content: space-between;
-				.personal-edit-safe-item-left {
-					flex: 1;
-					overflow: hidden;
-					.personal-edit-safe-item-left-label {
-						color: var(--el-text-color-regular);
-						margin-bottom: 5px;
-					}
-					.personal-edit-safe-item-left-value {
-						color: var(--el-text-color-secondary);
-						@include text-ellipsis(1);
-						margin-right: 15px;
-					}
-				}
-			}
-			&:last-of-type {
-				padding-bottom: 0;
-				border-bottom: none;
-			}
-		}
-	}
+.personal-center {
+  min-width: 0;
+  padding: var(--lims-space-6);
+  display: grid;
+  gap: var(--lims-space-6);
+  color: var(--lims-text-regular);
+  overflow-wrap: anywhere;
+  h1 { font-size: var(--lims-type-page-title-size); line-height: var(--lims-type-page-title-line-height); font-weight: var(--lims-type-page-title-weight); color: var(--lims-text-primary); }
+  h2 { font-size: var(--lims-type-section-title-size); line-height: var(--lims-type-section-title-line-height); font-weight: var(--lims-type-section-title-weight); color: var(--lims-text-primary); }
+  h3 { font-size: var(--lims-type-card-title-size); line-height: var(--lims-type-card-title-line-height); font-weight: var(--lims-type-card-title-weight); color: var(--lims-text-primary); }
+}
+.personal-panel {
+  min-width: 0;
+  padding: var(--lims-space-6);
+  background: var(--lims-background-card);
+  border: var(--lims-border-width) solid var(--lims-border-default);
+  border-radius: var(--lims-radius-card);
+}
+.personal-identity { display: flex; align-items: center; gap: var(--lims-space-6); }
+.personal-avatar {
+  flex-shrink: 0;
+  text-align: center;
+  :deep(.el-avatar) { border: var(--lims-border-width) solid var(--lims-border-default); }
+  :deep(.user-info-head:hover::after) { color: var(--lims-text-primary); background: var(--lims-background-hover); border-radius: 50%; font-size: var(--lims-type-form-value-size); }
+  p { margin-top: var(--lims-space-2); color: var(--lims-text-secondary); font-size: var(--lims-type-helper-size); }
+}
+.personal-identity-content { min-width: 0; flex: 1; }
+.personal-username { margin-top: var(--lims-space-1); color: var(--lims-text-secondary); }
+.personal-context {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: var(--lims-space-4);
+  margin-top: var(--lims-space-4);
+}
+.personal-context, .personal-security-details {
+  dt { color: var(--lims-text-secondary); margin-bottom: var(--lims-space-2); }
+  dd { margin: 0; }
+}
+.personal-roles { display: flex; flex-wrap: wrap; gap: var(--lims-space-2); }
+.personal-sections { display: grid; grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); gap: var(--lims-space-6); align-items: start; }
+.profile-form {
+  margin-top: var(--lims-space-6);
+  max-width: 800px;
+  :deep(.el-form-item) { margin-bottom: var(--lims-space-8); }
+  :deep(.el-form-item__label) { color: var(--lims-text-regular); }
+  :deep(.el-select) { width: 100%; }
+}
+.personal-security-item {
+  padding-block: var(--lims-space-6);
+  border-bottom: var(--lims-border-width) solid var(--lims-border-light);
+  p { color: var(--lims-text-secondary); line-height: var(--lims-type-form-value-line-height); margin-block: var(--lims-space-2) var(--lims-space-4); }
+}
+.personal-security-details { display: grid; gap: var(--lims-space-4); margin-top: var(--lims-space-6); }
+:deep(.personal-password-dialog) {
+  max-width: calc(100vw - 32px);
+  .el-form-item { margin-bottom: calc(var(--lims-type-helper-line-height) * 2 + var(--lims-space-3)); }
+  .el-form-item__error { line-height: var(--lims-type-helper-line-height); overflow-wrap: anywhere; }
+}
+@media (max-width: 1200px) {
+  .personal-sections { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 1100px) {
+  .personal-center { padding: var(--lims-space-4); gap: var(--lims-space-4); }
+  .personal-sections { gap: var(--lims-space-4); }
+  .personal-context { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 600px) {
+  .personal-identity { flex-direction: column; align-items: flex-start; }
 }
 </style>

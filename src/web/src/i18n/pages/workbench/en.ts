@@ -1,0 +1,20 @@
+export default {
+  workbench: {
+    title: 'Workbench',
+    context: 'Current user context',
+    organization: 'Organization',
+    roles: 'Roles',
+    overview: 'Business overview',
+    notConnected: 'Business data not connected',
+    explanation: 'Real LIMS business data will appear when the relevant modules are connected.',
+    personalTitle: 'Personal center',
+    profile: 'Profile',
+    security: 'Account security',
+    avatarHint: 'Select your avatar to edit it',
+    password: 'Account password',
+    passwordHint: 'Verify your current password to set a new password.',
+    changePassword: 'Change password',
+    mobile: 'Mobile',
+    email: 'Email',
+  },
+};

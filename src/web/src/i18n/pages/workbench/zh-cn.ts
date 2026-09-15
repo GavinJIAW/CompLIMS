@@ -1,0 +1,20 @@
+export default {
+  workbench: {
+    title: '工作台',
+    context: '当前用户信息',
+    organization: '组织',
+    roles: '角色',
+    overview: '业务概览',
+    notConnected: '业务数据尚未接入',
+    explanation: '真实 LIMS 业务数据将在后续模块接入后显示。',
+    personalTitle: '个人中心',
+    profile: '个人资料',
+    security: '账户安全',
+    avatarHint: '点击头像修改',
+    password: '账户密码',
+    passwordHint: '使用原密码验证后设置新密码。',
+    changePassword: '修改密码',
+    mobile: '手机',
+    email: '邮箱',
+  },
+};
