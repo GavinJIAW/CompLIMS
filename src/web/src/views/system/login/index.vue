@@ -2,7 +2,7 @@
   <main class="login-entry">
     <section class="login-brand" :aria-label="$t('message.loginPresentation.productName')">
       <div class="login-brand-content">
-        <BrandLogo :src="siteLogo" />
+        <BrandLogo class="login-brand-logo" :src="siteLogo" />
         <p class="login-product">{{ $t('message.loginPresentation.productName') }}</p>
         <h2>{{ getSystemConfig['login.site_title'] || getThemeConfig.globalViceTitle }}</h2>
         <p class="login-description">{{ getSystemConfig['login.site_name'] || getThemeConfig.globalViceTitleMsg || $t('message.loginPresentation.description') }}</p>
@@ -130,6 +130,18 @@ onMounted(() => {
     line-height: var(--lims-type-section-title-line-height);
     font-weight: var(--lims-type-section-title-weight);
     color: var(--lims-text-primary);
+  }
+}
+// Login only: keep image scale, adding 24 source-space pixels above and below
+// the shared 1281x413 viewport. The adjusted top preserves the original crop origin.
+.login-brand-logo {
+  line-height: 0;
+  :deep(.brand-logo-viewport:not(.brand-logo-custom)) {
+    aspect-ratio: 1281 / 461;
+    img {
+      display: block;
+      top: -49.89%;
+    }
   }
 }
 .login-product {
