@@ -2,13 +2,25 @@
 
 > 2026-09-14 · 视觉体系与重构规划，非代码实施。
 > 推荐 **Direction B — Industrial / Engineering Precision（工业工程精密型）**；Logo 原始品牌橙 **#FF6900**；建议 **6 个 UI Batch**。
-> 本阶段只新增本报告，不修改任何现有文件，不实施 LIMS 业务。
+> 本文为 UI 开发前的设计决策基线，与根目录 `AGENTS.md` 配套。已纳入 FastCrud CRUD Layout Freeze；本次仅整理文档，不修改源码、不开始 UI B1A 或 P0。报告当前路径为 `docs/UI_REDESIGN_PLAN.md`。
+
+### FastCrud CRUD Layout Freeze — 实施最高约束
+
+现有 FastCrud System CRUD 页面保持原始结构。`index.vue / crud.tsx / api.ts` 及 FastCrud 自动生成的 **Search、Actionbar、Toolbar、Table、Pagination、Form、Dialog** 属于保留框架，不进行结构性 Layout 重写。本规则限制下文所有视觉、组件与实施建议；不能以统一 UI 为理由突破。
+
+唯一改造链路：**Design Tokens → Element Plus Theme → FastCrud Theme → crud.tsx Visual Configuration**。
+
+- 允许：typography、colors、spacing、table density、header/row/button/dialog/form appearance、column width/alignment、form col/span、status renderer、empty/loading appearance。
+- 禁止：将 Search 拆成自建 FilterBar；将 Add/Import/Export 从 Actionbar 搬到另一操作栏；自建 Toolbar、Pagination、CRUD Dialog/Form；以新 DataTable 包装层替代 fs-crud；重写 useFs/useCrud/useExpose 或 FastCrud request lifecycle。
+- 不变契约：CRUD request、API contract、pagination/query mapping、permission logic、show/disabled logic、valueBuilder/valueResolve、dict behavior、refresh/submit lifecycle。颜色与密度不构成修改这些契约的理由。
+- **PageHeader 不是现有 FastCrud 页面的强制结构**，PageContainer/Section Layout 也不能成为重包现有 CRUD 的入口。现有 Search/Actionbar/Toolbar/Table/Pagination 的位置、归属和原生布局能力保持。
+- 未来 Test Execution、Result Review、Report Approval、Specimen Detail 等复杂 LIMS 独立页面可以采用 PageHeader / Section Layout；这些业务本阶段不实施。
 
 ## 1. Current UI Assessment
 
 ### 分析依据与边界
 
-已扫描 `src/web/src` 的 layout、views、components、router、stores、plugin、directive、utils、assets、theme、i18n，读取入口、依赖及代表性页面。以下现状来自源码与本地文件；建议是设计推导，不能理解为已有业务。未启动服务、登录真实账户或执行构建，不能声称浏览器、权限账号或 API 回归已通过。根目录没有可用 Git 仓库，本阶段使用前端源码、Logo、依赖文件的 SHA-256 前后比对验证未改动。
+初次分析已扫描 `src/web/src` 的 layout、views、components、router、stores、plugin、directive、utils、assets、theme、i18n，读取入口、依赖及代表性页面。以下现状记录来自当时源码与本地文件；建议是设计推导，不是已有业务。未启动服务、登录真实账户或执行构建，不能声称浏览器、权限账号或 API 回归已通过。初次分析时无可用 Git 仓库，以294项前端源码、Logo、依赖文件 SHA-256 比对验证未改动。本次规则修订时项目已有Git且报告已移至docs，仅核对并修改本报告，不重新审计代码版本；以当前git diff确认改动范围。
 
 路径缩写：`W/` = `src/web/`；`S/` = `src/web/src/`，均相对项目根目录。“拟新增”表示未来文件，本阶段不创建。
 
@@ -21,13 +33,15 @@
 | Vue Router | ^4.4.3 | 4.6.4 | router/index.ts，createWebHashHistory |
 | vue-i18n | ^9.14.0 | 9.14.5 | i18n/、App.vue、菜单与登录文案 |
 
-锁定版本不等于已验证运行版本。另有 yarn.lock，实施前确定团队实际安装流程，不在 UI 批次升级依赖或重生成锁文件。还有 VXE Table、Tailwind、ECharts、Iconify、e-icon-picker、Font Awesome 等，需考虑第三方样式影响。
+上表保留初次分析从package-lock.json读取的历史版本证据，不表示该文件是后续依赖管理权威，也不等于已验证运行版本。前端开发已统一使用 **Node 20.19.5 + Yarn**：先 `cd src/web`、`nvm use 20.19.5`，执行前核对package.json中真实存在的Yarn Scripts。已有package-lock.json为历史遗留，本任务不删除、不更新、不运行npm install、不生成pnpm-lock.yaml；锁文件清理单独处理，不在UI任务顺手进行。还有VXE Table、Tailwind、ECharts、Iconify、e-icon-picker、Font Awesome等，需考虑第三方样式影响。
+
+后端环境统一为 `cd src/backend`、`conda activate dvadmin3_env`；本次文档任务不执行后端命令或迁移。项目事实、源码和文档的取舍遵循根目录AGENTS.md的Source of Truth；本报告的实施计划不代表已实现。
 
 | 范围 | 已确认现状 | 重设计边界 |
 |---|---|---|
 | 动态路由 | themeConfig.isRequestRoutes 默认 true；beforeEach 在 routesList 为空时执行 initBackEndControlRoutes；handleMenu、backEndComponent、动态 import、addRoute 串联 | 保留 path/name/component_name/meta、守卫、参数、外链/iframe，不改成静态 LIMS 路由 |
 | 动态菜单 | routesList → aside.vue 递归过滤 meta.isHide → vertical.vue/subItem.vue；另有 horizontal/columns | 改呈现，保留后端顺序和递归、隐藏机制 |
-| 按钮权限 | directive/index.ts 注册 v-auth/v-auths/v-auth-all；authFunction.ts 提供函数；CRUD 使用 show:auth(...) | PageHeader/更多菜单必须保留原判断、回调 |
+| 按钮权限 | directive/index.ts 注册 v-auth/v-auths/v-auth-all；authFunction.ts 提供函数；CRUD 使用 show:auth(...) | 保持原操作位置、show/disabled与回调，不搬入PageHeader或重建更多菜单 |
 | 重复权限 | stores/btnPermission.ts 与 plugin/permission/store.permission.ts 均 defineStore('BtnPermission')；路由加载后者，常用函数/指令读取前者 | 记录技术债，不借 UI 修改权限规则 |
 | 权限插件 | main.ts 导入 RegisterPermission，但未见调用；plugin 与常用 auth 不是同一入口 | 不声称所有权限插件已启用，不擅自重注册 |
 | 列权限 | utils/columnPermission.ts 控制 column.show、columnSetDisabled、addForm/editForm；areas 和 log/loginLog 调用后 resetCrudOptions | 接入不一致，不能声称全站已覆盖；不扩大授权逻辑范围 |
@@ -37,7 +51,7 @@
 | Tabs | tagsView.vue 726行，关闭、刷新、右键、拖动、固定标签、缓存、全屏和参数处理 | 强保留行为，只统一呈现与可访问性 |
 | Main/Footer | defaults 外层与 main 内层双 scrollbar；main 按85/51px计算高度；Footer 默认开但内容空 | 优先解决滚动所有权和空占位 |
 | Dialog/Drawer | FastCrud wrapper；角色授权80% Drawer+700px授权用户Dialog；文件选择嵌套Dialog | 保留 before-close、destroy-on-close、挂载位置和提交 |
-| Table/Form | FastCrud、components/table、Element 表单/树表并存；settings 默认文本和字典居中、字典auto染色 | 统一密度、对齐与状态语义 |
+| Table/Form | FastCrud、components/table、Element 表单/树表并存；settings 默认文本和字典居中、字典auto染色 | 只统一外观和允许的列/表单视觉配置；dict行为不改 |
 | Upload | FsExtendsUploader、fileSelector、avatarSelector、importExcel 多入口 | 统一外观反馈，保留参数、URL、header、值转换 |
 | Dashboard | home/index.vue 655行，静态homeOne/homeThree和图表数组，订单/计划/访问等演示指标 | 不得包装成真实实验室数据 |
 | 重复Dashboard | home/backup/index.vue 与 home/index.vue 哈希完全相同 | 清理前核对后端component引用 |
@@ -248,19 +262,19 @@ Element Plus主色映射action-primary，Logo映射brand-primary。`primary-ligh
 │ + CompLIMS       ├─────────────────────────────────────────┤
 │                  │ 36px TabsView（保留现有多任务行为）       │
 │ Dynamic Sidebar  ├─────────────────────────────────────────┤
-│                  │ PageHeader：标题 / 上下文 / 页面操作      │
-│ 一级 / 二级菜单   │ Search / Filters                        │
-│                  │ Main：Table 或分区 Form                  │
-│                  │ Pagination / 页面结果                   │
+│                  │ 现有 fs-page / fs-crud 原生内容           │
+│ 一级 / 二级菜单   │ Search / Actionbar / Toolbar（原位置）   │
+│                  │ Table / Form / Dialog（原生能力）        │
+│                  │ Pagination（原位置与映射）               │
 └──────────────────┴─────────────────────────────────────────┘
 ```
 
-Sidebar240px/折叠64px，主区域min-width:0，外边距24px。Header56px、Tabs36px；PageHeader随内容，不加入新的硬编码calc。240px是扩展建议，不要求四种布局一次统一重写。
+Sidebar240px/折叠64px，主区域min-width:0，外边距24px。Header56px、Tabs36px。应用壳层尺寸不得改变FastCrud内部布局；不为现有CRUD额外加入PageHeader。240px是扩展建议，不要求四种布局一次统一重写。
 
 保留layout/index.vue、routerView/parent.vue、keep-alive、routesList、tagsView store。主要调整defaults.vue、component/main/header/aside的呈现与滚动。
 
-- 列表：固定Header/Tabs，筛选与分页保持可访问，数据区内部滚动；flex/grid与min-height:0分配空间。
-- 表单：主内容整体纵滚，Header/Tabs固定，保存栏可sticky；各SectionCard不再各加滚动条。
+- 现有FastCrud列表：只调整应用壳可用空间及原生容器样式，沿用Search/Actionbar/Toolbar/Table/Pagination布局和滚动能力，不独立固定、搬移或重建这些区域。
+- 现有FastCrud表单：保持原生Form/Dialog及wrapper，不创建分区表单壳或独立sticky保存栏；只改外观与允许的col/span。整体纵滚、独立保存栏和Section Layout仅供未来复杂LIMS页面设计。
 - 保留isFixedHeader旧偏好兼容；不能删scrollbar而让updateScrollbar或Backtop引用失效。
 - 现有85/51px高度、500ms后更新双scrollbar不能作为新页头基准。88vh样式也应移除后才接入。
 - Footer现在空内容，不再留空白栏；保留配置能力，仅在需要时显示真实版本/版权。
@@ -289,11 +303,11 @@ search.vue是tagsViewRoutes驱动的**菜单搜索**，不改名“全局样品�
 
 ## 12. Page Header
 
-统一title、可选description/context、primary action与secondary actions插槽。标题和操作左右排，描述下间4px，至筛选16px；不足时两行，按钮不可覆盖标题。PageHeader不产生权限或调用API。
+PageHeader仅供工作台、适合的非FastCrud页面和未来复杂LIMS独立页面按需采用，不作为现有System CRUD页面的强制结构。现有用户/角色/文件等FastCrud页面保留原生Actionbar；Add/Import/Export不搬移、不复制到页头，Toolbar不重新分配职责。
 
-每活动页面层级一个Primary；创建/导入放PageHeader，表格工具只留刷新/列设置/密度/可选导出。迁移时复用原权限、disabled/loading、回调上下文，移除重复可见入口。
+独立页面的PageHeader可以有title、可选description/context、primary/secondary action插槽：标题操作左右排，描述下间4px，至下一内容区16px，不足时两行；组件不产生权限或隐式请求。
 
-未来示例：Samples / 样品；“管理接收与制备中的试样”；主按钮“接收样品”、次按钮“导入”。本阶段不创建业务，实施先用现有用户/角色/文件管理页验证。
+未来Test Execution、Result Review、Report Approval、Specimen Detail可使用该规范与Section Layout。示例为“试样详情 / Specimen Detail”加编号/上下文和该页面已定义的动作，不从已有FastCrud Actionbar抽取操作。现有CRUD页标题仅在已有原生位置优化typography/spacing/header appearance。
 
 ## 13. Tables
 
@@ -307,16 +321,16 @@ search.vue是tagsViewRoutes驱动的**菜单搜索**，不改名“全局样品�
 | Code/Number | 试样号/报告号当字符串左对齐，保留前导零，不当数值排序 |
 | Date | 左对齐、等宽数字；日期约112px，时间戳168–184px；有时区上下文，不改服务端含义 |
 | Text | 项目/材料/人员左对齐，长文两行或省略+详情；编号可复制 |
-| Status | StatusTag，稳定宽度、左对齐，不字典自动染色 |
-| Actions | 固定右侧，常显查看+最多一个高频动作，其余更多；128–160px按可见按钮适应 |
+| Status | 可在原位置使用纯显示StatusTag，稳定宽度、左对齐；既有dict行为冻结，未来新状态使用统一语义映射 |
+| Actions | 现有CRUD保持rowHandle/Actionbar按钮位置、数量与show/disabled、回调；仅调整按钮外观、间距和列宽。常显查看+更多的结构只供未来独立页面，不套改现有CRUD |
 | Pagination | 表格下16px，32px控件；保持total/sizes/prev/pager/next/jumper、page/limit和现有页大小 |
-| Empty | 无数据/无搜索结果不同；约160–200px区域，有权限才创建 |
-| Loading | 初载保留表头列宽和有限骨架；刷新区域遮罩保留上下文，不显示0条成功 |
+| Empty | 原生empty区域区分现有可判别的空态，约160–200px；不添加第二个Add入口、不重写query判断 |
+| Loading | 原生loading状态驱动外观，保留表头列宽；不新增加载状态机或影响refresh时机 |
 | Error | 区域内错误+重试，保留搜索条件，不伪装暂无数据 |
 
-未来列宽预算：Specimen No.160、Project176、Material144、Test Method160、Status112、Assigned To112、Due Date112、Actions144px，共约1120px；选择列再加40。1366屏在240侧栏与48边距后约1078px，允许**表格内部横滚**，不靠10px字体或隐藏唯一编号解决。固定首列和操作列背景不透明且有边界；默认可见列仍受列权限/用户配置约束。本阶段不开发这些业务字段。
+未来列宽预算：Specimen No.160、Project176、Material144、Test Method160、Status112、Assigned To112、Due Date112、Actions144px，共约1120px；选择列再加40。1366屏在240侧栏与48边距后约1078px，允许**表格内部横滚**，不靠10px字体或隐藏唯一编号解决。未来独立页可固定首列和操作列；现有CRUD保留原固定/选择/可见列配置，只优化列宽、对齐、密度和现有固定区外观。默认可见列仍受原权限/用户配置约束。本阶段不开发这些业务字段。
 
-搜索区按容器宽度2–4列，单控件最小200px，gap12px；查询Secondary，Primary留给页面任务。高级筛选可折叠，展开状态与值分开；批量操作显示“已选N项”和作用范围，取消选择不清空筛选。“更多”菜单不得重新露出无权限动作。
+现有Search继续由FastCrud布局：只优化字体、颜色、spacing与现有容器适配，不拆FilterBar，不改变展开/折叠、查询、重置或状态保存逻辑。查询按钮可调整appearance，但不修改show/disabled与触发方式。批量选择、更多菜单如原已存在则保持，不为视觉统一新增操作结构或选择状态。
 
 ## 14. Forms
 
@@ -336,7 +350,7 @@ search.vue是tagsViewRoutes驱动的**菜单搜索**，不改名“全局样品�
 | Validation | 沿用rules与触发时机；提交定位首错，长表单顶部摘要，保留输入 |
 | Help Text | 字段下12/20px，说明格式/单位/来源，Tooltip只补充 |
 
-默认顶部label适应中英；管理弹窗可用统一112px侧label，不混用。备注/附件跨列，不把复杂表单做成长达数屏单列。只读审核的数据来源、操作者、时间低一级呈现；没有接口不伪造审计记录。
+上表的Section Form、Readonly Data和测量输入结构主要面向未来复杂LIMS独立页面。现有FastCrud保留生成字段、控件类型、标签位置、校验规则、帮助/错误触发逻辑与wrapper，仅调整typography、colors、spacing、form appearance和col/span；不以InfoItem替换其生成表单。未来表单可选顶部label或统一112px侧label，备注/附件跨列；没有接口不伪造审计记录。
 
 Upload显示文件名/大小/进度/成功失败/重试移除。保留每个入口现有类型、大小限制、单多选、预览、回传ID/URL，失败不得显示成功附件。统一呈现不等于增加文件服务或改上传策略。
 
@@ -350,7 +364,7 @@ Upload显示文件名/大小/进度/成功失败/重试移除。保留每个入�
 
 RoleDrawer现有80%+splitpanes为高密度授权场景，先统一表面/标题/滚动、保留尺寸行为，验证后再选宽度档；不能为了规范改变授权提交时机或改成新路由。
 
-所有弹层有可见关闭/取消；保持原close-on-click-modal、before-close、destroy-on-close与既有未保存策略，不全局改遮罩关闭。新复杂表单的脏数据确认需另行定义验证。必须测试进入焦点、Tab约束、原Esc策略、关闭回触发点。避免新增嵌套，现有授权用户/文件选择嵌套保留兼容。
+未来独立页面弹层应有清晰退出入口。现有FastCrud的关闭/取消按钮show/disabled及close-on-click-modal、before-close、destroy-on-close均冻结，即使原配置隐藏取消，也只记录问题，不因本规范启用按钮。保留原Form/Dialog，不自建替代；只改外观。脏数据确认等新增行为不属于UI冻结范围。回归现有焦点、Tab、Esc策略与关闭回焦点；已有授权用户/文件选择嵌套保持。
 
 ## 16. Buttons
 
@@ -362,7 +376,7 @@ RoleDrawer现有80%+splitpanes为高密度授权场景，先统一表面/标题/
 | Danger | danger字/边框，最终删除确认可实底 | Delete/已有撤销，不用普通主色表示删除 |
 | Icon | 32px命中区、16/20px图标、Tooltip+aria-label | 刷新、列设置、折叠 |
 
-gap8px、普通高32/登录40、字14px。Loading宽度不跳，防重复提交；Disabled可提供确切原因。活动Dialog的Primary属于模态层，背景不可交互，不算竞争主动作。删除继续调用原确认与API，不借视觉改变操作策略。
+gap8px、普通高32/登录40、字14px。现有CRUD的Loading/Disabled由原逻辑驱动，只优化外观，不增加防重提交逻辑或改启禁用条件。一个主要视觉强调通过button appearance实现，不能移动/删除/隐藏现有按钮。活动Dialog属于模态层。删除继续原确认与API，不改变操作策略。
 
 ## 17. Status System
 
@@ -385,7 +399,7 @@ gap8px、普通高32/登录40、字14px。Loading宽度不跳，防重复提交�
 | Completed | completed | 完成/已完成 |
 | Archived | archived | 归档/已归档 |
 
-默认高24px、横padding8、字12/16、边框1、圆角4；不能只剩色点。未知枚举neutral+“未知状态”，不默认Draft，更不能Approved。原值显示服从权限。逾期/优先级/异常为独立维度，用warning/danger说明，不覆盖生命周期。现有启用/禁用不可自动重释为Approved/Invalid。本阶段仅设计映射，不新增后端枚举、状态机、审核流程。
+默认高24px、横padding8、字12/16、边框1、圆角4；不能只剩色点。未来状态未知枚举neutral+“未知状态”，不默认Draft或Approved。现有CRUD仅可在原渲染位置调整status renderer，不改变dict请求/映射/选项/默认染色行为、valueBuilder/valueResolve、已有label/value或原枚举含义；既有字典若无法仅通过外观适配满足本表，记录差异而非改dict。逾期/优先级/异常为独立维度。现有启用/禁用不可重释为Approved/Invalid。本阶段不新增后端枚举、状态机、审核流程。
 
 ## 18. Dashboard
 
@@ -424,6 +438,8 @@ PageHeader：工作台 + 当前用户上下文
 `login-main.svg`被import但assets扫描未找到，属于静态构建风险；后续确认死引用可移除，不声称已运行构建失败，本阶段不修。Dark表单用深surface，完整Logo白色载体不反色。平板单列顶部品牌，手机仅保障登录/基本导航，不承诺完整LIMS执行。
 
 ## 20. Empty / Loading / Error
+
+以下为统一显示语义。现有FastCrud只改变原位置的empty/loading appearance，状态来源、请求/查询判断、动作show/disabled及生命周期均沿用原实现；没有现成状态的信息不为满足本表另建状态机，空态创建/重试等也不得新增另一套CRUD操作入口。独立新页面才可按完整表格设计新交互。
 
 | 状态 | 内容 | 操作 |
 |---|---|---|
@@ -497,20 +513,20 @@ tree/checkbox/radio/upload/notification/tooltip/popconfirm/message-box亦做状�
 
 ### 保留当前分层
 
-- index.vue：保留fs-page/fs-crud、crudBinding/ref、初始化、slots、refresh；仅增加布局与PageHeader。
-- crud.tsx：保留request、dict、权限show、valueBuilder/valueResolve、rules、回调；可以显式配置align/width/表单分组/操作呈现。
+- index.vue：保留fs-page/fs-crud、原有结构、crudBinding/ref、初始化、slots、refresh；不添加强制PageHeader/PageContainer，不搬移原生区域。必要时仅挂接外观class或原位置的允许renderer。
+- crud.tsx：只修改column width/alignment、form col/span、status renderer和其他明确允许的视觉配置；request、dict、permission、show/disabled、valueBuilder/valueResolve、rules、回调保持原样，不重建表单分组或操作栏。
 - api.ts：不改URL、method、参数、返回、导出路径。
-- settings.ts：继续安装ui-element、FastCrud、扩展；视觉默认在commonOptions或纯视觉工厂集中，不能修改transformQuery/Res。
+- settings.ts：继续原安装和生命周期；只有确需共享的允许视觉默认项才调整。transformQuery/Res、dict配置、show/disabled、valueBuilder/valueResolve、refresh/submit均冻结，不重写useFs/useCrud/useExpose或request lifecycle。
 
 | 层 | 应包含 | 禁止 |
 |---|---|---|
-| Global FastCrud Theme | fs-page surface、工具gap、搜索、表格密度、分页、form wrapper | 88vh/全局白底；请求转换 |
-| Reusable Component | PageHeader、StatusTag、EmptyState、附件展示；测量字段有多个真实用例再建 | 重写fs-crud、另建分页状态 |
-| Page-specific | 树+表、字段单位/宽度、权限抽屉、特殊单元格 | 页内硬编码主色、复制全套表格样式 |
+| Global FastCrud Theme | 原生Search/Actionbar/Toolbar/Table/Pagination/Form/Dialog的颜色、字体、间距、密度和表面 | 拆分/替换/搬移区域；自建FilterBar/Toolbar/Pagination/Form/Dialog；请求与状态变化 |
+| Reusable Component | 原位置纯显示StatusTag/empty/loading外观；未来独立页面另行使用PageHeader/Section Layout | 强制PageHeader/PageContainer、用新DataTable替代fs-crud、另建分页/加载状态 |
+| crud.tsx Visual Configuration | 列宽/对齐、form col/span、status renderer、按钮/行/表头等允许外观 | 改dict、show/disabled、权限、值转换、query/page映射或生命周期 |
 
-settings当前文本居中、字典auto色，迁移先在试点显式配置，不让全部字典一次变色；未来业务状态opt-in StatusTag，普通字典保留兼容直到逐页审查，不重释现有enum。
+settings当前文本居中可通过允许的column alignment局部优化；字典auto色属于现有dict行为，不在UI改造中修改。StatusTag只作为允许的显示renderer，不改变字典数据、label/value、自动染色规则或值转换。无法在冻结边界内统一的差异明确记录，不默认留到下一批改逻辑。
 
-从actionbar搬到PageHeader的操作复用已解析的show/disabled/loading/click及CRUD上下文，不在Header重新写API；也不同时保留两个可见创建按钮。“更多”按相同权限过滤。不得套全量DataTable导致named slots、columnSetDisabled、wrapper、exposed methods丢失。
+**Add/Import/Export全部保持Actionbar原位置**，不搬到PageHeader或另一操作栏，不重建Toolbar/Pagination/CRUD Dialog/Form。保留原native slots、columnSetDisabled、wrapper、exposed methods和hooks。纯CSS也不能通过order/absolute定位等方式变相搬移区域。现有Search布局/折叠逻辑不改，Table的列宽/对齐/密度可改；Form只改外观和col/span。
 
 本地docs/FastCrud-doc可查API，最终以锁定版本实现为准。`theme/fastCrud.scss`在theme/index.scss和源码引用中未发现接入，不能声称其88vh已对全站生效；未来先改写再引入，不能直接导入旧白底样式。
 
@@ -518,20 +534,20 @@ settings当前文本居中、字典auto色，迁移先在试点显式配置，�
 
 | 候选 | 决策 | 最小职责与依据 |
 |---|---|---|
-| PageContainer | 建立 | list/form模式、padding/滚动，不加载数据 |
-| PageHeader | 建立 | title/context/action slots；用户/角色/文件页复用 |
-| SectionCard | 轻包装或统一class | 至少两处相同结构再抽取，不包所有el-card |
-| DataTable | 暂不全量建立 | 先统一FastCrud和components/table视觉，避免第三套表格 |
+| PageContainer | 非CRUD页面按需 | 不包装/重组现有fs-page/fs-crud |
+| PageHeader | 未来独立页面按需 | 工作台与Test Execution/Result Review/Report Approval/Specimen Detail；不强制系统CRUD |
+| SectionCard | 独立复杂页面按需 | 多处真实重复再抽取，不拆FastCrud生成的Form/Dialog |
+| DataTable | 不替代fs-crud | 现有CRUD保留原框架；手工表格仅统一外观 |
 | StatusTag | 建立显示抽象 | 注册表/语义色，未来枚举再接入 |
 | MetricCard | 按工作台需要 | title/value/loading/unavailable，不算KPI |
-| InfoItem | 建立 | label/value/empty、代码/单位slot；个人信息/详情复用 |
-| EmptyState | 建立 | empty/no-result/unavailable/error结构与action slot |
-| ConfirmAction | 优先公共配置函数 | 文案/按钮，保留调用方确认回调，不再造模态管理 |
+| InfoItem | 非CRUD详情按需 | 个人信息/未来详情，不替换FastCrud生成字段 |
+| EmptyState | 纯显示复用 | CRUD沿用原empty/loading状态与位置，不新增动作或状态机 |
+| ConfirmAction | 非CRUD页面按需 | 现有CRUD确认/submit lifecycle保持，不替换原Dialog或确认流程 |
 | FilePreview | 演进现有 | 复用fileSelector/el-image显示，不兼任上传服务/权限加载 |
 | UserAvatar | 轻组件 | 头像/回退/用户名；Header/用户表/个人中心 |
 | BrandLogo | 建立 | 资源、透明留白、浅/深载体；Sidebar/Login复用 |
 
-保留importExcel、fileSelector、avatarSelector、tableSelector、dvaSelect、foreignKey、manyToMany、editor、auth组件功能接口，优先改呈现。新UI组件不隐式请求API或重写RBAC；单页独有结构留页面。MeasurementInput/UnitInput有两个以上真实字段用例后再抽象，不能为未来概念造空组件。
+保留importExcel、fileSelector、avatarSelector、tableSelector、dvaSelect、foreignKey、manyToMany、editor、auth接口及其在CRUD中的原生位置，只改允许呈现。新组件不隐式请求API或重写RBAC。MeasurementInput/UnitInput仅待未来真实业务用例再抽象，不能替换现有FastCrud控件并改变值转换或dict。
 
 ## 27. CSS / Theme Architecture
 
@@ -560,7 +576,7 @@ src/web/src/utils/theme.ts # 现有：主题应用/兼容收敛入口
 
 主题内部token→semantic/legacy aliases→typography→component adapters→layout→兼容补丁。`--next-bg-menuBar`暂映射`--lims-background-sidebar`，保持未迁移页。themeConfig旧色字段是兼容输入，不允许store、DOM缓存和token持续互相覆盖；规范预设默认，旧自定义仍可读取。未来限制自由调色另行决策。
 
-页面scoped CSS仅布局；不在全站宽泛覆盖el-row高度/el-menu宽度，用宿主class限定。Teleport用根token和明确popper-class，不仅依赖PageContainer祖先。VXE/编辑器/插件有范围适配，不改node_modules。Token→Component Theme→Page是唯一新样式流向。
+非CRUD页面scoped CSS仅承担必要局部布局；现有CRUD不结构改写，连CSS变相重排原生区域也禁止。不在全站宽泛覆盖el-row高度/el-menu宽度，用宿主class限定。Teleport使用根token与已有浮层作用域，不依赖新增PageContainer。VXE/编辑器/插件有范围适配，不改node_modules。CRUD唯一改造链路：**Design Tokens → Element Plus Theme → FastCrud Theme → crud.tsx Visual Configuration**。
 
 ## 28. Existing UI Technical Debt
 
@@ -582,7 +598,7 @@ src/web/src/utils/theme.ts # 现有：主题应用/兼容收敛入口
 | setings.vue824行；tagsView.vue726行 | 配置/事件/持久化/样式混合 | 改动风险高 | 先分离样式，不一次拆全部交互 |
 | stores/btnPermission.ts；plugin/permission/store.permission.ts | 相同Pinia ID重复定义 | 引用入口不清晰 | 独立技术债；不随UI改变授权 |
 | main.ts；plugin/permission/index.ts | RegisterPermission未调用 | 易误认插件启用 | 如实记录入口，不擅自注册 |
-| settings.ts | 字典auto染色、文本居中、form取消隐藏 | 状态随机色、退出不统一 | 逐页视觉opt-in，保留关闭行为 |
+| settings.ts | 字典auto染色、文本居中、form取消隐藏 | 视觉一致性和退出入口存在差异 | 只改允许的对齐/外观；dict及取消show/disabled冻结，差异记录不修行为 |
 | home/index.vue；home/backup/index.vue | 同哈希655行静态演示 | KPI误导、重复维护 | 工作台任务化；核对component后再清理backup |
 | views/system/demo；views/template | demo路由与VIEWSETNAME占位模板 | 不应冒充业务 | 保留模板用途，删除前查动态引用/生成链 |
 | user/index.vue | Tailwind字体粗细混杂、树缩进38、头像50px | 与其他管理页不一致 | 统一排版/头像/缩进，保留组织筛选 |
@@ -609,14 +625,14 @@ src/web/src/utils/theme.ts # 现有：主题应用/兼容收敛入口
 | Theme Integration | S/main.ts、App.vue、stores/themeConfig.ts、utils/theme.ts、layout/navBars/breadcrumb/setings.vue；必要时types/pinia.d.ts |
 | Layout | S/layout/main/defaults.vue、component/aside.vue、header.vue、main.vue、logo/index.vue、footer/index.vue；拟新增theme/layout.scss |
 | Navigation | S/layout/navMenu/vertical.vue、subItem.vue、horizontal.vue；navBars/index.vue；breadcrumb/index.vue、breadcrumb.vue、user.vue、search.vue、userNews.vue；tagsView/tagsView.vue、contextmenu.vue |
-| Components | 第26节拟新增组件、ui/status.ts；现有table/fileSelector/avatarSelector/importExcel/svgIcon呈现层；拟新增theme/components.scss |
-| CRUD Visual | S/settings.ts仅视觉默认；按需ui/crudVisual.ts；views/template/index.vue、crud.tsx后续模板 |
+| Components | 第26节按需纯显示组件、ui/status.ts；现有table/fileSelector/avatarSelector/importExcel/svgIcon仅外观；PageHeader/Section Layout只供非CRUD/未来独立页面；拟新增theme/components.scss |
+| CRUD Visual | S/theme/fastCrud.scss及各crud.tsx允许视觉配置；settings.ts仅必要共享视觉默认，不碰dict/show/disabled/lifecycle；index.vue和template/index.vue结构不改，最多外观class/原位置renderer |
 | Entry Pages | S/views/system/login/index.vue、component/account.vue、changePwd.vue；home/index.vue；personal/index.vue；error/401.vue、404.vue |
 | System Pages | user、role、menu、dept、dictionary/subDict、areas、fileList、messageCenter、downloadCenter、whiteList、log/loginLog、log/operationLog、config、columns中的实际index.vue/crud.tsx/手工表单组件 |
 | Responsive/i18n | S/theme/media/*.scss、i18n/lang/*.ts、i18n/pages/login/*.ts，仅呈现/文案 |
 | Brand | 未来S/assets/brand/展示副本、W/public/favicon.ico；必要时W/index.html，原docs/logo.png不变 |
 
-禁止范围：Django Models/API、数据库/迁移、后端RBAC、LIMS业务、各CRUD api.ts、service/request协议、Router守卫/菜单转换规则、权限store/指令授权规则、node_modules。绝对必要的前端兼容问题单独记录和实施，不扩大到后端。
+禁止范围：Django Models/API、数据库/迁移、后端RBAC、LIMS业务、各CRUD api.ts、service/request协议、Router守卫/菜单转换规则、权限store/指令授权规则、node_modules，以及FastCrud原生布局、hooks、request/query/page映射、show/disabled、valueBuilder/valueResolve、dict、refresh/submit lifecycle。兼容问题只独立记录，不以此自动获得突破冻结规则的授权。
 
 ## 30. Implementation Batches
 
@@ -632,30 +648,30 @@ src/web/src/utils/theme.ts # 现有：主题应用/兼容收敛入口
 ### UI Batch 2 — Layout + Sidebar + Header + Brand
 
 - 范围：defaults.vue、component/{aside,header,main}.vue、logo/index.vue、navMenu/*、navBars相关呈现、footer；拟新增BrandLogo/theme/layout.scss；必要品牌展示副本。
-- 风险：双滚动、Tabs缓存、折叠菜单、蒙版、Logo留白、旧布局兼容。
+- 风险：应用壳双滚动、Tabs缓存、折叠菜单、蒙版、Logo留白、旧布局兼容；不得通过调整壳层重排CRUD内部区域。
 - 验证：1366/1440/1920；长三级菜单、折叠、深链接刷新、外链/iframe；Tags关闭/刷新/右键/拖动/固定/全屏；classic/transverse/columns冒烟。
-- 出口：无多余页面横滚，关键动作/分页可达，动态菜单和Tabs行为不变。
+- 出口：无多余页面横滚，关键动作/分页在FastCrud原生布局内可达；动态菜单和Tabs不变，CRUD结构保持。
 
-### UI Batch 3 — Core Components + CRUD Pilot
+### UI Batch 3 — FastCrud Visual Standardization
 
-- 范围：PageContainer/PageHeader/StatusTag/InfoItem/EmptyState/UserAvatar；theme/components.scss；settings.ts纯视觉项、components/table；先迁移areas（列权限）与user（组织树+CRUD）。
-- 风险：动作搬移失去权限或上下文、列设置泄漏、wrapper/分页回归。
-- 验证：同账户前后可见菜单/动作一致；GET查询/排序/page/limit、增改删payload一致；禁读列不能在列设置恢复；组织树筛选、表单错误/取消保持。
-- 出口：形成两个真实页面范式，不重写FastCrud，不引入LIMS枚举或API。
+- 范围：theme/fastCrud.scss及必要Element适配；areas/user的crud.tsx列宽/对齐、form col/span、按钮/表头/行/表单外观；按需原位置status/empty/loading纯显示renderer。不新增PageHeader/PageContainer，不改组织树+CRUD结构。
+- 风险：样式越界引起原生区域重排、列设置泄漏；误改dict、show/disabled或生命周期。
+- 验证：前后Search/Actionbar/Toolbar/Table/Pagination/Form/Dialog结构与操作归属一致；Add/Import/Export不搬移；diff检查hooks/request/mapping/dict/valueBuilder/valueResolve/show/disabled未变；同账号动作与列权限、请求和refresh/submit时序一致。
+- 出口：两个真实页面只完成主题和视觉配置试点，保留FastCrud原始布局，不引入LIMS枚举或API。
 
 ### UI Batch 4 — Login + Dashboard + Personal + Error
 
-- 范围：login/index.vue、account.vue、changePwd.vue；home/index.vue；personal/index.vue；error/401.vue、404.vue与相关i18n。
+- 范围：login/index.vue、account.vue、changePwd.vue；home/index.vue；personal/index.vue；error/401.vue、404.vue与相关i18n；PageHeader/InfoItem等仅在适合的非FastCrud页面按需采用。
 - 风险：验证码/首次改密/redirect、假KPI、头像上传、配置Logo回退。
 - 验证：验证码开关、错误/成功登录、首次改密、回跳、退出；工作台无伪造数据；个人资料/安全原动作；配置与默认Logo均可读；错误恢复可用。
 - 出口：入口页同一语言，数据未接入/零/空/错明确。
 
 ### UI Batch 5 — System Management Pages
 
-- 范围：role及授权组件、menu、dept、dictionary、fileList、config、columns、message/download/whiteList/log；fileSelector/avatarSelector/importExcel外观；template模板视觉。
+- 范围：role及授权组件、menu、dept、dictionary、fileList、config、columns、message/download/whiteList/log仅主题与允许视觉配置；fileSelector/avatarSelector/importExcel仅外观；template保持原生结构，仅crud.tsx视觉默认。
 - 风险：RBAC配置页高风险、嵌套弹层、字典、上传/导出/批量。
-- 验证：用现有不同权限账号；授权查看/修改遵原能力；组织树/子字典/文件选择/导入导出；每个CRUD按钮、表单、筛选、分页与原请求一致，不改api.ts。
-- 出口：主系统管理页面采用同一token/排版/状态显示规则；未国际化项如保留则登记。
+- 验证：不同权限账号与授权原能力；组织树/子字典/上传导出；每页原生结构、按钮位置、show/disabled、dict/value转换、query/page映射、request/refresh/submit生命周期均一致，不改api.ts。
+- 出口：现有System CRUD原始结构保持，统一token与允许的视觉配置；不能在边界内统一的差异登记，不以清理名义改变行为。
 
 ### UI Batch 6 — Cleanup + Responsive + Dark Audit
 
@@ -673,10 +689,12 @@ src/web/src/utils/theme.ts # 现有：主题应用/兼容收敛入口
 | Login | token、验证码、密码处理、首次改密、redirect | 未登录深链接、错/对密码、验证码开关、首次账户、退出 |
 | Dynamic Router | path/name/component/meta/参数 | 二三级刷新、query/params、iframe/外链、404 |
 | Dynamic Menu | 后端顺序/isHide/授权范围 | 普通/受限/管理员、空菜单、长名称、展开 |
-| Button Permission | v-auth/auths/auth-all、auth函数语义 | 单/任一/全部，Header/更多/批量均受控 |
+| Button Permission | v-auth/auths/auth-all、auth及show/disabled原逻辑 | 单/任一/全部；原Actionbar/rowHandle/既有批量操作位置与可见性不变 |
 | Column Permission | 列/新增/编辑隐藏、列设置禁用 | areas/loginLog禁读/禁增/禁改、原例外字段保持 |
 | Pinia/cache | persist、Tabs、keep-alive | 多页编辑切换、刷新、旧主题恢复 |
 | CRUD/Pagination/Search | endpoint/method/payload、page/limit/ordering | 新增/编辑/删除、分页、排序、筛选/清空、组织树 |
+| FastCrud Layout Freeze | 原生Search/Actionbar/Toolbar/Table/Pagination/Form/Dialog结构 | 前后结构/截图核对，无FilterBar、操作搬移、新Toolbar/Pagination/Dialog/Form或DataTable替代 |
+| FastCrud Data/Lifecycle | useFs/useCrud/useExpose、dict、valueBuilder/valueResolve、request/refresh/submit | 静态diff与请求/回调时序比较；查询/分页映射、字典选项值/标签/染色行为一致 |
 | Upload | 类型/限制/header/FormData/回传值 | 图片/文件/Excel、失败重试取消、预览移除、既有限制 |
 | Dialog/Drawer | 守卫/销毁/提交/层级 | 嵌套、遮罩、Esc原策略、Tab焦点、长内容滚动 |
 | Theme/i18n | 明暗/语言/密度偏好 | 新/旧缓存、首屏、英文长文、所有浮层 |
@@ -693,7 +711,8 @@ src/web/src/utils/theme.ts # 现有：主题应用/兼容收敛入口
 - [x] 查看正式Logo，测量尺寸/透明背景/主色，区分资源与设计推导。
 - [x] 3个方向、1个推荐，完整token、组件规范、6批实施与回归矩阵。
 - [x] 明确静态Dashboard和未来业务预留，不虚构真实数据。
-- [x] 唯一交付UI_REDESIGN_PLAN.md，不继续实施代码。
+- [x] 初次UI设计交付为docs/UI_REDESIGN_PLAN.md；本次文档基线仅整理根目录AGENTS.md与本文件，不实施代码。
+- [x] 纳入FastCrud CRUD Layout Freeze，撤回操作搬移、强制PageHeader和CRUD结构重写建议。
 
 ### 未来实施验收（尚未执行）
 
@@ -701,16 +720,21 @@ src/web/src/utils/theme.ts # 现有：主题应用/兼容收敛入口
 - [ ] Logo在Login/展开/折叠Sidebar均可读；源图不变形，CL产品标记不冒充正式简标。
 - [ ] Element Plus、FastCrud、手工表格使用统一字体、密度、边界、按钮语言。
 - [ ] 动态菜单/路由行为不变，包括顺序、隐藏、外链/iframe、组件匹配与参数。
-- [ ] 按钮/列权限不变，Header/更多/列设置不绕过判断。
+- [ ] 按钮/列权限及show/disabled不变，原Actionbar/rowHandle/列设置不绕过判断。
+- [ ] 现有System CRUD保持FastCrud原生结构；Search不拆FilterBar，Add/Import/Export保持Actionbar，不重建Toolbar/Pagination/CRUD Form/Dialog。
+- [ ] 无新DataTable替代fs-crud，无强制PageHeader/PageContainer；不以CSS重排变相结构改写。
+- [ ] useFs/useCrud/useExpose、request/refresh/submit lifecycle、query/pagination mapping、valueBuilder/valueResolve、dict行为均不变。
+- [ ] CRUD diff仅涉及token/theme和允许视觉配置：typography/colors/spacing/density/appearance、列宽对齐、form col/span、status/empty/loading renderer。
+- [ ] 未来Test Execution/Result Review/Report Approval/Specimen Detail可独立使用PageHeader/Section Layout，不能反向要求现有CRUD迁移。
 - [ ] CRUD API、分页/筛选/排序转换、上传下载契约不变，前后请求快照一致。
 - [ ] Pinia/keep-alive/Tabs与主题语言偏好可恢复，不以清空全部Local实现迁移。
 - [ ] 1366×768、1440×900、1920×1080正常使用，125%缩放可读，操作/分页可达。
 - [ ] 数值右对齐，编号左对齐且保留前导零，单位明确、时间含义不变。
 - [ ] 每活动层级一个主动作，删除Danger，图标有名称和键盘焦点。
 - [ ] Login/Dashboard/System Pages同一语言，无假项目、任务、设备指标或曲线。
-- [ ] 状态统一映射，文案+图标+颜色，Completed不等于Approved，Invalid不等于Disabled。
+- [ ] 未来新状态统一映射，文案+图标+颜色，Completed不等于Approved，Invalid不等于Disabled；现有CRUD只做允许renderer，既有dict行为保持，不能兼容的视觉差异登记。
 - [ ] Light/Dark含teleport区域无明显不可读；正文4.5:1、控件边界/焦点3:1目标有实测记录。
-- [ ] Empty/No Result/No Permission/Loading/Error/Unavailable区分；失败不归零。
+- [ ] 根据原有可用状态呈现Empty/No Result/No Permission/Loading/Error/Unavailable；现有CRUD不另建query/loading状态机、不改变失败处理生命周期；独立新页面失败不归零。
 - [ ] 键盘可操作菜单/按钮/表单/弹层，关闭回焦点，减少运动偏好生效。
 - [ ] 原i18n行为保留，新文案入资源，英文不溢出；未解决存量翻译明确登记。
 - [ ] 每批回归通过后扩面，后端Models/API/数据库/RBAC/LIMS逻辑不修改。
@@ -719,12 +743,12 @@ src/web/src/utils/theme.ts # 现有：主题应用/兼容收敛入口
 
 1. **方向**：B — Industrial / Engineering Precision（工业工程精密型）。
 2. **Logo主色**：#FF6900，辅助#746661；Light交互派生#B74700，Dark派生#FF9A52，派生色不是官方色号。
-3. **五个首要问题**：品牌被注释与Logo缩放；主题多来源/Dark覆盖风险；Layout滚动高度耦合；Table/Form/PageHeader缺少统一层级和状态语义；重复静态Dashboard与入口风格断层。
+3. **五个首要问题**：品牌被注释与Logo缩放；主题多来源/Dark覆盖风险；应用壳滚动高度耦合；原生Table/Form的视觉密度/对齐/呈现不统一；重复静态Dashboard与入口风格断层。解决这些问题不需要重写FastCrud布局。
 4. **保留**：Element Plus/FastCrud适配、Pinia/Router、动态菜单、Tabs/keep-alive、原权限入口、CRUD三层、上传/导入/选择器、ECharts、SvgIcon兼容层。
-5. **重设计**：品牌呈现、Sidebar/Header/Breadcrumb/Tabs外观、PageHeader、Table/Form/Dialog/Drawer视觉、StatusTag、Login/Dashboard/Personal/Error/Empty，保留各自业务处理。
+5. **重设计**：品牌与应用壳外观、现有CRUD允许的Theme/Visual Configuration、Login/Dashboard/Personal/Error/Empty；PageHeader/Section Layout仅在适合的非CRUD及未来复杂独立页面按需使用。
 6. **更换Element Plus？** 不需要，以变量/集中覆盖/轻包装实现。
 7. **更换FastCrud？** 不需要，保留配置与API，统一视觉默认和呈现。
-8. **重写Layout？** 不整体重写，渐进重整默认布局视觉/滚动，保留控制骨架及其他布局兼容。
+8. **重写Layout？** 不整体重写；应用壳可渐进优化，现有FastCrud CRUD内部布局冻结，保留原Search/Actionbar/Toolbar/Table/Pagination/Form/Dialog。
 9. **批次数**：6，Dark/响应式每批纳入，最后全面审查。
 10. **第一批具体文件**：拟新增 `src/web/src/theme/tokens.scss`、`semantic.scss`、`typography.scss`；修改 `src/web/src/theme/index.scss`、`app.scss`、`element.scss`、`dark.scss`、`fastCrud.scss`，`src/web/src/assets/style/reset.scss`；最小主题接入修改 `src/web/src/main.ts`、`App.vue`、`utils/theme.ts`、`stores/themeConfig.ts`、`layout/navBars/breadcrumb/setings.vue`。不含业务api.ts、后端和权限规则。
 
