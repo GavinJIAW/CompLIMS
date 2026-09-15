@@ -1,8 +1,8 @@
 <template>
-  <button class="layout-logo" type="button" @click="onThemeConfigChange" :aria-label="'CompLIMS'" :title="'CompLIMS'">
+  <div class="layout-logo">
     <BrandLogo :compact="!setShowLogo" :src="siteLogo" />
     <span v-if="setShowLogo" class="layout-logo-product">CompLIMS</span>
-  </button>
+  </div>
 </template>
 
 <script setup lang="ts" name="layoutLogo">
@@ -17,11 +17,6 @@ const setShowLogo = computed(() => {
   const { isCollapse, layout } = themeConfig.value;
   return !isCollapse || layout === 'classic' || layout === 'transverse' || document.body.clientWidth < 1000;
 });
-// Preserve the existing logo shortcut; Header remains the explicit collapse control.
-const onThemeConfigChange = () => {
-  if (themeConfig.value.layout === 'transverse') return;
-  themeConfig.value.isCollapse = !themeConfig.value.isCollapse;
-};
 const siteLogo = computed(() => systemConfig.value['login.site_logo'] || undefined);
 </script>
 
@@ -39,11 +34,11 @@ const siteLogo = computed(() => systemConfig.value['login.site_logo'] || undefin
   background: transparent;
   color: var(--lims-text-primary);
   font-family: inherit;
-  cursor: pointer;
+
   .layout-logo-product {
     font-size: var(--lims-type-helper-size);
     line-height: var(--lims-type-caption-line-height);
-    font-weight: 600;
+    font-weight: 500;
     letter-spacing: .04em;
   }
 }

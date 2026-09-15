@@ -6,7 +6,7 @@
 
 > B1A 实施状态（2026-09-15）：已建立根部 Light/Dark token、排版与 Element Plus/FastCrud 基础皮肤，移除专用 FastCrud 旧高度规则与 reset 硬编码颜色；下文初次源码评估为历史基线。App/store/cache 迁移、页面布局和后续批次仍未实施，构建通过不代表浏览器视觉验收。
 
-> B2 实施状态（2026-09-15）：Shell 已接入 240/64px Sidebar、56px Header、36px Tabs 与集中 layout.scss；BrandLogo 使用原图展示视窗及 CL 产品缩写，配置图片失败时回退正式原图。空 Footer 不再占位，Header 原有工具保留并分组，菜单搜索仅整理浮层样式。四种 Layout 控制骨架、菜单/路由契约和 FastCrud 页面结构保持；下文初次评估中的尺寸与品牌缺失描述为历史基线。
+> B2 实施状态（2026-09-15）：Shell 已接入 240/64px Sidebar、56px Header、36px Tabs 与集中 layout.scss；BrandLogo 展开使用完整原图展示视窗，折叠使用用户提供并确认的 compact logo 运行时副本，配置图片失败时回退正式原图。空 Footer 不再占位，Header 原有工具保留并分组，菜单搜索仅整理浮层样式。四种 Layout 控制骨架、菜单/路由契约和 FastCrud 页面结构保持；下文初次评估中的尺寸与品牌缺失描述为历史基线。
 
 ### FastCrud CRUD Layout Freeze — 实施最高约束
 
@@ -92,15 +92,15 @@
 - 事实：主橙#FF6900、辅助暖灰#746661来自像素，不等于取得官方品牌手册。
 - 推导：工程服务、检测技术、稳健、强识别。不能据此推断资质或认证。
 - 浅底：原色Logo适合白/极浅灰；不变形、不加阴影。
-- 深底：暖灰字标对比不足；完整Logo放白色底板，四周8px安全区。未获得反白版本前不擅自反色/滤镜处理。
+- 深底：暖灰字标对比不足；完整Logo放白色底板，Sidebar展示使用四周4px紧凑留白。未获得反白版本前不擅自反色/滤镜处理。
 - 品牌橙不直接用于白色小字按钮；派生交互橙Light #B74700，Dark #FF9A52配深字。
 - 石墨中性色、青色辅助、状态紫、派生橙、字体/spacing/Dark均是本项目设计推导，不是既有官方规范。
 
 | 场景 | 展示规范 |
 |---|---|
-| 展开Sidebar | 品牌区88px；可见图形约176×57px，按内容约3.1:1显示；CompLIMS作为独立产品文字，不改公司字标 |
-| 折叠Sidebar | 64px栏中32px产品缩写“CL”，橙细边框与可读深字；Tooltip完整名称。这是产品占位标记，不冒充公司简标 |
-| 正式小标识 | 未来有公司认可资源后替换CL；不能截取加号声称官方简标 |
+| 展开Sidebar | 品牌区80px；可见图形约152×49px，按内容约3.1:1显示；CompLIMS作为独立产品文字，不改公司字标 |
+| 折叠Sidebar | 64px栏中居中展示约32px的用户确认紧凑Logo；Tooltip显示CompLIMS，不重复显示产品文字 |
+| 紧凑资产 | 源文件docs/compact-logo.png保留不变；运行时使用S/assets/compact-logo.png等字节副本，不重绘、不改色 |
 | Login | 可见完整Logo宽280–320px；保证Laboratories可读 |
 | Favicon | 后续用可读产品缩写或正式小标，制作16/32/48px，不缩完整字标 |
 
@@ -287,7 +287,7 @@ Sidebar240px/折叠64px，主区域min-width:0，外边距24px。Header56px、Ta
 
 ## 10. Sidebar
 
-品牌区88px，只有菜单区域纵滚。一级40px高，左右16px，图标20px，图文gap12px，字体14/500；二级36px，文字起点增加24px。保留三级递归支持，未来IA尽量两级，不能UI强行裁掉三级。
+品牌区80px，只有菜单区域纵滚。一级40px高，左右16px，图标20px，图文gap12px，字体14/500；二级36px，文字起点增加24px。保留三级递归支持，未来IA尽量两级，不能UI强行裁掉三级。
 
 Active=selected底+4px橙标记+action-primary文字；Hover=background-hover。当前祖先仅适度加粗，不把所有祖先涂成同等强激活。折叠64px内图标居中，Tooltip全名，点击/键盘可开子菜单浮层，仍保留激活形状。
 
@@ -721,7 +721,7 @@ src/web/src/utils/theme.ts # 现有：主题应用/兼容收敛入口
 ### 未来实施验收（尚未执行）
 
 - [ ] 所有主品牌色来自统一token；Sidebar/Header/Table/Form/Dialog不独立硬编码主色。
-- [ ] Logo在Login/展开/折叠Sidebar均可读；源图不变形，CL产品标记不冒充正式简标。
+- [ ] Logo在Login/展开/折叠Sidebar均可读；源图不变形，折叠标识使用用户确认的compact logo。
 - [ ] Element Plus、FastCrud、手工表格使用统一字体、密度、边界、按钮语言。
 - [ ] 动态菜单/路由行为不变，包括顺序、隐藏、外链/iframe、组件匹配与参数。
 - [ ] 按钮/列权限及show/disabled不变，原Actionbar/rowHandle/列设置不绕过判断。
