@@ -25,6 +25,9 @@ __pypackages__/
 logs/
 *.log
 media/
+# Frontend responsive styles are source, not uploaded media.
+!/src/web/src/theme/media/
+!/src/web/src/theme/media/**
 dist/
 coverage/
 .pytest_cache/
