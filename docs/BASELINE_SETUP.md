@@ -1,6 +1,6 @@
 # CompLIMS baseline setup
 
-This baseline contains source and design documents, not a production-hardened release. P0 and UI implementation have not started.
+This document records the repository baseline setup established before the UI redesign and P0 remediation phases. It describes local configuration, sanitized initialization inputs, dependency-lockfile handling, and deployment safety constraints. Current project status is documented separately in Handover.md and the files under docs/.
 
 - Backend: copy `src/backend/conf/env.example.py` to `env.py` in the same directory. The copy is ignored. Set `DJANGO_SECRET_KEY` and database credentials locally or through environment variables. There is no hardcoded signing-key fallback. Never commit the local file. Credentials previously present in source/local exports should be rotated before deployment.
 - Frontend: copy `src/web/.env.example` to `.env`. Set non-secret Vite settings appropriate to each deployment. Local `.env.*` files are ignored. `VITE_*` values are public browser configuration, never credentials.
