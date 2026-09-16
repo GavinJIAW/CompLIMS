@@ -22,14 +22,43 @@ MEDIA_DIR = Path(__file__).resolve().parent.parent.parent
 # ******************** 动态配置 ******************** #
 # ================================================= #
 
-from conf.env import *
+# Select before importing local development configuration (also used by legacy
+# modules that import application.settings directly).
+_ISOLATED_TEST = os.environ.get("DJANGO_SETTINGS_MODULE") == "application.settings_test"
+if _ISOLATED_TEST:
+    import re
+    from django.core.exceptions import ImproperlyConfigured
+
+    _required = ("NAME", "USER", "PASSWORD", "HOST", "PORT")
+    _missing = [key for key in _required if not os.environ.get("COMPLIMS_TEST_DB_" + key)]
+    if _missing:
+        raise ImproperlyConfigured(
+            "Missing test-only database configuration: "
+            + ", ".join("COMPLIMS_TEST_DB_" + key for key in _missing)
+        )
+    DATABASE_NAME = os.environ["COMPLIMS_TEST_DB_NAME"]
+    # Both the connection database and Django's disposable test database must
+    # belong to this namespace; no development or maintenance DB as the target.
+    if not re.fullmatch(r"complims_test_[a-z0-9_]{1,40}", DATABASE_NAME):
+        raise ImproperlyConfigured("Test database name must match complims_test_[a-z0-9_]{1,40}")
+    DATABASE_ENGINE = "django.db.backends.postgresql"
+    DATABASE_USER = os.environ["COMPLIMS_TEST_DB_USER"]
+    DATABASE_PASSWORD = os.environ["COMPLIMS_TEST_DB_PASSWORD"]
+    DATABASE_HOST = os.environ["COMPLIMS_TEST_DB_HOST"]
+    DATABASE_PORT = os.environ["COMPLIMS_TEST_DB_PORT"]
+    if not DATABASE_PORT.isascii() or not DATABASE_PORT.isdigit() or not 1 <= int(DATABASE_PORT) <= 65535:
+        raise ImproperlyConfigured("COMPLIMS_TEST_DB_PORT must be a valid TCP port")
+    # TEST ONLY / NOT FOR PRODUCTION. Never use a deployment secret in tests.
+    DJANGO_SECRET_KEY = "TEST-ONLY-NOT-FOR-PRODUCTION-CompLIMS-foundation-baseline"
+else:
+    from conf.env import *
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # Required: environment variable or ignored conf/env.py; never a source fallback.
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY") or locals().get("DJANGO_SECRET_KEY")
+SECRET_KEY = DJANGO_SECRET_KEY if _ISOLATED_TEST else (os.environ.get("DJANGO_SECRET_KEY") or locals().get("DJANGO_SECRET_KEY"))
 if not SECRET_KEY:
     raise ValueError("DJANGO_SECRET_KEY must be configured in the environment or local conf/env.py")
 
@@ -195,7 +224,7 @@ CORS_ALLOW_CREDENTIALS = True  # 指明在跨域访问中，后端是否支持�
 SERVER_LOGS_FILE = os.path.join(BASE_DIR, "logs", "server.log")
 ERROR_LOGS_FILE = os.path.join(BASE_DIR, "logs", "error.log")
 LOGS_FILE = os.path.join(BASE_DIR, "logs")
-if not os.path.exists(os.path.join(BASE_DIR, "logs")):
+if not _ISOLATED_TEST and not os.path.exists(os.path.join(BASE_DIR, "logs")):
     os.makedirs(os.path.join(BASE_DIR, "logs"))
 
 # 格式:[2020-04-22 23:33:01][micoservice.apps.ready():16] [INFO] 这是一条日志:

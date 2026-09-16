@@ -23,7 +23,7 @@ from rest_framework_simplejwt.views import (
 )
 
 from application import dispatch
-from application import settings
+from django.conf import settings
 from coreadmin.system.views.dictionary import InitDictionaryViewSet
 from coreadmin.system.views.login import (
     LoginView,
@@ -36,8 +36,9 @@ from coreadmin.system.views.system_config import InitSettingsViewSet
 from coreadmin.utils.swagger import CustomOpenAPISchemaGenerator
 
 # =========== 初始化系统配置 =================
-dispatch.init_system_config()
-dispatch.init_dictionary()
+if getattr(settings, "INITIALIZE_ON_URL_IMPORT", True):
+    dispatch.init_system_config()
+    dispatch.init_dictionary()
 # =========== 初始化系统配置 =================
 
 permission_classes = [permissions.AllowAny, ] if settings.DEBUG else [permissions.IsAuthenticated, ]
