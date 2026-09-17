@@ -26,6 +26,21 @@ def resolve_ids(queryset, value):
     return requested
 
 
+def dept_info_selection(params):
+    """An explicit empty UI selection is not a missing or concrete target."""
+    if 'dept_id' not in params:
+        raise ValidationError({'dept_id': 'Target parameter is required.'})
+    show_all = params.get('show_all', '0')
+    if show_all not in ('0', '1', ''):
+        raise ValidationError({'show_all': 'Expected 0 or 1.'})
+    value = params.get('dept_id')
+    if value == '':
+        if show_all == '1':
+            raise ValidationError({'dept_id': 'Recursive statistics require a department.'})
+        return None, False
+    return next(iter(ids(value))), show_all == '1'
+
+
 # (source, parameter, model). These are admin controls, never role-delegated.
 ADMIN_TARGETS = {
     'menu.move_up': [('body', 'menu_id', 'Menu')],
@@ -90,7 +105,9 @@ def validate_targets(view, request, context):
             policy.validate_write({key: value for key, value in row.items() if key != 'id'},
                                   models.SystemConfig.objects.get(pk=row['id']))
     if code == 'dept.dept_info':
-        resolve_ids(context.scope(view.get_queryset()), request.query_params.get('dept_id'))
+        dept_id, _ = dept_info_selection(request.query_params)
+        if dept_id is not None:
+            resolve_ids(context.scope(view.get_queryset()), dept_id)
 
 
 def validate_write_relations(context, data):

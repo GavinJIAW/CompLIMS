@@ -163,14 +163,20 @@ class DeptViewSet(CustomModelViewSet):
     def dept_info(self, request):
         """部门信息"""
         from coreadmin.access.context import descendants
+        from coreadmin.access.targets import dept_info_selection
         from django.shortcuts import get_object_or_404
-        from rest_framework.exceptions import ValidationError
+        dept_id, show_all = dept_info_selection(request.query_params)
+        if dept_id is None:
+            # Fixed UI state: no object, subtree, user query or object fields.
+            return SuccessResponse({
+                'dept_name': None, 'dept_user': 0, 'owner': None,
+                'description': None,
+                'gender': {'male': 0, 'female': 0, 'unknown': 0},
+                'sub_dept_map': [],
+            })
         authorized = self.access_context.scope(self.get_queryset())
-        dept_obj = get_object_or_404(authorized, pk=request.query_params.get('dept_id'))
-        show_all = request.query_params.get('show_all', '0')
-        if show_all not in ('0', '1', ''):
-            raise ValidationError({'show_all': 'Expected 0 or 1.'})
-        dept_ids = descendants(dept_obj.pk) if show_all == '1' else {dept_obj.pk}
+        dept_obj = get_object_or_404(authorized, pk=dept_id)
+        dept_ids = descendants(dept_obj.pk) if show_all else {dept_obj.pk}
         permitted_ids = authorized.filter(pk__in=dept_ids).values_list('pk', flat=True)
         users = Users.objects.exclude(is_superuser=True).filter(dept_id__in=permitted_ids)
         data = {
