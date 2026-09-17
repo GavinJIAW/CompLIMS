@@ -41,23 +41,41 @@ if getattr(settings, "INITIALIZE_ON_URL_IMPORT", True):
     dispatch.init_dictionary()
 # =========== 初始化系统配置 =================
 
-permission_classes = [permissions.AllowAny, ] if settings.DEBUG else [permissions.IsAuthenticated, ]
-schema_view = get_schema_view(
-    openapi.Info(
-        title="Snippets API",
-        default_version="v1",
-        description="Test description",
-        terms_of_service="https://www.google.com/policies/terms/",
-        contact=openapi.Contact(email="contact@snippets.local"),
-        license=openapi.License(name="BSD License"),
-    ),
-    public=True,
-    permission_classes=permission_classes,
-    generator_class=CustomOpenAPISchemaGenerator,
-)
-
 urlpatterns = (
         [
+            path("api/system/", include("coreadmin.system.urls")),
+            path("api/login/", LoginView.as_view(), name="token_obtain_pair"),
+            path("api/logout/", LogoutView.as_view(), name="token_obtain_pair"),
+            path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+
+            path("api/captcha/", CaptchaView.as_view()),
+            path("api/init/dictionary/", InitDictionaryViewSet.as_view()),
+            path("api/init/settings/", InitSettingsViewSet.as_view()),
+
+            #apps
+
+        ]
+        + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+        + static(settings.STATIC_URL, document_root=settings.STATIC_URL)
+)
+
+# Development tooling is not registered in production.
+if settings.DEBUG:
+    permission_classes = [permissions.AllowAny]
+    schema_view = get_schema_view(
+        openapi.Info(
+            title="Snippets API",
+            default_version="v1",
+            description="Test description",
+            terms_of_service="https://www.google.com/policies/terms/",
+            contact=openapi.Contact(email="contact@snippets.local"),
+            license=openapi.License(name="BSD License"),
+        ),
+        public=True,
+        permission_classes=permission_classes,
+        generator_class=CustomOpenAPISchemaGenerator,
+    )
+    urlpatterns += [
             re_path(
                 r"^api/swagger(?P<format>\.json|\.yaml)$",
                 schema_view.without_ui(cache_timeout=0),
@@ -79,18 +97,4 @@ urlpatterns = (
             path("apiLogin/", ApiLogin.as_view()),
 
 
-            path("api/system/", include("coreadmin.system.urls")),
-            path("api/login/", LoginView.as_view(), name="token_obtain_pair"),
-            path("api/logout/", LogoutView.as_view(), name="token_obtain_pair"),
-            path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-
-            path("api/captcha/", CaptchaView.as_view()),
-            path("api/init/dictionary/", InitDictionaryViewSet.as_view()),
-            path("api/init/settings/", InitSettingsViewSet.as_view()),
-
-            #apps
-
-        ]
-        + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-        + static(settings.STATIC_URL, document_root=settings.STATIC_URL)
-)
+    ]

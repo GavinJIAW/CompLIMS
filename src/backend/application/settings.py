@@ -14,6 +14,7 @@ import os
 import sys
 from pathlib import Path
 from datetime import timedelta
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,7 +28,6 @@ MEDIA_DIR = Path(__file__).resolve().parent.parent.parent
 _ISOLATED_TEST = os.environ.get("DJANGO_SETTINGS_MODULE") == "application.settings_test"
 if _ISOLATED_TEST:
     import re
-    from django.core.exceptions import ImproperlyConfigured
 
     _required = ("NAME", "USER", "PASSWORD", "HOST", "PORT")
     _missing = [key for key in _required if not os.environ.get("COMPLIMS_TEST_DB_" + key)]
@@ -50,6 +50,9 @@ if _ISOLATED_TEST:
         raise ImproperlyConfigured("COMPLIMS_TEST_DB_PORT must be a valid TCP port")
     # TEST ONLY / NOT FOR PRODUCTION. Never use a deployment secret in tests.
     DJANGO_SECRET_KEY = "TEST-ONLY-NOT-FOR-PRODUCTION-CompLIMS-foundation-baseline"
+    JWT_SIGNING_KEY = "TEST-ONLY-NOT-FOR-PRODUCTION-CompLIMS-independent-JWT"
+    DEBUG = False
+    ALLOWED_HOSTS = ["testserver", "localhost", "127.0.0.1"]
 else:
     from conf.env import *
 
@@ -60,12 +63,50 @@ else:
 # Required: environment variable or ignored conf/env.py; never a source fallback.
 SECRET_KEY = DJANGO_SECRET_KEY if _ISOLATED_TEST else (os.environ.get("DJANGO_SECRET_KEY") or locals().get("DJANGO_SECRET_KEY"))
 if not SECRET_KEY:
-    raise ValueError("DJANGO_SECRET_KEY must be configured in the environment or local conf/env.py")
+    raise ImproperlyConfigured("DJANGO_SECRET_KEY must be configured in the environment or local conf/env.py")
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = locals().get("DEBUG", True)
-ALLOWED_HOSTS = locals().get("ALLOWED_HOSTS", ["*"])
+def _security_value(name, default=None, environment=None):
+    # Test selection precedes all deployment configuration, including env overrides.
+    if not _ISOLATED_TEST and environment and environment in os.environ:
+        return os.environ[environment]
+    return globals().get(name, default)
+
+
+def _security_bool(name, value):
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        value = value.strip().lower()
+        if value in ('1', 'true', 'yes', 'on'):
+            return True
+        if value in ('0', 'false', 'no', 'off'):
+            return False
+    raise ImproperlyConfigured(name + ' must be an explicit boolean')
+
+
+def _security_list(name, value):
+    if isinstance(value, str):
+        value = value.split(',')
+    if not isinstance(value, (list, tuple)) or any(not isinstance(item, str) for item in value):
+        raise ImproperlyConfigured(name + ' must be a list of strings')
+    return [item.strip() for item in value if item.strip()]
+
+
+DEBUG = _security_bool('DJANGO_DEBUG', _security_value('DEBUG', False, 'DJANGO_DEBUG'))
+ALLOWED_HOSTS = _security_list('ALLOWED_HOSTS', _security_value(
+    'ALLOWED_HOSTS', ['localhost', '127.0.0.1'] if DEBUG else [], 'DJANGO_ALLOWED_HOSTS'))
+if not DEBUG and (not ALLOWED_HOSTS or '*' in ALLOWED_HOSTS):
+    raise ImproperlyConfigured('Production ALLOWED_HOSTS must be nonempty and exclude wildcard')
+
+JWT_SIGNING_KEY = _security_value('JWT_SIGNING_KEY', None, 'JWT_SIGNING_KEY')
+if DEBUG and not JWT_SIGNING_KEY:
+    # DEVELOPMENT ONLY: production must always supply a separate signing key.
+    JWT_SIGNING_KEY = SECRET_KEY
+if not DEBUG and (not isinstance(JWT_SIGNING_KEY, str) or len(JWT_SIGNING_KEY.strip()) < 32
+                  or JWT_SIGNING_KEY == SECRET_KEY):
+    raise ImproperlyConfigured('Production JWT_SIGNING_KEY must be independent and at least 32 characters')
 
 # 列权限需要排除的App应用
 COLUMN_EXCLUDE_APPS = ['channels', 'captcha'] + locals().get("COLUMN_EXCLUDE_APPS", [])
@@ -193,10 +234,32 @@ STATICFILES_FINDERS = (
 # ******************* 跨域的配置 ******************* #
 # ================================================= #
 
-# 全部允许配置
-CORS_ORIGIN_ALLOW_ALL = True
-# 允许cookie
-CORS_ALLOW_CREDENTIALS = True  # 指明在跨域访问中，后端是否支持对cookie的操作
+# django-cors-headers 4.x uses the modern names; reject unsafe legacy aliases too.
+# Preserve the old local cross-port workflow only after explicit DEBUG=True.
+_cors_legacy_all = _security_bool('CORS_ORIGIN_ALLOW_ALL', _security_value('CORS_ORIGIN_ALLOW_ALL', DEBUG))
+CORS_ALLOW_ALL_ORIGINS = _security_bool('CORS_ALLOW_ALL_ORIGINS', _security_value(
+    'CORS_ALLOW_ALL_ORIGINS', _cors_legacy_all, 'DJANGO_CORS_ALLOW_ALL_ORIGINS'))
+if not DEBUG and (CORS_ALLOW_ALL_ORIGINS or _cors_legacy_all):
+    raise ImproperlyConfigured('Production CORS allow-all is forbidden')
+CORS_ORIGIN_ALLOW_ALL = CORS_ALLOW_ALL_ORIGINS
+CORS_ALLOWED_ORIGINS = _security_list('CORS_ALLOWED_ORIGINS', _security_value(
+    'CORS_ALLOWED_ORIGINS', _security_value('CORS_ORIGIN_WHITELIST', []), 'DJANGO_CORS_ALLOWED_ORIGINS'))
+CORS_ALLOW_CREDENTIALS = _security_bool('CORS_ALLOW_CREDENTIALS', _security_value(
+    'CORS_ALLOW_CREDENTIALS', DEBUG, 'DJANGO_CORS_ALLOW_CREDENTIALS'))
+CSRF_TRUSTED_ORIGINS = _security_list('CSRF_TRUSTED_ORIGINS', _security_value(
+    'CSRF_TRUSTED_ORIGINS', [], 'DJANGO_CSRF_TRUSTED_ORIGINS'))
+if not DEBUG:
+    from urllib.parse import urlsplit
+    for _origin in CORS_ALLOWED_ORIGINS + CSRF_TRUSTED_ORIGINS:
+        _parsed_origin = urlsplit(_origin)
+        if ('*' in _origin or _parsed_origin.scheme not in ('http', 'https')
+                or not _parsed_origin.netloc or _parsed_origin.path or _parsed_origin.query
+                or _parsed_origin.fragment or _parsed_origin.username):
+            raise ImproperlyConfigured('Production CORS/CSRF requires exact HTTP(S) origins')
+    if _security_value('CORS_ALLOWED_ORIGIN_REGEXES', []) or _security_value('CORS_ORIGIN_REGEX_WHITELIST', []):
+        raise ImproperlyConfigured('Production CORS requires exact origins, not regexes')
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
 
 # ===================================================== #
 # ********************* channels配置 ******************* #
@@ -337,6 +400,7 @@ AUTHENTICATION_BACKENDS = ["coreadmin.utils.backends.CustomBackend"]
 # ****************** simplejwt配置 ***************** #
 # ================================================= #
 SIMPLE_JWT = {
+    "SIGNING_KEY": JWT_SIGNING_KEY,
     # token有效时长
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=1440),
     # token刷新后的有效时间

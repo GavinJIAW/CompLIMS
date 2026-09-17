@@ -9,6 +9,7 @@ from coreadmin.system.models import Dictionary
 from coreadmin.utils.json_response import SuccessResponse
 from coreadmin.utils.serializers import CustomModelSerializer
 from coreadmin.utils.viewset import CustomModelViewSet
+from coreadmin.utils.permission import ActiveAuthenticatedPermission
 
 
 class DictionarySerializer(CustomModelSerializer):
@@ -83,8 +84,7 @@ class InitDictionaryViewSet(APIView):
     """
     获取初始化配置
     """
-    authentication_classes = []
-    permission_classes = []
+    permission_classes = [ActiveAuthenticatedPermission]
     queryset = Dictionary.objects.all()
 
     def get(self, request):

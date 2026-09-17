@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny
+from coreadmin.utils.permission import ActiveAuthenticatedPermission
 
 from coreadmin.utils.json_response import DetailResponse
 
@@ -140,9 +140,8 @@ class FastCrudMixin:
             for key, value in self.crud_update_key_value.items():
                 columns = self.__update_nested_dict(columns,key,value)
         return columns
-    @action(methods=['get'], detail=False,permission_classes=[AllowAny])
+    @action(methods=['get'], detail=False,permission_classes=[ActiveAuthenticatedPermission])
     def init_crud(self, request):
-        self.permission_classes = [AllowAny]
         columns = self.__handle_crud()
         expose = "({expose,dict})=>{"
         ret = "return {"
