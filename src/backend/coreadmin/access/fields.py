@@ -40,7 +40,7 @@ WRITE = {key: frozenset(fields.split()) for key, fields in {
     'dept': 'name key sort owner phone email status parent description',
     'user': 'username name email mobile avatar gender user_type is_active',
     'dictionary': 'label value type color is_value status sort remark parent description',
-    'area': 'name code enable pcode description level pinyin initials',
+    'area': 'name code enable pcode description',
     'api_white_list': 'url method enable_datasource description',
     'system_config': 'title key value sort status data_options form_item_type rule placeholder setting parent description',
     'message_center': 'title content target_type target_user target_dept target_role description',
@@ -70,6 +70,7 @@ SELF_READ = {
 # Relations have an explicit target resource/action. A parent's field grant
 # never authorizes a child's fields or objects.
 RELATIONS = {
+    'area': {'pcode_info': ('area', 'pcode')},
     'role': {'users': ('user', 'users_set')},
     'user': {'role_info': ('role', 'role'), 'role': ('role', 'role'), 'dept': ('dept', 'dept')},
     'message_center': {'role_info': ('role', 'target_role'), 'user_info': ('user', 'target_user'),
@@ -78,9 +79,15 @@ RELATIONS = {
     'system_config': {'children': ('system_config', 'children')},
     'menu': {'menuPermission': ('menu_button', 'menuPermission')},
 }
+# Area's parent summary belongs to the current Area action. Its FK uses code,
+# not the primary key; keep the existing name/code response shape.
+CURRENT_ACTION_RELATIONS = frozenset({('area', 'pcode_info')})
+RELATION_IDENTIFIERS = {('area', 'pcode_info'): 'code'}
 # Only explicitly named scalar relationship lookups may be queried. No arbitrary
 # '__' traversal is admitted by django-filter/RESTQL on behalf of a caller.
 QUERY_RELATIONS = {'user': {'dept__name': 'dept_name', 'role__name': 'role_info'}}
+# Exact scalar lookup registrations, not permission for arbitrary traversal.
+QUERY_LOOKUPS = {'system_config': {'parent__isnull': ('parent', frozenset({'true', 'false'}))}}
 QUERY_CONTROLS = frozenset({'page', 'limit', 'page_size', 'format', 'search', 'ordering', 'query'})
 BUSINESS_QUERIES = {
     'user.list': {'show_all': None},
@@ -163,9 +170,15 @@ class FieldPolicy:
         readable = self.query_fields()
         controls = dict(BUSINESS_QUERIES.get(self.context.action.code, {}))
         aliases = QUERY_RELATIONS.get(self.resource, {})
+        lookups = QUERY_LOOKUPS.get(self.resource, {})
         rejected = set()
         for key in request.query_params:
             if key in QUERY_CONTROLS:
+                continue
+            if key in lookups:
+                field, values = lookups[key]
+                if field not in readable or any(value.lower() not in values for value in request.query_params.getlist(key)):
+                    rejected.add(key)
                 continue
             if key in controls:
                 field = controls[key]
@@ -226,22 +239,26 @@ def project_relations(policy, instance, data, depth=0):
         return {}
     from coreadmin.system import models
     model_names = {'user': 'Users', 'role': 'Role', 'dept': 'Dept',
-                   'system_config': 'SystemConfig', 'menu_button': 'MenuButton'}
+                   'system_config': 'SystemConfig', 'menu_button': 'MenuButton', 'area': 'Area'}
     for field, (resource, _) in RELATIONS.get(policy.resource, {}).items():
         if field not in data or data[field] is None:
             continue
-        child_context = AccessContext(policy.context.user, REGISTRY[resource, 'retrieve', 'GET'])
+        binding = (policy.resource, field)
+        child_context = (policy.context if binding in CURRENT_ACTION_RELATIONS else
+                         AccessContext(policy.context.user, REGISTRY[resource, 'retrieve', 'GET']))
         multiple = isinstance(data[field], (list, tuple, QuerySet))
         if not child_context.allowed():
             data[field] = [] if multiple else None
             continue
         values = list(data[field]) if multiple else [data[field]]
-        identifiers = [value.get('id') if isinstance(value, dict) else value for value in values]
+        identifier = RELATION_IDENTIFIERS.get(binding, 'id')
+        identifiers = [value.get(identifier) if isinstance(value, dict) else value for value in values]
         model = getattr(models, model_names[resource])
         queryset = model.objects.all()
         if resource == 'user':
             queryset = queryset.exclude(is_superuser=True)
-        objects = {obj.pk: obj for obj in child_context.scope(queryset).filter(pk__in=identifiers)}
+        objects = {getattr(obj, identifier): obj for obj in
+                   child_context.scope(queryset).filter(**{identifier + '__in': identifiers})}
         child_policy = FieldPolicy(child_context, model)
         result = []
         for value, pk in zip(values, identifiers):

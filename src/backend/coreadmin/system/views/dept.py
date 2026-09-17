@@ -182,8 +182,16 @@ class DeptViewSet(CustomModelViewSet):
             'sub_dept_map': [],
         }
         for child in authorized.filter(parent=dept_obj):
-            child_ids = authorized.filter(pk__in=descendants(child.pk)).values_list('pk', flat=True)
-            data['sub_dept_map'].append({'name': child.name, 'count': Users.objects.exclude(is_superuser=True).filter(dept_id__in=child_ids).count()})
+            child_fields = self.field_policy.allowed(child)
+            child_data = {}
+            if 'name' in child_fields:
+                child_data['name'] = child.name
+            # The subtree user count is field-governed, under the same
+            # dept_user permission as this endpoint's top-level count.
+            if 'dept_user' in child_fields:
+                child_ids = authorized.filter(pk__in=descendants(child.pk)).values_list('pk', flat=True)
+                child_data['count'] = Users.objects.exclude(is_superuser=True).filter(dept_id__in=child_ids).count()
+            data['sub_dept_map'].append(child_data)
         if not request.user.is_superuser:
             allowed = self.field_policy.allowed(dept_obj)
             aliases = {'dept_name': 'name'}

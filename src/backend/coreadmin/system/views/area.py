@@ -37,26 +37,39 @@ class AreaSerializer(CustomModelSerializer):
         read_only_fields = ["id"]
 
 
+class AreaParentField(serializers.PrimaryKeyRelatedField):
+    """Retain legacy PK input and parent-code output for Area writes."""
+
+    def use_pk_only_optimization(self):
+        return False
+
+    def to_representation(self, value):
+        return value.code
+
+
 class AreaCreateUpdateSerializer(CustomModelSerializer):
     """
     地区管理 创建/更新时的列化器
     """
 
-    def to_internal_value(self, data):
-        pinyin = ''.join([''.join(i) for i in pypinyin.pinyin(data["name"], style=pypinyin.NORMAL)])
-        data["level"] = 1
-        data["pinyin"] = pinyin
-        data["initials"] = pinyin[0].upper() if pinyin else "#"
-        pcode = data["pcode"] if 'pcode' in data else None
-        if pcode:
-            pcode = Area.objects.get(pk=pcode)
-            data["pcode"] = pcode.code
-            data["level"] = pcode.level + 1
-        return super().to_internal_value(data)
+    # The existing API accepts the parent's PK, while the model FK stores code.
+    pcode = AreaParentField(queryset=Area.objects.all(), required=False, allow_null=True)
+
+    def validate(self, attrs):
+        # FieldPolicy has already checked the original client keys. Derived
+        # values enter validated_data only here and are never client-writable.
+        attrs = super().validate(attrs)
+        name = attrs.get('name', getattr(self.instance, 'name', ''))
+        parent = attrs.get('pcode', getattr(self.instance, 'pcode', None))
+        pinyin = ''.join([''.join(i) for i in pypinyin.pinyin(name, style=pypinyin.NORMAL)])
+        attrs.update(level=parent.level + 1 if parent else 1,
+                     pinyin=pinyin, initials=pinyin[0].upper() if pinyin else '#')
+        return attrs
 
     class Meta:
         model = Area
         fields = '__all__'
+        read_only_fields = ['level', 'pinyin', 'initials']
 
 
 class AreaViewSet(CustomModelViewSet, FieldPermissionMixin):
@@ -72,6 +85,7 @@ class AreaViewSet(CustomModelViewSet, FieldPermissionMixin):
     serializer_class = AreaSerializer
     create_serializer_class = AreaCreateUpdateSerializer
     update_serializer_class = AreaCreateUpdateSerializer
+    partial_update_serializer_class = AreaCreateUpdateSerializer
     extra_filter_class = []
 
     def list(self, request, *args, **kwargs):
