@@ -171,7 +171,11 @@ class ImportSerializerMixin:
         for number, (obj, item) in enumerate(zip(objects, data), 1):
             # Structural identity comes only from the authorized row, even if
             # RESTQL omitted id from its presentation serializer.
-            sheet.append([number, obj.pk, *[self.workbook_cell(item.get(key)) for key, _, _ in columns]])
+            # Choice labels and raw model values are not interchangeable. Only
+            # an explicit display field opts a dict column into row prefill.
+            sheet.append([number, obj.pk, *[self.workbook_cell(item.get(
+                specification.get('display') if isinstance(specification, dict) else key))
+                for key, _, specification in columns]])
         validation_column = 0
         for business_column, (key, title, specification) in enumerate(columns, 3):
             choices = specification.get('choices', {}) if isinstance(specification, dict) else {}
@@ -248,7 +252,9 @@ class ExportSerializerMixin:
         sheet = workbook.active
         sheet.append(['序号', *[title for _, title, _ in columns]])
         for number, item in enumerate(data, 1):
-            sheet.append([number, *[self.workbook_cell(item.get(key)) for key, _, _ in columns]])
+            sheet.append([number, *[self.workbook_cell(item.get(
+                specification.get('display', key) if isinstance(specification, dict) else key))
+                for key, _, specification in columns]])
         return self.finish_workbook(workbook, queryset)
 
     def workbook_projection(self, request, serializer_class, configured_columns):
@@ -262,10 +268,14 @@ class ExportSerializerMixin:
         readable = self.field_policy.query_fields()
         columns = []
         for key, specification in configured_columns.items():
-            output = specification.get('display', key) if isinstance(specification, dict) else key
-            if output != 'id' and output in readable and output in serializer.child.fields:
+            display = specification.get('display') if isinstance(specification, dict) else None
+            # Authorize the business column independently of its presentation.
+            # Display cannot borrow permission from another business field or
+            # escape the serializer and READ ceilings.
+            if (key != 'id' and key in readable and key in serializer.child.fields
+                    and (not display or (display in readable and display in serializer.child.fields))):
                 title = specification.get('title', key) if isinstance(specification, dict) else specification
-                columns.append((output, title, specification))
+                columns.append((key, title, specification))
         return queryset, objects, serializer.data, columns
 
     def workbook_choice_values(self, output, choices):

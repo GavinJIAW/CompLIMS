@@ -8,7 +8,7 @@ from openpyxl import load_workbook
 from rest_framework.test import APIClient
 
 from coreadmin.foundation_tests.access_fixtures import grant
-from coreadmin.system.models import Dept, Users
+from coreadmin.system.models import Dept, Role, Users
 from coreadmin.system.views.user import UserViewSet
 
 
@@ -169,3 +169,54 @@ class WorkbookContractTests(TestCase):
                 self.assertEqual(getattr(self.client, method)('/api/system/dept/import_data/', {'url': 'never-open.xlsx'}).status_code, 405)
             importer.assert_not_called()
             reader.assert_not_called()
+
+    def test_static_choices_without_display_leave_existing_cells_blank(self):
+        self.allow('UpdateTemplate', ['username', 'gender', 'is_active'])
+        _, workbook = self.workbook('/api/system/user/update_template/')
+        rows = list(workbook.active.values)
+        self.assertEqual(rows[0], ('序号', '更新主键(勿改)', '登录账号', '用户性别', '帐号状态'))
+        self.assertEqual({row[2] for row in rows[1:]}, {self.own.username, self.second.username})
+        for row in rows[1:]:
+            self.assertEqual(row[3:], (None, None))
+        self.assertEqual(list(workbook['data'].values),
+            [('用户性别', '帐号状态'), ('未知', '启用'), ('男', '禁用'), ('女', None)])
+        validations = workbook.active.data_validations.dataValidation
+        self.assertEqual([(v.formula1, str(v.sqref)) for v in validations],
+            [("'data'!$A$2:$A$4", 'D2:D1048576'), ("'data'!$B$2:$B$3", 'E2:E1048576')])
+
+    def test_relation_choices_keep_names_but_do_not_prefill_ids(self):
+        dept = Dept.objects.create(name='Allowed department')
+        role = Role.objects.create(name='Allowed role', key='choice-role', creator=self.actor)
+        self.own.dept = dept
+        self.own.save(update_fields=['dept'])
+        self.own.role.add(role)
+        self.allow('UpdateTemplate', ['username', 'dept', 'role'])
+        grant(self.actor, 'dept:Retrieve', 'Dept', fields=['name'], scope=4, departments=[dept])
+        grant(self.actor, 'role:Retrieve', 'Role', fields=['name'], scope=0)
+        _, workbook = self.workbook('/api/system/user/update_template/')
+        rows = list(workbook.active.values)
+        self.assertEqual(rows[0], ('序号', '更新主键(勿改)', '登录账号', '部门', '角色'))
+        for row in rows[1:]:
+            self.assertEqual(row[3:], (None, None))
+        self.assertEqual(list(workbook['data'].values), [('部门', '角色'), (dept.name, role.name)])
+        self.assertEqual(len(workbook.active.data_validations.dataValidation), 2)
+
+    def test_explicit_display_prefills_authorized_serializer_value(self):
+        self.allow('UpdateTemplate', ['username', 'name'])
+        with patch.object(UserViewSet, 'import_field_dict', {
+                'username': {'title': 'Display name', 'display': 'name'}}):
+            _, workbook = self.workbook('/api/system/user/update_template/')
+        rows = list(workbook.active.values)
+        self.assertEqual(rows[0], ('序号', '更新主键(勿改)', 'Display name'))
+        self.assertEqual({row[1]: row[2] for row in rows[1:]}[self.own.pk], self.own.name)
+
+    def test_display_cannot_bypass_business_permission_or_read_ceiling(self):
+        self.allow('UpdateTemplate', ['username', 'password'])
+        for field, display in [('username', 'email'), ('username', 'password'), ('email', 'username')]:
+            with self.subTest(field=field, display=display), patch.object(UserViewSet, 'import_field_dict', {
+                    field: {'title': 'Forbidden display', 'display': display,
+                            'choices': {'data': {'HIDDEN_DISPLAY_CHOICE': 1}}}}):
+                _, workbook = self.workbook('/api/system/user/update_template/')
+                self.assertEqual(list(workbook.active.values)[0], ('序号', '更新主键(勿改)'))
+                self.assertNotIn(self.own.email, str(list(workbook.active.values)))
+                self.assertNotIn('HIDDEN_DISPLAY_CHOICE', str(list(workbook['data'].values)))
