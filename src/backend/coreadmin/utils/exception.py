@@ -2,7 +2,6 @@
 
 
 import logging
-import traceback
 
 from django.db.models import ProtectedError
 from django.http import Http404
@@ -25,8 +24,7 @@ class CustomAuthenticationFailed(NotAuthenticated):
 def CustomExceptionHandler(ex, context):
     """
     统一异常拦截处理
-    目的:(1)取消所有的500异常响应,统一响应为标准错误返回
-        (2)准确显示错误信息
+    保留安全异常 HTTP 状态；未知异常仅返回稳定通用错误。
     :param ex:
     :param context:
     :return:
@@ -61,6 +59,7 @@ def CustomExceptionHandler(ex, context):
     #     set_rollback()
     #     msg = "接口服务器异常,请联系管理员"
     elif isinstance(ex, Exception):
-        logger.exception(traceback.format_exc())
-        msg = str(ex)
+        set_rollback()
+        logger.exception('Unhandled API exception', exc_info=(type(ex), ex, ex.__traceback__))
+        return ErrorResponse(msg='接口服务器异常，请联系管理员', code=code, status=500)
     return ErrorResponse(msg=msg, code=code)

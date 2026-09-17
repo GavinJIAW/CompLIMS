@@ -2,9 +2,11 @@
 
 
 from coreadmin.system.models import LoginLog
-from coreadmin.utils.field_permission import FieldPermissionMixin
 from coreadmin.utils.serializers import CustomModelSerializer
 from coreadmin.utils.viewset import CustomModelViewSet
+from coreadmin.system.views.operation_log import LogReadOnlyMixin
+from coreadmin.utils.json_response import ErrorResponse
+from rest_framework.decorators import action
 
 
 class LoginLogSerializer(CustomModelSerializer):
@@ -18,7 +20,7 @@ class LoginLogSerializer(CustomModelSerializer):
         read_only_fields = ["id"]
 
 
-class LoginLogViewSet(CustomModelViewSet, FieldPermissionMixin):
+class LoginLogViewSet(LogReadOnlyMixin, CustomModelViewSet):
     """
     登录日志接口
     list:查询
@@ -30,3 +32,7 @@ class LoginLogViewSet(CustomModelViewSet, FieldPermissionMixin):
     queryset = LoginLog.objects.all()
     serializer_class = LoginLogSerializer
     # extra_filter_class = []
+
+    @action(methods=['get'], detail=False)
+    def field_permission(self, request):
+        return ErrorResponse(msg='Log field-permission lookup is disabled.', status=405)

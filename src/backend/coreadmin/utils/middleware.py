@@ -5,101 +5,130 @@ import json
 import logging
 
 from django.conf import settings
-from django.contrib.auth.models import AnonymousUser
+from django.db import transaction
 from django.http import HttpResponse, HttpResponseServerError
 from django.utils.deprecation import MiddlewareMixin
 
 from coreadmin.system.models import OperationLog
-from coreadmin.utils.request_util import get_request_user, get_request_ip, get_request_data, get_request_path, get_os, \
-    get_browser, get_verbose_name
+from coreadmin.utils.request_util import get_request_ip, get_request_path, get_os, get_browser, get_verbose_name
+from coreadmin.utils.log_sanitization import serialize_log_value, bounded_string, MAX_LOG_SERIALIZED_SIZE, TRUNCATED
+
+logger = logging.getLogger(__name__)
 
 
 class ApiLoggingMiddleware(MiddlewareMixin):
-    """
-    用于记录API访问日志中间件
-    """
+    """Best-effort final-response operational logging; never a business audit trail."""
 
     def __init__(self, get_response=None):
         super().__init__(get_response)
-        self.enable = getattr(settings, 'API_LOG_ENABLE', None) or False
-        self.methods = getattr(settings, 'API_LOG_METHODS', None) or set()
-        self.operation_log_id = None
+        self.enable = bool(getattr(settings, 'API_LOG_ENABLE', False))
+        self.methods = getattr(settings, 'API_LOG_METHODS', ())
 
-    @classmethod
-    def __handle_request(cls, request):
-        request.request_ip = get_request_ip(request)
-        request.request_data = get_request_data(request)
-        request.request_path = get_request_path(request)
-
-    def __handle_response(self, request, response):
-
-        # 判断有无log_id属性，使用All记录时，会出现此情况
-        if request.request_data.get('log_id', None) is None:
-            return
-        
-        # 移除log_id，不记录此ID
-        log_id = request.request_data.pop('log_id')
-
-        # request_data,request_ip由PermissionInterfaceMiddleware中间件中添加的属性
-        body = getattr(request, 'request_data', {})
-        # 请求含有password则用*替换掉(暂时先用于所有接口的password请求参数)
-        if isinstance(body, dict) and body.get('password', ''):
-            body['password'] = '*' * len(body['password'])
-        if not hasattr(response, 'data') or not isinstance(response.data, dict):
-            response.data = {}
-        try:
-            if not response.data and response.content:
-                content = json.loads(response.content.decode())
-                response.data = content if isinstance(content, dict) else {}
-        except Exception:
-            return
-        user = get_request_user(request)
-        info = {
-            'request_ip': getattr(request, 'request_ip', 'unknown'),
-            'creator': user if not isinstance(user, AnonymousUser) else None,
-            'dept_belong_id': getattr(request.user, 'dept_id', None),
-            'request_method': request.method,
-            'request_path': request.request_path,
-            'request_body': body,
-            'response_code': response.data.get('code'),
-            'request_os': get_os(request),
-            'request_browser': get_browser(request),
-            'request_msg': request.session.get('request_msg'),
-            'status': True if response.data.get('code') in [2000, ] else False,
-            'json_result': {"code": response.data.get('code'), "msg": response.data.get('msg')},
-        }
-        operation_log, creat = OperationLog.objects.update_or_create(defaults=info, id=log_id)
-        if not operation_log.request_modular and settings.API_MODEL_MAP.get(request.request_path, None):
-            operation_log.request_modular = settings.API_MODEL_MAP[request.request_path]
-            operation_log.save()
-
-    def process_view(self, request, view_func, view_args, view_kwargs):
-        if hasattr(view_func, 'cls') and hasattr(view_func.cls, 'queryset'):
-            if self.enable:
-                if self.methods == 'ALL' or request.method in self.methods:
-                    log = OperationLog(request_modular=get_verbose_name(view_func.cls.queryset))
-                    log.save()
-                    # self.operation_log_id = log.id
-                    request.request_data['log_id'] = log.id
-
-        return
+    def eligible(self, request):
+        return self.enable and (self.methods == 'ALL' or request.method in self.methods
+                               or (request.method == 'PATCH' and 'PUT' in self.methods))
 
     def process_request(self, request):
-        self.__handle_request(request)
+        if not self.eligible(request):
+            return
+        try:
+            metadata = {'ip': get_request_ip(request), 'path': get_request_path(request)}
+            # Cache only bounded JSON bytes so DRF can still read the original stream.
+            # Never force multipart parsing, file reads, or request.POST before permission.
+            length = int(request.META.get('CONTENT_LENGTH') or 0)
+            if request.content_type == 'application/json':
+                if 0 < length <= MAX_LOG_SERIALIZED_SIZE:
+                    metadata['body'] = request.body
+                elif length > MAX_LOG_SERIALIZED_SIZE:
+                    metadata['body_omitted'] = True
+            request._operation_log_metadata = metadata
+        except Exception:
+            logger.exception('Operational log metadata collection failed')
+
+    def process_view(self, request, view_func, view_args, view_kwargs):
+        if not self.eligible(request):
+            return
+        try:
+            metadata = getattr(request, '_operation_log_metadata', {})
+            view = getattr(view_func, 'cls', None)
+            queryset = getattr(view, 'queryset', None)
+            metadata['module'] = get_verbose_name(queryset) if queryset is not None else ''
+            request._operation_log_metadata = metadata
+        except Exception:
+            logger.exception('Operational log route collection failed')
+
+    def request_payload(self, request, metadata):
+        # Build a separate dictionary; never inject/pop a client log_id.
+        query = {key: values if len(values) > 1 else values[0] for key, values in request.GET.lists()}
+        supplied = getattr(request, 'request_data', None)
+        if supplied is not None:
+            return {'query': query, 'body': supplied}
+        if metadata.get('body_omitted'):
+            return {'query': query, 'body': TRUNCATED}
+        body = metadata.get('body')
+        if body:
+            try:
+                body = json.loads(body)
+            except (ValueError, UnicodeError, RecursionError):
+                body = '[UNPARSEABLE BODY]'
+        else:
+            # Only inspect forms that the business endpoint already parsed.
+            post = getattr(request, '_post', None)
+            body = dict(post.lists()) if post is not None else {}
+        return {'query': query, 'body': body}
+
+    def response_summary(self, response):
+        data = getattr(response, 'data', None)
+        if not isinstance(data, dict):
+            data = {}
+            if not getattr(response, 'streaming', False) and 'json' in response.get('Content-Type', ''):
+                content = response.content
+                if len(content) <= MAX_LOG_SERIALIZED_SIZE:
+                    try:
+                        decoded = json.loads(content)
+                        if isinstance(decoded, dict):
+                            data = decoded
+                    except (ValueError, UnicodeError, RecursionError):
+                        pass
+        return data
 
     def process_response(self, request, response):
-        """
-        主要请求处理完之后记录
-        :param request:
-        :param response:
-        :return:
-        """
-        if self.enable:
-            if self.methods == 'ALL' or request.method in self.methods:
-                self.__handle_response(request, response)
+        if not self.eligible(request) or getattr(request, '_operation_log_finished', False):
+            return response
+        # No retry: even a persistence error must not duplicate a possibly saved row.
+        request._operation_log_finished = True
+        try:
+            metadata = getattr(request, '_operation_log_metadata', {})
+            data = self.response_summary(response)
+            user = getattr(request, 'user', None)
+            creator = user if getattr(user, 'is_authenticated', False) else None
+            path = metadata.get('path', request.path)
+            module = metadata.get('module') or getattr(settings, 'API_MODEL_MAP', {}).get(path, '')
+            session = getattr(request, 'session', {})
+            code = data.get('code')
+            info = {
+                'request_ip': bounded_string(str(metadata.get('ip', 'unknown')), 32),
+                'creator': creator,
+                'dept_belong_id': getattr(creator, 'dept_id', None),
+                'request_method': bounded_string(request.method, 8),
+                'request_path': bounded_string(path, 400),
+                'request_modular': bounded_string(str(module), 64),
+                'request_body': serialize_log_value(self.request_payload(request, metadata)),
+                'response_code': bounded_string(str(code), 32) if isinstance(code, (str, int)) else None,
+                'request_os': bounded_string(get_os(request), 64),
+                'request_browser': bounded_string(get_browser(request), 64),
+                'request_msg': serialize_log_value(session.get('request_msg')),
+                'status': 200 <= response.status_code < 400 and ('code' not in data or code == 2000),
+                'json_result': serialize_log_value({'code': code, 'msg': data.get('msg'), 'http_status': response.status_code}),
+            }
+            # Savepoint isolates a log DB error from any enclosing transaction.
+            with transaction.atomic():
+                OperationLog.objects.create(**info)
+        except Exception:
+            logger.exception('Operational log persistence failed')
         return response
 
-logger = logging.getLogger("healthz")
+health_logger = logging.getLogger("healthz")
 class HealthCheckMiddleware(object):
     """
     存活检查中间件
@@ -135,7 +164,7 @@ class HealthCheckMiddleware(object):
                 if row is None:
                     return HttpResponseServerError("db: invalid response")
         except Exception as e:
-            logger.exception(e)
+            health_logger.exception(e)
             return HttpResponseServerError("db: cannot connect to database.")
 
         # Call get_stats() to connect to each memcached instance and get it's stats.
@@ -149,7 +178,7 @@ class HealthCheckMiddleware(object):
                     if len(stats) != len(cache._servers):
                         return HttpResponseServerError("cache: cannot connect to cache.")
         except Exception as e:
-            logger.exception(e)
+            health_logger.exception(e)
             return HttpResponseServerError("cache: cannot connect to cache.")
 
         return HttpResponse("OK")

@@ -318,7 +318,7 @@ export default function ({ crudExpose, context }: CreateCrudOptionsProps): Creat
 						width: 300,
 						show: false,
 					},
-					type: ['editor-wang5', 'colspan'],
+					type: ['textarea', 'colspan'],
 					form: {
 						rules: [
 							// 表单校验规则
@@ -328,24 +328,10 @@ export default function ({ crudExpose, context }: CreateCrudOptionsProps): Creat
 							},
 						],
 						component: {
-							disabled: false,
-							id: '1', // 当同一个页面有多个editor时，需要配置不同的id
-							editorConfig: {
-								// 是否只读
-								readOnly: compute((context) => {
-									const { mode } = context;
-									if (mode === 'add') {
-										return false;
-									}
-									return true;
-								}),
-							},
-							uploader: {
-								type: 'form',
-								buildUrl(res: any) {
-									return res.url;
-								},
-							},
+							name: 'el-input',
+							type: 'textarea',
+							rows: 6,
+							readonly: compute(({ mode }) => mode !== 'add'),
 						},
 					},
 				},

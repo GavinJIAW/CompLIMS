@@ -128,7 +128,7 @@ def get_browser(request, ):
     :param kwargs:
     :return:
     """
-    ua_string = request.META['HTTP_USER_AGENT']
+    ua_string = request.META.get('HTTP_USER_AGENT', '')
     user_agent = parse(ua_string)
     return user_agent.get_browser()
 
@@ -141,7 +141,7 @@ def get_os(request, ):
     :param kwargs:
     :return:
     """
-    ua_string = request.META['HTTP_USER_AGENT']
+    ua_string = request.META.get('HTTP_USER_AGENT', '')
     user_agent = parse(ua_string)
     return user_agent.get_os()
 
@@ -211,7 +211,7 @@ def save_login_log(request):
     analysis_data = get_ip_analysis(ip)
     analysis_data['username'] = request.user.username
     analysis_data['ip'] = ip
-    analysis_data['agent'] = str(parse(request.META['HTTP_USER_AGENT']))
+    analysis_data['agent'] = str(parse(request.META.get('HTTP_USER_AGENT', '')))
     analysis_data['browser'] = get_browser(request)
     analysis_data['os'] = get_os(request)
     analysis_data['creator_id'] = request.user.id

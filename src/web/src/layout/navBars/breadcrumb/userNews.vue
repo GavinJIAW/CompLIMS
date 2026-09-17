@@ -10,7 +10,7 @@
 				<div class="content-box-item" v-for="(v, k) in state.newsList" :key="k">
 					<div>{{ v.title }}</div>
 					<div class="content-box-msg">
-						<div v-html="v.content"></div>
+						<div>{{ v.content }}</div>
 					</div>
 					<div class="content-box-time">{{ v.create_datetime }}</div>
 				</div>
@@ -86,6 +86,8 @@ onMounted(() => {
 				padding-bottom: 12px;
 			}
 			.content-box-msg {
+				white-space: pre-wrap;
+				overflow-wrap: anywhere;
 				color: var(--el-text-color-secondary);
 				margin-top: 5px;
 				margin-bottom: 5px;
