@@ -11,7 +11,8 @@ from application import dispatch
 from coreadmin.system.models import FileList
 from coreadmin.utils.json_response import DetailResponse, SuccessResponse
 from coreadmin.utils.serializers import CustomModelSerializer
-from coreadmin.utils.viewset import CustomModelViewSet
+from coreadmin.utils.viewset import CustomModelViewSet, ReadOnlyAPIMixin
+from coreadmin.utils.permission import SuperuserPermission
 
 
 class FileSerializer(CustomModelSerializer):
@@ -94,7 +95,7 @@ class FileFilter(django_filters.FilterSet):
         fields = ['name', 'mime_type', 'upload_method', 'file_type']
 
 
-class FileViewSet(CustomModelViewSet):
+class FileViewSet(ReadOnlyAPIMixin, CustomModelViewSet):
     """
     文件管理接口
     list:查询
@@ -106,7 +107,7 @@ class FileViewSet(CustomModelViewSet):
     queryset = FileList.objects.all()
     serializer_class = FileSerializer
     filter_class = FileFilter
-    permission_classes = []
+    permission_classes = [SuperuserPermission]
 
     @action(methods=['GET'], detail=False)
     def get_all(self, request):

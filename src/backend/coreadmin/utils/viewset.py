@@ -21,6 +21,15 @@ from coreadmin.system.models import FieldPermission, MenuField
 from django_restql.mixins import QueryArgumentsMixin
 
 
+class ReadOnlyAPIMixin:
+    """B1 temporary API freeze; internal ORM writes remain available."""
+    http_method_names = ['get', 'head', 'options']
+
+    def http_method_not_allowed(self, request, *args, **kwargs):
+        # Return an explicit status; the legacy generic exception handler folds 405.
+        return ErrorResponse(msg='This legacy API is read-only.', status=405)
+
+
 class PatchAsUpdateFilterMixin:
     """Opt-in compatibility for B1B: apply existing PUT filters to PATCH.
 
@@ -50,6 +59,7 @@ class CustomModelViewSet(ModelViewSet, ImportSerializerMixin, ExportSerializerMi
     (5)export_field_label = [] 导出时的字段
     """
     values_queryset = None
+    bulk_delete_enabled = False
     ordering_fields = '__all__'
     create_serializer_class = None
     update_serializer_class = None
@@ -165,6 +175,8 @@ class CustomModelViewSet(ModelViewSet, ImportSerializerMixin, ExportSerializerMi
     ), operation_summary='批量删除')
     @action(methods=['delete'], detail=False)
     def multiple_delete(self, request, *args, **kwargs):
+        if not self.bulk_delete_enabled:
+            return ErrorResponse(msg='Bulk deletion is temporarily disabled.', status=405)
         request_data = request.data
         keys = request_data.get('keys', None)
         if keys:

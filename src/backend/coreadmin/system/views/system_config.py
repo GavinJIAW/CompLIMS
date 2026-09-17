@@ -2,7 +2,6 @@
 
 
 import django_filters
-from django.db.models import Q
 from django_filters.rest_framework import BooleanFilter
 from rest_framework import serializers
 from rest_framework.views import APIView
@@ -13,7 +12,8 @@ from coreadmin.utils.json_response import DetailResponse, SuccessResponse, Error
 from coreadmin.utils.models import get_all_models_objects
 from coreadmin.utils.serializers import CustomModelSerializer
 from coreadmin.utils.validator import CustomValidationError
-from coreadmin.utils.viewset import CustomModelViewSet
+from coreadmin.utils.permission import SuperuserPermission
+from coreadmin.utils.viewset import CustomModelViewSet, PatchAsUpdateFilterMixin
 
 
 class SystemConfigCreateSerializer(CustomModelSerializer):
@@ -108,7 +108,7 @@ class SystemConfigFilter(django_filters.rest_framework.FilterSet):
         fields = ['id', 'parent', 'status', 'parent__isnull']
 
 
-class SystemConfigViewSet(CustomModelViewSet):
+class SystemConfigViewSet(PatchAsUpdateFilterMixin, CustomModelViewSet):
     """
     系统配置接口
     """
@@ -118,6 +118,14 @@ class SystemConfigViewSet(CustomModelViewSet):
     retrieve_serializer_class = SystemConfigChinldernSerializer
     # filter_fields = ['id','parent']
     filter_class = SystemConfigFilter
+
+    def get_permissions(self):
+        if self.action == 'get_table_data':
+            # Disabled for every actor, including anonymous callers.
+            return []
+        if self.request.method in ('POST', 'PUT', 'PATCH', 'DELETE') or self.action == 'get_association_table':
+            return [SuperuserPermission()]
+        return super().get_permissions()
 
     def save_content(self, request):
         body = request.data
@@ -141,33 +149,7 @@ class SystemConfigViewSet(CustomModelViewSet):
         return DetailResponse(msg="获取成功", data=res)
 
     def get_table_data(self, request, pk):
-        """
-        动态获取关联表的数据
-        """
-        instance = SystemConfig.objects.filter(id=pk).first()
-        if instance is None:
-            return ErrorResponse(msg="查询出错了~")
-        setting = instance.setting
-        if setting is None:
-            return ErrorResponse(msg="查询出错了~")
-        table = setting.get('table')  # 获取model名
-        model = get_all_models_objects(table).get("object", {})
-        # 自己判断一下不存在
-        queryset = model.objects.values()
-        body = request.query_params
-        search_value = body.get('search', None)
-        if search_value:
-            search_fields = setting.get('searchField')
-            filters = Q()
-            filters.connector = 'OR'
-            for item in search_fields:
-                filed = '{0}__icontains'.format(item.get('field'))
-                filters.children.append((filed, search_value))
-            queryset = model.objects.filter(filters).values()
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            return self.get_paginated_response(queryset)
-        return SuccessResponse(msg="获取成功", data=queryset, total=len(queryset))
+        return ErrorResponse(msg='Dynamic model lookup is temporarily disabled.', status=405)
 
     def get_relation_info(self, request):
         """
@@ -201,19 +183,20 @@ class InitSettingsViewSet(APIView):
     authentication_classes = []
     permission_classes = []
 
+    # Exact UI consumers: login/index.vue, layout/logo/index.vue,
+    # login/component/account.vue and utils/other.ts. Enabled != public.
+    PUBLIC_KEYS = frozenset({
+        'login.site_title', 'login.site_name', 'login.site_logo',
+        'login.login_background', 'base.web_title', 'base.web_favicon',
+        'base.captcha_state',
+    })
+
     def filter_system_config_values(self, data: dict):
-        """
-        过滤系统初始化配置
-        :param data:
-        :return:
-        """
-        if not self.request.query_params.get('key', ''):
-            return data
-        new_data = {}
-        for key in self.request.query_params.get('key', '').split('|'):
-            if key:
-                new_data.update(**dict(filter(lambda x: x[0].startswith(key), data.items())))
-        return new_data
+        allowed = self.PUBLIC_KEYS
+        requested = self.request.query_params.get('key', '')
+        if requested:
+            allowed = allowed.intersection(requested.split('|'))
+        return {key: value for key, value in data.items() if key in allowed}
 
     def get(self, request):
         data = dispatch.get_system_config()

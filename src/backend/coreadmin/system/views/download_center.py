@@ -3,7 +3,8 @@ from django.conf import settings
 from django_filters.rest_framework import FilterSet, CharFilter
 
 from coreadmin.utils.serializers import CustomModelSerializer
-from coreadmin.utils.viewset import CustomModelViewSet
+from coreadmin.utils.viewset import CustomModelViewSet, ReadOnlyAPIMixin
+from coreadmin.utils.permission import ActiveAuthenticatedPermission
 from coreadmin.system.models import DownloadCenter
 
 
@@ -36,11 +37,11 @@ class DownloadCenterFilterSet(FilterSet):
         fields = ['task_status', 'task_name', 'file_name']
 
 
-class DownloadCenterViewSet(CustomModelViewSet):
+class DownloadCenterViewSet(ReadOnlyAPIMixin, CustomModelViewSet):
     queryset = DownloadCenter.objects.all()
     serializer_class = DownloadCenterSerializer
     filter_class = DownloadCenterFilterSet
-    permission_classes = []
+    permission_classes = [ActiveAuthenticatedPermission]
     extra_filter_class = []
 
     def get_queryset(self):

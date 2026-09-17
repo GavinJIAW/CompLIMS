@@ -13,9 +13,6 @@ import { request } from '/@/utils/service';
 import { dictionary } from '/@/utils/dictionary';
 import { successMessage } from '/@/utils/message';
 import { auth } from '/@/utils/authFunction';
-import { SystemConfigStore } from "/@/stores/systemConfig";
-import { storeToRefs } from "pinia";
-import { computed } from "vue";
 import { Md5 } from 'ts-md5';
 import { commonCrudConfig } from "/@/utils/commonCrud";
 import { ElMessageBox } from 'element-plus';
@@ -44,14 +41,6 @@ export const createCrudOptions = function ({ crudExpose }: CreateCrudOptionsProp
         successMessage("重置密码成功")
     }
 
-    const systemConfigStore = SystemConfigStore()
-    const { systemConfig } = storeToRefs(systemConfigStore)
-    const getSystemConfig = computed(() => {
-        // console.log(systemConfig.value)
-        return systemConfig.value
-    })
-
-
     return {
         crudOptions: {
             table: {
@@ -64,13 +53,6 @@ export const createCrudOptions = function ({ crudExpose }: CreateCrudOptionsProp
                 addRequest,
                 editRequest,
                 delRequest,
-            },
-            form: {
-                initialForm: {
-                    password: computed(() => {
-                        return systemConfig.value['base.default_password']
-                    }),
-                }
             },
             actionbar: {
                 buttons: {

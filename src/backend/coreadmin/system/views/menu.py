@@ -9,6 +9,7 @@ from coreadmin.system.models import Menu, RoleMenuPermission
 from coreadmin.system.views.menu_button import MenuButtonSerializer
 from coreadmin.utils.json_response import SuccessResponse, ErrorResponse
 from coreadmin.utils.serializers import CustomModelSerializer
+from coreadmin.utils.permission import ActiveAuthenticatedPermission, SuperuserPermission
 from coreadmin.utils.viewset import CustomModelViewSet
 
 
@@ -125,7 +126,7 @@ class MenuViewSet(CustomModelViewSet):
         data = serializer.data
         return SuccessResponse(data=data, total=len(data), msg="获取成功")
 
-    @action(methods=['GET'], detail=False, permission_classes=[])
+    @action(methods=['GET'], detail=False, permission_classes=[ActiveAuthenticatedPermission])
     def get_all_menu(self, request):
         """用于菜单管理获取所有的菜单"""
         user = request.user
@@ -138,7 +139,7 @@ class MenuViewSet(CustomModelViewSet):
         data = serializer.data
         return SuccessResponse(data=data, total=len(data), msg="获取成功")
 
-    @action(methods=['POST'], detail=False, permission_classes=[])
+    @action(methods=['POST'], detail=False, permission_classes=[SuperuserPermission])
     def move_up(self, request):
         """菜单上移"""
         menu_id = request.data.get('menu_id')
@@ -153,7 +154,7 @@ class MenuViewSet(CustomModelViewSet):
             menu.save()
         return SuccessResponse(data=[], msg="上移成功")
 
-    @action(methods=['POST'], detail=False, permission_classes=[])
+    @action(methods=['POST'], detail=False, permission_classes=[SuperuserPermission])
     def move_down(self, request):
         """菜单下移"""
         menu_id = request.data['menu_id']

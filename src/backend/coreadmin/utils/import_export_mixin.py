@@ -12,7 +12,7 @@ from rest_framework.decorators import action
 from rest_framework.request import Request
 
 from coreadmin.utils.import_export import import_to_data
-from coreadmin.utils.json_response import DetailResponse, SuccessResponse
+from coreadmin.utils.json_response import DetailResponse, SuccessResponse, ErrorResponse
 from coreadmin.utils.request_util import get_verbose_name
 from coreadmin.system.tasks import async_export_data
 from coreadmin.system.models import DownloadCenter
@@ -70,6 +70,9 @@ class ImportSerializerMixin:
         :param kwargs:
         :return:
         """
+        # DRF also maps HEAD to this action; only GET may build a template.
+        if request.method != 'GET':
+            return ErrorResponse(msg='Path-based import is temporarily disabled.', status=405)
         assert self.import_field_dict, "'%s' 请配置对应的导出模板字段。" % self.__class__.__name__
         # 导出模板
         if request.method == "GET":

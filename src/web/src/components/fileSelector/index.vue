@@ -129,13 +129,13 @@
             <slot name="actionbar-right" v-bind="{}">
               <el-button type="default" circle icon="refresh" @click="listRequest" />
               <template v-if="tabsActived > 3 ? isSuperTenent : true">
-                <el-upload ref="uploadRef" :action="getBaseURL() + 'api/system/file/'" :multiple="false" :drag="false"
+                <el-upload disabled ref="uploadRef" :action="getBaseURL() + 'api/system/file/'" :multiple="false" :drag="false"
                   :data="{ upload_method: 1 }" :show-file-list="true" :accept="AcceptList[tabsActived % 4]"
                   :on-success="() => { listRequest(); listRequestAll(); uploadRef.clearFiles(); }"
                   v-if="props.showUploadButton">
-                  <el-button type="primary" icon="plus">上传{{ TypeLabel[tabsActived % 4] }}</el-button>
+                  <el-button disabled type="primary" icon="plus">上传已暂停</el-button>
                 </el-upload>
-                <el-button type="info" icon="link" @click="netVisiable = true" v-if="props.showNetButton">
+                <el-button disabled title="旧文件上传已暂停" type="info" icon="link" @click="netVisiable = true" v-if="props.showNetButton">
                   网络{{ TypeLabel[tabsActived % 4] }}
                 </el-button>
               </template>
@@ -144,14 +144,14 @@
         </el-row>
         <div v-if="!listData.length">
           <slot name="empty">
-            <el-empty description="无内容，请上传" style="width: 100%; height: calc(50vh); margin-top: 24px; padding: 4px;" />
+            <el-empty description="无可用文件；旧文件上传已暂停" style="width: 100%; height: calc(50vh); margin-top: 24px; padding: 4px;" />
           </slot>
         </div>
         <div ref="listContainerRef" class="listContainer" v-else>
           <div v-for="item, index in listData" :key="index" @click="onItemClick($event)" :data-id="item[props.valueKey]"
             :style="{ width: (props.itemSize || 100) + 'px', cursor: props.selectable ? 'pointer' : 'normal' }">
             <slot name="item" :data="item">
-              <FileItem :fileData="item" :api="fileApi" :showClose="tabsActived < 4 || isSuperTenent"
+              <FileItem :fileData="item" :api="fileApi" :showClose="false"
                 @onDelFile="listRequest(); listRequestAll();" />
             </slot>
           </div>
@@ -379,7 +379,7 @@ const confirmNetUrl = () => {
   }, 10 * 1000);
   fetch(netPrefix.value + netUrl.value, { signal: controller.signal }).then(async (res: Response) => {
     clearTimeout(timeout);
-    if (!res.ok) errorNotification(`网络${TypeLabel[tabsActived.value % 4]}获取失败！`);
+    if (!res.ok) throw new Error(`File fetch failed: HTTP ${res.status}`);
     const _ = res.url.split('?')[0].split('/');
     let filename = _[_.length - 1];
     // let filetype = res.headers.get('content-type')?.split('/')[1] || '';
@@ -389,7 +389,12 @@ const confirmNetUrl = () => {
     form.append('file', file);
     form.append('upload_method', '1');
     fetch(getBaseURL() + 'api/system/file/', { method: 'post', body: form })
-      .then(() => successNotification('网络文件上传成功！'))
+      .then(async (response: Response) => {
+        if (!response.ok) throw new Error(`Upload failed: HTTP ${response.status}`);
+        const result = await response.json();
+        if (result.code !== 2000) throw new Error('Upload rejected');
+        successNotification('网络文件上传成功！');
+      })
       .then(() => { netVisiable.value = false; listRequest(); listRequestAll(); })
       .catch(() => errorNotification('网络文件上传失败！'))
       .then(() => netLoading.value = false);

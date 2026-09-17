@@ -39,6 +39,13 @@ class AnonymousUserPermission(BasePermission):
         return True
 
 
+class ActiveAuthenticatedPermission(BasePermission):
+    """Authenticated reads require an active account."""
+
+    def has_permission(self, request, view):
+        return bool(request.user.is_authenticated and request.user.is_active)
+
+
 class SuperuserPermission(BasePermission):
     """
     超级管理员权限类

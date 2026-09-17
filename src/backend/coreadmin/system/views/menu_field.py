@@ -27,6 +27,8 @@ class MenuFieldViewSet(AuthorizationMutationMixin, PatchAsUpdateFilterMixin, Cus
     """
     列权限视图集
     """
+    # B1 temporary opt-in, protected by AuthorizationMutationMixin.
+    bulk_delete_enabled = True
     queryset = MenuField.objects.order_by('-model')
     serializer_class = MenuFieldSerializer
 

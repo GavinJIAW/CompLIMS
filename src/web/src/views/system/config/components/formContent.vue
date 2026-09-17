@@ -92,7 +92,7 @@
           </el-switch>
           <!--     图片     -->
           <div v-else-if="['img', 'imgs'].indexOf(item.form_item_type_label) > -1" :key="index + 7">
-            <el-upload
+            <el-upload disabled
                 :action="uploadUrl"
                 :headers="uploadHeaders"
                 name="file"
@@ -118,7 +118,7 @@
                 list-type="picture-card"
             >
               <i class="el-icon-plus"></i>
-              <div slot="tip" class="el-upload__tip">请选取图片,并且只能上传jpg/png文件</div>
+              <div slot="tip" class="el-upload__tip">旧文件上传已暂停</div>
             </el-upload>
             <el-dialog :visible.sync="dialogImgVisible">
               <img width="100%" :src="dialogImageUrl" alt="" />
@@ -126,7 +126,7 @@
           </div>
           <!--     文件     -->
           <div v-else-if="['file'].indexOf(item.form_item_type_label) > -1" :key="index + 8">
-            <el-upload
+            <el-upload disabled
                 :action="uploadUrl"
                 :headers="uploadHeaders"
                 name="file"
@@ -150,7 +150,7 @@
                 list-type="picture-card"
             >
               <i class="el-icon-plus"></i>
-              <div slot="tip" class="el-upload__tip">请选取图片,并且只能上传jpg/png文件</div>
+              <div slot="tip" class="el-upload__tip">旧文件上传已暂停</div>
             </el-upload>
             <el-dialog :visible.sync="dialogImgVisible">
               <img width="100%" :src="dialogImageUrl" alt="" />
@@ -158,20 +158,7 @@
           </div>
           <!--    关联表      -->
           <div v-else-if="['foreignkey', 'manytomany'].indexOf(item.form_item_type_label) > -1" :key="index + 9">
-            <table-selector
-                v-model="formData[item.key]"
-                :el-props="{
-								pagination: true,
-								columns: item.setting.searchField,
-							}"
-                :dict="{
-								url: '/api/system/system_config/get_table_data/' + item.id + '/',
-								value: item.setting.primarykey,
-								label: item.setting.field,
-							}"
-                :pagination="true"
-                :multiple="item.form_item_type_label === 'manytomany'"
-            ></table-selector>
+            <el-text type="warning">动态关联查询已暂停，保留现有值。</el-text>
           </div>
           <!--   数组       -->
           <div v-else-if="item.form_item_type_label === 'array'" :key="index + 10">
@@ -208,7 +195,6 @@ import { successMessage, errorMessage } from '/@/utils/message';
 import { Session } from '/@/utils/storage';
 import {Edit,Finished,Delete} from "@element-plus/icons-vue";
 import crudTable from "./components/crudTable.vue"
-import tableSelector from '/@/components/tableSelector/index.vue';
 const props = defineProps(['options', 'editableTabsItem']);
 
 let formData: any = ref({});

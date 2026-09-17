@@ -1,7 +1,7 @@
 <template>
   <div style="display: inline-block">
     <el-button size="default" type="success" @click="handleImport()">
-      <slot>导入</slot>
+      <slot>导入模板（导入已暂停）</slot>
     </el-button>
     <el-dialog :title="props.upload.title" v-model="uploadShow" width="400px" append-to-body>
       <div v-loading="loading">
@@ -11,7 +11,7 @@
             accept=".xlsx, .xls"
             :headers="props.upload.headers"
             :action="props.upload.url"
-            :disabled="isUploading"
+            :disabled="true"
             :on-progress="handleFileUploadProgress"
             :on-success="handleFileSuccess"
             :auto-upload="false"
@@ -19,8 +19,8 @@
         >
           <i class="el-icon-upload"/>
           <div class="el-upload__text">
-            将文件拖到此处，或
-            <em>点击上传</em>
+            旧路径导入已暂停，
+            <em>仅可下载模板</em>
           </div>
           <template #tip>
           <div  class="el-upload__tip" style="color:red">提示：仅允许导入“xls”或“xlsx”格式文件！</div>
@@ -33,7 +33,7 @@
       </div>
       <template #footer>
       <div  class="dialog-footer">
-        <el-button type="primary" :disabled="loading" @click="submitFileForm">确 定</el-button>
+        <el-button type="primary" :disabled="true" @click="submitFileForm">确 定</el-button>
         <el-button :disabled="loading" @click="uploadShow = false">取 消</el-button>
       </div>
       </template>
@@ -136,7 +136,7 @@ const handleFileSuccess=function (response:any, file:any, fileList:any) {
 }
 // 提交上传文件
 const submitFileForm=function () {
-  uploadRef.value.submit()
+  ElMessageBox.alert('旧路径导入已暂停，请仅下载模板。', '导入已暂停')
 }
 
 </script>

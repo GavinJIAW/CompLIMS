@@ -30,6 +30,8 @@ class ApiWhiteListViewSet(AuthorizationMutationMixin, PatchAsUpdateFilterMixin, 
     retrieve:单例
     destroy:删除
     """
+    # B1 temporary opt-in, protected by AuthorizationMutationMixin.
+    bulk_delete_enabled = True
     queryset = ApiWhiteList.objects.all()
     serializer_class = ApiWhiteListSerializer
     # permission_classes = []

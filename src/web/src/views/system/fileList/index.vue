@@ -20,9 +20,9 @@
     </FileSelector>
     <fs-crud ref="crudRef" v-bind="crudBinding">
       <template #actionbar-left="scope">
-        <el-upload :action="getBaseURL() + 'api/system/file/'" :multiple="false"
+        <el-upload disabled :action="getBaseURL() + 'api/system/file/'" :multiple="false"
           :on-success="() => crudExpose.doRefresh()" :drag="false" :show-file-list="false">
-          <el-button type="primary" icon="plus">上传</el-button>
+          <el-button disabled type="primary" icon="plus">上传已暂停</el-button>
         </el-upload>
       </template>
       <template #cell_size="scope">

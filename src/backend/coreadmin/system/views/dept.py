@@ -7,6 +7,7 @@ from coreadmin.system.models import Dept, RoleMenuButtonPermission, Users
 from coreadmin.utils.filters import DataLevelPermissionsFilter
 from coreadmin.utils.json_response import DetailResponse, SuccessResponse, ErrorResponse
 from coreadmin.utils.serializers import CustomModelSerializer
+from coreadmin.utils.permission import ActiveAuthenticatedPermission, SuperuserPermission
 from coreadmin.utils.viewset import CustomModelViewSet
 
 
@@ -125,7 +126,7 @@ class DeptViewSet(CustomModelViewSet):
         data = queryset.filter(status=True).order_by('sort').values('name', 'id', 'parent')
         return DetailResponse(data=data, msg="获取成功")
 
-    @action(methods=['POST'], detail=False, permission_classes=[IsAuthenticated])
+    @action(methods=['POST'], detail=False, permission_classes=[SuperuserPermission])
     def move_up(self, request):
         """部门上移"""
         dept_id = request.data.get('dept_id')
@@ -140,7 +141,7 @@ class DeptViewSet(CustomModelViewSet):
             dept.save()
         return SuccessResponse(data=[], msg="上移成功")
 
-    @action(methods=['POST'], detail=False, permission_classes=[IsAuthenticated])
+    @action(methods=['POST'], detail=False, permission_classes=[SuperuserPermission])
     def move_down(self, request):
         """部门下移"""
         dept_id = request.data['dept_id']
@@ -155,7 +156,7 @@ class DeptViewSet(CustomModelViewSet):
             dept.save()
         return SuccessResponse(data=[], msg="下移成功")
 
-    @action(methods=['GET'], detail=False, permission_classes=[])
+    @action(methods=['GET'], detail=False, permission_classes=[ActiveAuthenticatedPermission])
     def dept_info(self, request):
         """部门信息"""
         def inner(did, li):
