@@ -21,6 +21,24 @@ from coreadmin.system.models import FieldPermission, MenuField
 from django_restql.mixins import QueryArgumentsMixin
 
 
+class PatchAsUpdateFilterMixin:
+    """Opt-in compatibility for B1B: apply existing PUT filters to PATCH.
+
+    The legacy data filter has no PATCH method index. Preserve its PUT scope
+    rules without changing that shared filter or the actual request lifecycle.
+    """
+
+    def filter_queryset(self, queryset):
+        method = self.request.method
+        if method != 'PATCH':
+            return super().filter_queryset(queryset)
+        try:
+            self.request.method = 'PUT'
+            return super().filter_queryset(queryset)
+        finally:
+            self.request.method = method
+
+
 class CustomModelViewSet(ModelViewSet, ImportSerializerMixin, ExportSerializerMixin, QueryArgumentsMixin):
     """
     自定义的ModelViewSet:

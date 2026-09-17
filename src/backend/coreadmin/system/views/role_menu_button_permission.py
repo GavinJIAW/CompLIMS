@@ -5,6 +5,7 @@ from rest_framework import serializers
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 
+from coreadmin.utils.permission import AuthorizationMutationMixin
 from coreadmin.system.models import RoleMenuButtonPermission, Menu, Dept, MenuButton, RoleMenuPermission, \
     MenuField, FieldPermission, Role
 from coreadmin.utils.json_response import DetailResponse
@@ -138,7 +139,7 @@ class RoleMenuFieldSerializer(CustomModelSerializer):
         fields = ['id', 'field_name', 'title', 'is_query', 'is_create', 'is_update']
 
 
-class RoleMenuButtonPermissionViewSet(CustomModelViewSet):
+class RoleMenuButtonPermissionViewSet(AuthorizationMutationMixin, CustomModelViewSet):
     """
     菜单按钮接口
     list:查询

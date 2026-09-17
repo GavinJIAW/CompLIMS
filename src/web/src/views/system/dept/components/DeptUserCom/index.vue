@@ -39,9 +39,6 @@
 		<template #toolbar-left>
 			<el-button :icon="!showCount ? 'Hide' : 'View'" circle @click="showCount = !showCount"></el-button>
 		</template>
-		<template #actionbar-right>
-			<importExcel api="api/system/user/" v-auth="'user:Import'">导入 </importExcel>
-		</template>
 		<template #cell_avatar="scope">
               <div v-if="scope.row.avatar" style="display: flex; justify-content: center; align-items: center;">
                 <el-image
@@ -72,7 +69,6 @@ import { ref, reactive, onMounted, watch } from 'vue';
 import { useExpose, useCrud } from '@fast-crud/fast-crud';
 import { Md5 } from 'ts-md5';
 import { createCrudOptions } from './crud';
-import importExcel from '/@/components/importExcel/index.vue';
 import * as echarts from 'echarts';
 import { ECharts, EChartsOption, init } from 'echarts';
 import { getDeptInfoById, resetPwd } from './api';

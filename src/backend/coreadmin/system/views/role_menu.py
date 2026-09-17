@@ -5,6 +5,7 @@ from django.db.models import F
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 
+from coreadmin.utils.permission import AuthorizationMutationMixin
 from coreadmin.system.models import RoleMenuPermission, Menu, MenuButton
 from coreadmin.utils.json_response import DetailResponse, ErrorResponse
 from coreadmin.utils.serializers import CustomModelSerializer
@@ -43,7 +44,7 @@ class RoleMenuPermissionCreateUpdateSerializer(CustomModelSerializer):
         read_only_fields = ["id"]
 
 
-class RoleMenuPermissionViewSet(CustomModelViewSet):
+class RoleMenuPermissionViewSet(AuthorizationMutationMixin, CustomModelViewSet):
     """
     菜单按钮接口
     list:查询

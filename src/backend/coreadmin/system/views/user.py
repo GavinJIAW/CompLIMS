@@ -1,3 +1,5 @@
+from collections.abc import Mapping
+
 import hashlib
 import re
 
@@ -14,7 +16,7 @@ from coreadmin.system.views.role import RoleSerializer
 from coreadmin.utils.json_response import ErrorResponse, DetailResponse, SuccessResponse
 from coreadmin.utils.serializers import CustomModelSerializer
 from coreadmin.utils.validator import CustomUniqueValidator
-from coreadmin.utils.viewset import CustomModelViewSet
+from coreadmin.utils.viewset import CustomModelViewSet, PatchAsUpdateFilterMixin
 
 
 def recursion(instance, parent, result):
@@ -65,7 +67,24 @@ class UserSerializer(CustomModelSerializer):
         return serializer.data
 
 
-class UserCreateSerializer(CustomModelSerializer):
+class UserWriteSerializer(CustomModelSerializer):
+    """A fixed input ceiling, independent of dynamic field presentation."""
+
+    def to_internal_value(self, data):
+        if isinstance(data, Mapping):
+            unknown = set(data) - set(self.Meta.fields)
+            if unknown:
+                raise serializers.ValidationError({key: ["不允许通过用户接口写入此字段"] for key in sorted(unknown)})
+        return super().to_internal_value(data)
+
+    def create(self, validated_data):
+        if self.request and self.request.user.is_authenticated:
+            validated_data['creator'] = self.request.user
+            validated_data['modifier'] = self.request.user.pk
+        return super().create(validated_data)
+
+
+class UserCreateSerializer(UserWriteSerializer):
     """
     用户新增-序列化器
     """
@@ -77,7 +96,7 @@ class UserCreateSerializer(CustomModelSerializer):
         ],
     )
     password = serializers.CharField(
-        required=False,
+        required=False, write_only=True,
     )
 
     def validate_password(self, value):
@@ -89,24 +108,14 @@ class UserCreateSerializer(CustomModelSerializer):
         md5_password = md5.hexdigest()
         return make_password(md5_password)
 
-    def save(self, **kwargs):
-        data = super().save(**kwargs)
-        data.dept_belong_id = data.dept_id
-        data.save()
-        data.post.set(self.initial_data.get("post", []))
-        return data
-
     class Meta:
         model = Users
-        fields = "__all__"
-        read_only_fields = ["id"]
-        extra_kwargs = {
-            "post": {"required": False},
-            "mobile": {"required": False},
-        }
+        fields = ('username', 'password', 'name', 'email', 'mobile', 'avatar',
+                  'gender', 'user_type', 'is_active')
+        extra_kwargs = {"mobile": {"required": False}}
 
 
-class UserUpdateSerializer(CustomModelSerializer):
+class UserUpdateSerializer(UserWriteSerializer):
     """
     用户修改-序列化器
     """
@@ -118,29 +127,17 @@ class UserUpdateSerializer(CustomModelSerializer):
         ],
     )
 
-    def validate_is_active(self, value):
-        """
-        更改激活状态
-        """
-        if value:
-            self.initial_data["login_error_count"] = 0
-        return value
-
-    def save(self, **kwargs):
-        data = super().save(**kwargs)
-        data.dept_belong_id = data.dept_id
-        data.save()
-        data.post.set(self.initial_data.get("post", []))
-        return data
+    def update(self, instance, validated_data):
+        # Server-controlled reset; client-supplied counters are rejected above.
+        if validated_data.get('is_active'):
+            validated_data['login_error_count'] = 0
+        return super().update(instance, validated_data)
 
     class Meta:
         model = Users
-        read_only_fields = ["id", "password"]
-        fields = "__all__"
-        extra_kwargs = {
-            "post": {"required": False, "read_only": True},
-            "mobile": {"required": False},
-        }
+        fields = ('username', 'name', 'email', 'mobile', 'avatar',
+                  'gender', 'user_type', 'is_active')
+        extra_kwargs = {"mobile": {"required": False}}
 
 
 class UserInfoUpdateSerializer(CustomModelSerializer):
@@ -221,7 +218,7 @@ class UserProfileImportSerializer(CustomModelSerializer):
         )
 
 
-class UserViewSet(CustomModelViewSet):
+class UserViewSet(PatchAsUpdateFilterMixin, CustomModelViewSet):
     """
     用户接口
     list:查询
@@ -235,6 +232,17 @@ class UserViewSet(CustomModelViewSet):
     serializer_class = UserSerializer
     create_serializer_class = UserCreateSerializer
     update_serializer_class = UserUpdateSerializer
+    partial_update_serializer_class = UserUpdateSerializer
+
+    def get_permissions(self):
+        if self.action == 'import_data':
+            return []  # Both URL aliases return the same disabled-endpoint response.
+        return super().get_permissions()
+
+    @action(methods=['get', 'post'], detail=False)
+    def import_data(self, request, *args, **kwargs):
+        return ErrorResponse(msg="用户导入暂时禁用", status=405)
+
     filter_fields = ["name", "username", "gender", "is_active", "dept", "user_type"]
     search_fields = ["username", "name", "dept__name", "role__name"]
     # 导出

@@ -6,7 +6,10 @@ import traceback
 
 from django.db.models import ProtectedError
 from django.http import Http404
-from rest_framework.exceptions import APIException as DRFAPIException, AuthenticationFailed, NotAuthenticated
+from rest_framework.exceptions import (
+    APIException as DRFAPIException, AuthenticationFailed, NotAuthenticated,
+    ValidationError, PermissionDenied, NotFound,
+)
 from rest_framework.status import HTTP_401_UNAUTHORIZED
 from rest_framework.views import set_rollback, exception_handler
 
@@ -32,21 +35,19 @@ def CustomExceptionHandler(ex, context):
     code = 4000
     # 调用默认的异常处理函数
     response = exception_handler(ex, context)
-    if isinstance(ex, AuthenticationFailed):
-        # 如果是身份验证错误
-        if response and response.data.get('detail') == "Given token not valid for any token type":
-            code = 401
-            msg = ex.detail
-        elif response and response.data.get('detail') == "Token is blacklisted":
-            # token在黑名单
-            return ErrorResponse(status=HTTP_401_UNAUTHORIZED)
-        else:
-            code = 401
-            msg = ex.detail
-    elif isinstance(ex,Http404):
-        code = 400
-        msg = "接口地址不正确"
-    elif isinstance(ex, DRFAPIException):
+    # Keep DRF security statuses and headers while retaining the project envelope.
+    if isinstance(ex, (ValidationError, PermissionDenied, NotFound, NotAuthenticated,
+                       AuthenticationFailed, Http404)):
+        status = response.status_code if response is not None else 404
+        if isinstance(ex, (NotAuthenticated, AuthenticationFailed)):
+            status = HTTP_401_UNAUTHORIZED
+        return ErrorResponse(
+            msg=response.data if response is not None else "Not found",
+            code=401 if status == 401 else 4000,
+            status=status,
+            headers=dict(response.headers) if response is not None else None,
+        )
+    if isinstance(ex, DRFAPIException):
         set_rollback()
         msg = ex.detail
         if isinstance(msg,dict):

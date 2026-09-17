@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
 
+from coreadmin.utils.permission import AuthorizationMutationMixin
 from coreadmin.system.models import ApiWhiteList
 from coreadmin.utils.serializers import CustomModelSerializer
-from coreadmin.utils.viewset import CustomModelViewSet
+from coreadmin.utils.viewset import CustomModelViewSet, PatchAsUpdateFilterMixin
 
 
 class ApiWhiteListSerializer(CustomModelSerializer):
@@ -20,7 +21,7 @@ class ApiWhiteListSerializer(CustomModelSerializer):
 
 
 
-class ApiWhiteListViewSet(CustomModelViewSet):
+class ApiWhiteListViewSet(AuthorizationMutationMixin, PatchAsUpdateFilterMixin, CustomModelViewSet):
     """
     接口白名单
     list:查询

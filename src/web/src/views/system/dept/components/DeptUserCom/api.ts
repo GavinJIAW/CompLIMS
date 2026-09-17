@@ -1,3 +1,4 @@
+import { userWritePayload } from '/@/views/system/user/api';
 import { request, downloadFile } from '/@/utils/service';
 import { PageQuery, AddReq, DelReq, EditReq, InfoReq } from '@fast-crud/fast-crud';
 
@@ -31,7 +32,7 @@ export function AddObj(obj: AddReq) {
 	return request({
 		url: apiPrefix,
 		method: 'post',
-		data: obj,
+		data: userWritePayload(obj, true),
 	});
 }
 
@@ -39,7 +40,7 @@ export function UpdateObj(obj: EditReq) {
 	return request({
 		url: apiPrefix + obj.id + '/',
 		method: 'put',
-		data: obj,
+		data: userWritePayload(obj, false),
 	});
 }
 

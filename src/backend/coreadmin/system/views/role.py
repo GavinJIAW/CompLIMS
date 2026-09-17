@@ -5,6 +5,7 @@ from rest_framework import serializers
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 
+from coreadmin.utils.permission import AuthorizationMutationMixin
 from coreadmin.system.models import Role, Menu, MenuButton, Dept, Users
 from coreadmin.system.views.dept import DeptSerializer
 from coreadmin.system.views.menu import MenuSerializer
@@ -14,7 +15,7 @@ from coreadmin.utils.field_permission import FieldPermissionMixin
 from coreadmin.utils.json_response import SuccessResponse, DetailResponse, ErrorResponse
 from coreadmin.utils.serializers import CustomModelSerializer
 from coreadmin.utils.validator import CustomUniqueValidator
-from coreadmin.utils.viewset import CustomModelViewSet
+from coreadmin.utils.viewset import CustomModelViewSet, PatchAsUpdateFilterMixin
 from coreadmin.utils.permission import CustomPermission
 
 
@@ -97,7 +98,7 @@ class MenuButtonPermissionSerializer(CustomModelSerializer):
         fields = '__all__'
 
 
-class RoleViewSet(CustomModelViewSet, FastCrudMixin,FieldPermissionMixin):
+class RoleViewSet(AuthorizationMutationMixin, PatchAsUpdateFilterMixin, CustomModelViewSet, FastCrudMixin,FieldPermissionMixin):
     """
     角色管理接口
     list:查询

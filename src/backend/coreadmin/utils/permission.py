@@ -45,11 +45,17 @@ class SuperuserPermission(BasePermission):
     """
 
     def has_permission(self, request, view):
-        if isinstance(request.user, AnonymousUser):
-            return False
-        # 判断是否是超级管理员
-        if request.user.is_superuser:
-            return True
+        user = request.user
+        return bool(user.is_authenticated and user.is_active and user.is_superuser)
+
+
+class AuthorizationMutationMixin:
+    """Temporary P0 gate: authorization writes never consult legacy grants."""
+
+    def get_permissions(self):
+        if self.request.method in ('POST', 'PUT', 'PATCH', 'DELETE'):
+            return [SuperuserPermission()]
+        return super().get_permissions()
 
 
 class AdminPermission(BasePermission):

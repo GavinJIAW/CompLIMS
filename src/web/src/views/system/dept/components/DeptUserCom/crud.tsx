@@ -240,23 +240,7 @@ export const createCrudOptions = function ({crudExpose, context}: CreateCrudOpti
                         }
                     },
                     form: {
-                        rules: [
-                            // 表单校验规则
-                            {
-                                required: true,
-                                message: '必填项',
-                            },
-                        ],
-                        component: {
-                            filterable: true,
-                            placeholder: '请选择',
-                            props: {
-                                props: {
-                                    value: 'id',
-                                    label: 'name',
-                                },
-                            },
-                        },
+                        show: false,
                     },
                 },
                 role: {
@@ -284,18 +268,7 @@ export const createCrudOptions = function ({crudExpose, context}: CreateCrudOpti
                         // }
                     },
                     form: {
-                        rules: [
-                            // 表单校验规则
-                            {
-                                required: true,
-                                message: '必填项',
-                            },
-                        ],
-                        component: {
-                            multiple: true,
-                            filterable: true,
-                            placeholder: '请选择角色',
-                        },
+                        show: false,
                     },
                 },
                 mobile: {

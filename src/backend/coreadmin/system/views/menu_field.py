@@ -4,9 +4,10 @@ from rest_framework import serializers
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 
+from coreadmin.utils.permission import AuthorizationMutationMixin
 from coreadmin.system.models import  Role, MenuField
 from coreadmin.utils.models import get_custom_app_models
-from coreadmin.utils.viewset import CustomModelViewSet
+from coreadmin.utils.viewset import CustomModelViewSet, PatchAsUpdateFilterMixin
 from coreadmin.utils.serializers import CustomModelSerializer
 from coreadmin.utils.json_response import DetailResponse, ErrorResponse, SuccessResponse
 
@@ -22,7 +23,7 @@ class MenuFieldSerializer(CustomModelSerializer):
         read_only_fields = ['id']
 
 
-class MenuFieldViewSet(CustomModelViewSet):
+class MenuFieldViewSet(AuthorizationMutationMixin, PatchAsUpdateFilterMixin, CustomModelViewSet):
     """
     列权限视图集
     """

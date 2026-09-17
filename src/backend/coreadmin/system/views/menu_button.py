@@ -5,6 +5,7 @@ from django.db.models import F
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 
+from coreadmin.utils.permission import AuthorizationMutationMixin
 from coreadmin.system.models import MenuButton, RoleMenuButtonPermission, Menu
 from coreadmin.utils.json_response import DetailResponse, SuccessResponse
 from coreadmin.utils.serializers import CustomModelSerializer
@@ -37,7 +38,7 @@ class MenuButtonCreateUpdateSerializer(CustomModelSerializer):
         read_only_fields = ["id"]
 
 
-class MenuButtonViewSet(CustomModelViewSet):
+class MenuButtonViewSet(AuthorizationMutationMixin, CustomModelViewSet):
     """
     菜单按钮接口
     list:查询

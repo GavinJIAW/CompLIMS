@@ -237,24 +237,7 @@ export const createCrudOptions = function ({ crudExpose }: CreateCrudOptionsProp
                         }
                     },
                     form: {
-                        rules: [
-                            // 表单校验规则
-                            {
-                                required: true,
-                                message: '必填项',
-                            },
-                        ],
-                        component: {
-                            filterable: true,
-                            placeholder: '请选择',
-                            props: {
-                                checkStrictly: true,
-                                props: {
-                                    value: 'id',
-                                    label: 'name',
-                                },
-                            },
-                        },
+                        show: false,
                     },
                 },
                 role: {
@@ -277,18 +260,7 @@ export const createCrudOptions = function ({ crudExpose }: CreateCrudOptionsProp
                         // }
                     },
                     form: {
-                        rules: [
-                            // 表单校验规则
-                            {
-                                required: true,
-                                message: '必填项',
-                            },
-                        ],
-                        component: {
-                            multiple: true,
-                            filterable: true,
-                            placeholder: '请选择角色',
-                        },
+                        show: false,
                     },
                 },
                 mobile: {
@@ -415,7 +387,7 @@ export const createCrudOptions = function ({ crudExpose }: CreateCrudOptionsProp
                 },
                 ...commonCrudConfig({
                     dept_belong_id: {
-                        form: true,
+                        form: false,
                         table: true
                     }
                 })
