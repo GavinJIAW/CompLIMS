@@ -95,6 +95,9 @@ class UserFieldsTests(TestCase):
 
     def test_normal_authorized_user_has_same_write_ceiling(self):
         from coreadmin.system.models import ApiWhiteList
+        from coreadmin.foundation_tests.access_fixtures import grant
+        grant(self.target, 'user:Create', 'Users', create=['username', 'name'])
+        grant(self.target, 'user:Update', 'Users', update=['username', 'name'])
         self.client.force_authenticate(self.target)
         for method in (1, 2, 5):
             ApiWhiteList.objects.create(url='/api/system/user/.*', method=method, enable_datasource=False)

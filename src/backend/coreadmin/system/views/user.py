@@ -296,7 +296,7 @@ class UserViewSet(PatchAsUpdateFilterMixin, CustomModelViewSet):
             "avatar": user.avatar,
             "dept": user.dept_id,
             "is_superuser": user.is_superuser,
-            "role": user.role.values_list('id', flat=True),
+            "role": user.role.filter(status=True).values_list('id', flat=True),
             "pwd_change_count":user.pwd_change_count
         }
         if hasattr(connection, 'tenant'):
@@ -315,7 +315,7 @@ class UserViewSet(PatchAsUpdateFilterMixin, CustomModelViewSet):
             }
         role = getattr(user, 'role', None)
         if role:
-            result['role_info'] = role.values('id', 'name', 'key')
+            result['role_info'] = role.filter(status=True).values('id', 'name', 'key')
         return DetailResponse(data=result, msg="获取成功")
 
     @action(methods=["PUT"], detail=False, permission_classes=[IsAuthenticated])
@@ -411,51 +411,20 @@ class UserViewSet(PatchAsUpdateFilterMixin, CustomModelViewSet):
             return ErrorResponse(msg="未获取到用户")
 
     def list(self, request, *args, **kwargs):
+        from coreadmin.access.context import context_for, descendants
+        from rest_framework.exceptions import ValidationError
+        queryset = context_for(request, self).scope(self.get_queryset())
         dept_id = request.query_params.get('dept')
-        show_all = request.query_params.get('show_all')
-        if not dept_id:
-            dept_id = ''
-        if not show_all:
-            show_all = 0
-        if int(show_all):
-            all_did = [dept_id]
-            def inner(did):
-                sub = Dept.objects.filter(parent_id=did)
-                if not sub.exists():
-                    return
-                for i in sub:
-                    all_did.append(i.pk)
-                    inner(i)
-            if dept_id != '':
-                inner(dept_id)
-                searchs = [
-                    Q(**{f+'__icontains':i})
-                    for f in self.search_fields
-                ] if (i:=request.query_params.get('search')) else []
-                q_obj = []
-                if searchs:
-                    q = searchs[0]
-                    for i in searchs[1:]:
-                        q |= i
-                    q_obj.append(Q(q))
-                queryset = Users.objects.filter(*q_obj, dept_id__in=all_did)
-            else:
-                queryset = self.filter_queryset(self.get_queryset())
-        else:
-            queryset = self.filter_queryset(self.get_queryset())
-        queryset = queryset.exclude(id=request.user.id)
-        queryset = queryset.annotate(
-            is_admin=Case(
-                When(role__key='Administrator', then=Value(0)),  # "管理员"的角色用 0 排在最前面
-                default=Value(1),  # 其他角色用 1 排在后面
-                output_field=IntegerField()
-            )
-        ).order_by('is_admin', '-create_datetime')
-
+        show_all = request.query_params.get('show_all', '0')
+        if show_all not in ('0', '1', ''):
+            raise ValidationError({'show_all': 'Expected 0 or 1.'})
+        if dept_id and show_all == '1':
+            try:
+                queryset = queryset.filter(dept_id__in=descendants(int(dept_id)))
+            except (TypeError, ValueError):
+                raise ValidationError({'dept': 'Invalid department ID.'})
+        queryset = self.filter_queryset(queryset).exclude(id=request.user.id).distinct()
         page = self.paginate_queryset(queryset)
         if page is not None:
-            serializer = self.get_serializer(page, many=True, request=request)
-            return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(queryset, many=True, request=request)
-
-        return SuccessResponse(data=serializer.data, msg="获取成功")
+            return self.get_paginated_response(self.get_serializer(page, many=True, request=request).data)
+        return SuccessResponse(data=self.get_serializer(queryset, many=True, request=request).data, msg="获取成功")

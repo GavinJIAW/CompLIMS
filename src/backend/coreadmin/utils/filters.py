@@ -17,7 +17,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django_filters.utils import get_model_field
 from rest_framework.filters import BaseFilterBackend
 from django_filters.conf import settings
-from coreadmin.system.models import Dept, ApiWhiteList, RoleMenuButtonPermission, MenuButton
+from coreadmin.system.models import Dept
 from coreadmin.utils.models import CoreModel
 
 class CoreModelFilterBankend(BaseFilterBackend):
@@ -71,128 +71,10 @@ def get_dept(dept_id: int, dept_all_list=None, dept_list=None):
 
 
 class DataLevelPermissionsFilter(BaseFilterBackend):
-    """
-    数据 级权限过滤器
-    0. 获取用户的部门id，没有部门则返回空
-    1. 判断过滤的数据是否有创建人所在部门 "creator" 字段,没有则返回全部
-    2. 如果用户没有关联角色则返回本部门数据
-    3. 根据角色的最大权限进行数据过滤(会有多个角色，进行去重取最大权限)
-    3.1 判断用户是否为超级管理员角色/如果有1(所有数据) 则返回所有数据
-
-    4. 只为仅本人数据权限时只返回过滤本人数据，并且部门为自己本部门(考虑到用户会变部门，只能看当前用户所在的部门数据)
-    5. 自定数据权限 获取部门，根据部门过滤
-    """
-
+    """Compatibility adapter: never resolve URL patterns or whitelist rows."""
     def filter_queryset(self, request, queryset, view):
-        """
-        接口白名单是否认证数据权限
-        """
-        api = request.path  # 当前请求接口
-        method = request.method  # 当前请求方法
-        methodList = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-        method = methodList.index(method)
-        # ***接口白名单***
-        api_white_list = ApiWhiteList.objects.filter(enable_datasource=False).values(
-            permission__api=F("url"), permission__method=F("method")
-        )
-        api_white_list = [
-            str(item.get("permission__api").replace("{id}", ".*?"))
-            + ":"
-            + str(item.get("permission__method"))
-            for item in api_white_list
-            if item.get("permission__api")
-        ]
-        for item in api_white_list:
-            new_api = f"{api}:{method}"
-            matchObj = re.match(item, new_api, re.M | re.I)
-            if matchObj is None:
-                continue
-            else:
-                return queryset
-        """
-        判断是否为超级管理员:
-        如果不是超级管理员,则进入下一步权限判断
-        """
-        if request.user.is_superuser == 0:
-            return self._extracted_from_filter_queryset_33(request, queryset, api, method)
-        else:
-            return queryset
-
-    # TODO Rename this here and in `filter_queryset`
-    def _extracted_from_filter_queryset_33(self, request, queryset, api, method):
-        # 0. 获取用户的部门id，没有部门则返回空
-        user_dept_id = getattr(request.user, "dept_id", None)
-        if not user_dept_id:
-            return queryset.none()
-
-        # 1. 判断过滤的数据是否有创建人所在部门 "dept_belong_id" 字段
-        if not getattr(queryset.model, "dept_belong_id", None):
-            return queryset
-
-        # 2. 如果用户没有关联角色则返回本部门数据
-        if not hasattr(request.user, "role"):
-            return queryset.filter(dept_belong_id=user_dept_id)
-
-        # 3. 根据所有角色 获取所有权限范围
-        # (0, "仅本人数据权限"),
-        # (1, "本部门及以下数据权限"),
-        # (2, "本部门数据权限"),
-        # (3, "全部数据权限"),
-        # (4, "自定数据权限")
-        re_api = api
-        _pk = request.parser_context["kwargs"].get('pk')
-        if _pk: # 判断是否是单例查询
-            re_api = re.sub(_pk,'{id}', api)
-        role_id_list = request.user.role.values_list('id', flat=True)
-        # 修复权限获取bug
-        menu_button_ids = MenuButton.objects.filter(api=re_api,method=method).values_list('id', flat=True)
-        role_permission_list = []
-        if menu_button_ids:
-            role_permission_list=RoleMenuButtonPermission.objects.filter(
-                role__in=role_id_list,
-                role__status=1,
-                menu_button_id__in=menu_button_ids).values(
-                'data_range'
-            )
-        dataScope_list = []  # 权限范围列表
-        for ele in role_permission_list:
-                # 判断用户是否为超级管理员角色/如果拥有[全部数据权限]则返回所有数据
-            if ele.get("data_range") == 3:
-                return queryset
-            dataScope_list.append(ele.get("data_range"))
-        dataScope_list = list(set(dataScope_list))
-        print(dataScope_list)
-        # 4. 只为仅本人数据权限时只返回过滤本人数据，并且部门为自己本部门(考虑到用户会变部门，只能看当前用户所在的部门数据)
-        if 0 in dataScope_list:
-            return queryset.filter(
-                creator=request.user, dept_belong_id=user_dept_id
-            )
-
-        # 5. 自定数据权限 获取部门，根据部门过滤
-        dept_list = []
-        for ele in dataScope_list:
-            if ele == 1:
-                dept_list.append(user_dept_id)
-                dept_list.extend(
-                    get_dept(
-                        user_dept_id,
-                    )
-                )
-            elif ele == 2:
-                dept_list.append(user_dept_id)
-            elif ele == 4:
-                dept_ids = RoleMenuButtonPermission.objects.filter(
-                    role__in=role_id_list,
-                    role__status=1,
-                    data_range=4).values_list(
-                    'dept__id',flat=True
-                )
-                dept_list.extend(
-                    dept_ids
-                )
-        if queryset.model._meta.model_name == 'dept':
-            return queryset.filter(id__in=list(set(dept_list)))
-        return queryset.filter(dept_belong_id__in=list(set(dept_list)))
+        from coreadmin.access.context import context_for
+        return context_for(request, view).scope(queryset)
 
 
 class CustomDjangoFilterBackend(DjangoFilterBackend):
@@ -402,6 +284,10 @@ class CustomDjangoFilterBackend(DjangoFilterBackend):
             conditions = []
             queries = []
             for search_term_key in filterset.data.keys():
+                if (search_term_key == 'dept' and getattr(view, 'access_context', None)
+                        and view.access_context.action.code == 'user.list'
+                        and request.query_params.get('show_all') == '1'):
+                    continue  # The authorized User list already applied the descendant business filter.
                 orm_lookup = self.find_filter_lookups(orm_lookups, search_term_key)
                 if not orm_lookup or filterset.data.get(search_term_key) == '':
                     continue

@@ -143,6 +143,11 @@ class FastCrudMixin:
     @action(methods=['get'], detail=False,permission_classes=[ActiveAuthenticatedPermission])
     def init_crud(self, request):
         columns = self.__handle_crud()
+        from coreadmin.access.projection import field_metadata
+        from coreadmin.access.registry import resource_for
+        permissions = field_metadata(request.user, resource_for(self), self.serializer_class.Meta.model)
+        columns = {key: value for key, value in columns.items()
+                   if any(permissions.get(key, {}).values())}
         expose = "({expose,dict})=>{"
         ret = "return {"
         res = "}}"

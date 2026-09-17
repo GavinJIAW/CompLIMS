@@ -128,9 +128,9 @@ export async function setAddRoute() {
  * @description isRequestRoutes 为 true，则开启后端控制路由
  * @returns 返回后端路由菜单数据
  */
-export function getBackEndControlRoutes() {
+export async function getBackEndControlRoutes() {
 	//获取所有的按钮权限
-	BtnPermissionStore().getBtnPermissionStore();
+	await BtnPermissionStore().getBtnPermissionStore();
 	// 获取系统配置
 	SystemConfigStore().getSystemConfigs()
 	// 获取所有部门信息

@@ -4,6 +4,7 @@
 from django.db.models import F
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
+from rest_framework import serializers
 
 from coreadmin.utils.permission import AuthorizationMutationMixin
 from coreadmin.system.models import MenuButton, RoleMenuButtonPermission, Menu
@@ -19,9 +20,20 @@ class MenuButtonSerializer(CustomModelSerializer):
     菜单按钮-序列化器
     """
 
+    canonical_action = serializers.SerializerMethodField()
+    mapping_status = serializers.SerializerMethodField()
+
+    def get_canonical_action(self, instance):
+        from coreadmin.access.projection import alias_diagnostic
+        return alias_diagnostic(instance.value)['canonical_action']
+
+    def get_mapping_status(self, instance):
+        from coreadmin.access.projection import alias_diagnostic
+        return alias_diagnostic(instance.value)['mapping_status']
+
     class Meta:
         model = MenuButton
-        fields = ['id', 'name', 'value', 'api', 'method','menu','sort']
+        fields = ['id', 'name', 'value', 'api', 'method','menu','sort', 'canonical_action', 'mapping_status']
         read_only_fields = ["id"]
 
 
@@ -63,7 +75,9 @@ class MenuButtonViewSet(AuthorizationMutationMixin, CustomModelViewSet):
         :param kwargs:
         :return:
         """
-        queryset = self.filter_queryset(self.get_queryset()).order_by('sort')
+        queryset = self.filter_queryset(self.get_queryset())
+        if 'sort' in self.field_policy.query_fields():
+            queryset = queryset.order_by('sort')
         serializer = self.get_serializer(queryset, many=True, request=request)
         return SuccessResponse(serializer.data,msg="获取成功")
 
@@ -74,13 +88,8 @@ class MenuButtonViewSet(AuthorizationMutationMixin, CustomModelViewSet):
         :param request:
         :return:
         """
-        is_superuser = request.user.is_superuser
-        if is_superuser:
-            queryset = MenuButton.objects.values_list('value',flat=True)
-        else:
-            role_id = request.user.role.values_list('id', flat=True)
-            queryset = RoleMenuButtonPermission.objects.filter(role__in=role_id).values_list('menu_button__value',flat=True).distinct()
-        return DetailResponse(data=queryset)
+        from coreadmin.access.projection import button_aliases
+        return DetailResponse(data=button_aliases(request.user))
 
     @action(methods=['post'], detail=False, permission_classes=[IsAuthenticated])
     def batch_create(self, request, *args, **kwargs):

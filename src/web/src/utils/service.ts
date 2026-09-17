@@ -11,6 +11,7 @@ import { Local, Session } from '/@/utils/storage';
 import qs from 'qs';
 import { getBaseURL } from './baseUrl';
 import { successMessage } from './message.js';
+import { projectCrudPayload, changesAuthorization } from './accessPayload';
 /**
  * @description 创建请求实例
  */
@@ -41,7 +42,7 @@ function createService() {
 	});
 	// 请求拦截
 	service.interceptors.request.use(
-		(config) => config,
+		(config) => projectCrudPayload(config),
 		(error) => {
 			// 发送失败
 			console.log(error);
@@ -92,6 +93,10 @@ function createService() {
 						errorCreate(`${dataAxios.msg}`);
 						break;
 					case 2000:
+						if (changesAuthorization(response.config)) {
+							void import('/@/stores/btnPermission').then(({ BtnPermissionStore }) =>
+								BtnPermissionStore().getBtnPermissionStore()).catch(() => undefined);
+						}
 						// @ts-ignore
 						if (response.config.unpack === false) {
 							//如果不需要解包

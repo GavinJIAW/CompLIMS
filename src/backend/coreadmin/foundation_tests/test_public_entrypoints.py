@@ -22,6 +22,8 @@ class PublicEntrypointTests(TestCase):
         cls.normal.role.add(role)
         cls.inactive.role.add(role)
         cls.inactive_admin.role.add(role)
+        from coreadmin.foundation_tests.access_fixtures import grant
+        grant(cls.normal, 'dictionary:Search', 'Dictionary', fields=['label', 'value'], role=role)
 
     def test_dictionary_and_real_role_init_crud_actor_matrix(self):
         for actor in (None, self.normal, self.inactive, self.admin, self.inactive_admin):
@@ -41,7 +43,10 @@ class PublicEntrypointTests(TestCase):
                 with self.subTest(whitelist=whitelist, actor=actor.username):
                     request = APIRequestFactory().get('/api/system/dictionary/')
                     request.user = actor
-                    self.assertEqual(bool(CustomPermission().has_permission(request, None)), actor.is_active)
+                    from coreadmin.system.views.dictionary import DictionaryViewSet
+                    view = DictionaryViewSet()
+                    view.action = 'list'
+                    self.assertEqual(bool(CustomPermission().has_permission(request, view)), actor.is_active)
                     client = APIClient()
                     client.force_authenticate(actor)
                     self.assertEqual(client.get('/api/system/dictionary/').status_code, 200 if actor.is_active else 403)
@@ -106,7 +111,7 @@ class PublicEntrypointTests(TestCase):
                     if all(permission.has_permission(request, view) for permission in view.get_permissions()):
                         allowed.add((view_class.__name__, view.action or method))
         self.assertEqual(allowed, {
-            ('LoginView', 'post'), ('CaptchaView', 'get'), ('TokenRefreshView', 'post'),
+            ('LoginView', 'post'), ('CaptchaView', 'get'), ('CanonicalTokenRefreshView', 'post'),
             ('InitSettingsViewSet', 'get'),
             # B1C shutdown route intentionally returns 405 before model lookup.
             ('SystemConfigViewSet', 'get_table_data'),

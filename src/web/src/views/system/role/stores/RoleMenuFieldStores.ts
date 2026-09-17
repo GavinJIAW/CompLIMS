@@ -17,8 +17,8 @@ export const RoleMenuFieldStores = defineStore('RoleMenuFieldStores', {
 
 export const RoleMenuFieldHeaderStores = defineStore('RoleMenuFieldHeaderStores', {
 	state: (): RoleMenuFieldHeaderType[] => [
-		{ value: 'is_create', label: '新增可见', disabled: 'disabled_create', checked: false },
-		{ value: 'is_update', label: '编辑可见', disabled: 'disabled_update', checked: false },
-		{ value: 'is_query', label: '列表可见', disabled: 'disabled_query', checked: false },
+		{ value: 'is_create', label: '允许新增字段', disabled: 'disabled_create', checked: false },
+		{ value: 'is_update', label: '允许修改字段', disabled: 'disabled_update', checked: false },
+		{ value: 'is_query', label: '允许读取字段（同菜单共享）', disabled: 'disabled_query', checked: false },
 	],
 });

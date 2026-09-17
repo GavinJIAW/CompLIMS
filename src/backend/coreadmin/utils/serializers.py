@@ -55,6 +55,33 @@ class CustomModelSerializer(DynamicFieldsMixin, ModelSerializer):
     def save(self, **kwargs):
         return super().save(**kwargs)
 
+    def to_internal_value(self, data):
+        from coreadmin.access.fields import serializer_policy
+        policy = serializer_policy(self)
+        if policy is not None and policy.context.action.name in {'create', 'update'}:
+            policy.validate_write(data, self.instance)
+        return super().to_internal_value(data)
+
+    def to_representation(self, instance):
+        from coreadmin.access.fields import serializer_policy, project_relations
+        policy = serializer_policy(self)
+        if policy is None:
+            return super().to_representation(instance)
+        original = getattr(self, '_policy_read_fields', None)
+        try:
+            self._policy_read_fields = policy.allowed(instance)
+            data = super().to_representation(instance)
+        finally:
+            self._policy_read_fields = original
+        return project_relations(policy, instance, data)
+
+    @property
+    def _readable_fields(self):
+        allowed = getattr(self, '_policy_read_fields', None)
+        for field in super()._readable_fields:
+            if allowed is None or field.field_name in allowed:
+                yield field
+
     def create(self, validated_data):
         if self.request:
             if str(self.request.user) != "AnonymousUser":

@@ -62,7 +62,7 @@ export default function ({ crudExpose, context }: CreateCrudOptionsProps): Creat
 						text: '查看',
 						type: 'text',
 						iconRight: 'View',
-						show: auth('messageCenter:Search'),
+						show: auth('messageCenter:Retrieve'),
 						click({ index, row }) {
 							crudExpose.openView({ index, row });
 							if (tabActivted.value === 'receive') {

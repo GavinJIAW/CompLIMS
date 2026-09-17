@@ -80,7 +80,10 @@ class DictionaryViewSet(CustomModelViewSet):
             return self.queryset
 
 
-class InitDictionaryViewSet(APIView):
+from coreadmin.access.entrypoints import CanonicalEntryMixin
+
+
+class InitDictionaryViewSet(CanonicalEntryMixin, APIView):
     """
     获取初始化配置
     """

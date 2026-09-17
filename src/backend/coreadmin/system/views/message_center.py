@@ -198,13 +198,13 @@ class MessageCenterViewSet(CustomModelViewSet):
         """
         重写查看
         """
-        pk = kwargs.get('pk')
+        instance = self.get_object()
+        pk = instance.pk
         user_id = self.request.user.id
         queryset = MessageCenterTargetUser.objects.filter(users__id=user_id, messagecenter__id=pk).first()
         if queryset:
             queryset.is_read = True
             queryset.save()
-        instance = self.get_object()
         serializer = self.get_serializer(instance)
         return DetailResponse(data=serializer.data, msg="获取成功")
 

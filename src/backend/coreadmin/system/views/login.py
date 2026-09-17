@@ -23,9 +23,10 @@ from coreadmin.utils.json_response import ErrorResponse, DetailResponse
 from coreadmin.utils.request_util import save_login_log
 from coreadmin.utils.serializers import CustomModelSerializer
 from coreadmin.utils.validator import CustomValidationError
+from coreadmin.access.entrypoints import CanonicalEntryMixin
 
 
-class CaptchaView(APIView):
+class CaptchaView(CanonicalEntryMixin, APIView):
     authentication_classes = []
     permission_classes = []
 
@@ -133,7 +134,7 @@ class LoginSerializer(TokenObtainPairSerializer):
             raise CustomValidationError(f"账号/密码错误;重试{count}次后将被锁定~")
 
 
-class LoginView(TokenObtainPairView):
+class LoginView(CanonicalEntryMixin, TokenObtainPairView):
     """
     登录接口
     """
@@ -236,7 +237,7 @@ class LoginTokenView(TokenObtainPairView):
     permission_classes = []
 
 
-class LogoutView(APIView):
+class LogoutView(CanonicalEntryMixin, APIView):
     def post(self, request):
         return DetailResponse(msg="注销成功")
 

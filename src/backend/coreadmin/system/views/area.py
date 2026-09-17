@@ -89,6 +89,7 @@ class AreaViewSet(CustomModelViewSet, FieldPermissionMixin):
                 queryset = self.queryset.filter(enable=True, pcode=pcode)
             else:
                 queryset = self.queryset.filter(enable=True, level=1)
+        queryset = self.filter_queryset(queryset)
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True, request=request)

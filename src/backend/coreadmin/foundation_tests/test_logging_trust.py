@@ -26,6 +26,9 @@ class EchoView(APIView):
 
     patch = post
 
+    def get(self, request):
+        return Response({'code': 2000, 'msg': 'done', 'data': {}})
+
 
 class BrokenView(APIView):
     permission_classes = []
@@ -81,7 +84,9 @@ class MiddlewareTrustTests(TestCase):
         self.assertTrue(row.status)
 
     def test_query_redaction(self):
-        response = self.client.get('/api/system/dept/dept_info/?access_token=QUERY_SECRET&name=visible&dept_id=')
+        # Query policy now rejects unrelated secret query keys on business APIs;
+        # the existing controlled echo path isolates middleware redaction itself.
+        response = self.client.get('/b1d/echo/?access_token=QUERY_SECRET&name=visible')
         self.assertEqual(response.status_code, 200)
         body = OperationLog.objects.get().request_body
         self.assertTrue('QUERY_SECRET' not in body)

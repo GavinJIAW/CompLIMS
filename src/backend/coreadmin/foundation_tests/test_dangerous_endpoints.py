@@ -27,8 +27,10 @@ class DangerousEndpointTests(TestCase):
         cls.admin = Users.objects.create(username='b1c-admin', password='!', is_superuser=True)
         cls.dept = Dept.objects.create(name='One', key='one', sort=1)
         cls.dept2 = Dept.objects.create(name='Two', key='two', sort=2)
+        from coreadmin.foundation_tests.access_fixtures import grant
         cls.menu = Menu.objects.create(name='One', sort=1)
         cls.menu2 = Menu.objects.create(name='Two', sort=2)
+        grant(cls.normal, 'dept:HeaderInfo', 'Dept', fields=['name'], menu=cls.menu)
         role = Role.objects.create(name='Read one menu', key='b1c-read')
         cls.normal.role.add(role)
         RoleMenuPermission.objects.create(role=role, menu=cls.menu)
@@ -204,7 +206,7 @@ def custom_test(actor, resource, action):
         client = self.client_for(actor)
         if action == 'read':
             suffix = 'get_all_menu' if resource == 'menu' else 'dept_info'
-            response = client.get(f'/api/system/{resource}/{suffix}/', {'dept_id': obj.pk})
+            response = client.get(f'/api/system/{resource}/{suffix}/', {'dept_id': obj.pk} if resource == 'dept' else {})
             allowed = actor in ('admin', 'normal')
         else:
             response = client.post(f'/api/system/{resource}/{action}/', {resource + '_id': obj2.pk if action == 'move_up' else obj.pk}, format='json')

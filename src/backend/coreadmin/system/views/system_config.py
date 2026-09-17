@@ -158,7 +158,8 @@ class SystemConfigViewSet(PatchAsUpdateFilterMixin, CustomModelViewSet):
         body = request.query_params
         var_name = body.get('varName', None)
         table = body.get('table', None)
-        instance = SystemConfig.objects.filter(key=var_name, setting__table=table).first()
+        authorized = self.access_context.scope(self.get_queryset())
+        instance = authorized.filter(key=var_name, setting__table=table).first()
         if instance is None:
             return ErrorResponse(msg="未获取到关联信息")
         relation_id = body.get('relationIds', None)
@@ -169,14 +170,19 @@ class SystemConfigViewSet(PatchAsUpdateFilterMixin, CustomModelViewSet):
             relationIds = [relation_id]
         elif instance.form_item_type in [14]:
             relationIds = relation_id.split(',')
-        queryset = SystemConfig.objects.filter(value__in=relationIds).first()
+        queryset = authorized.filter(value__in=relationIds).first()
         if queryset is None:
             return ErrorResponse(msg="未获取到关联信息")
-        serializer = SystemConfigChinldernSerializer(queryset.parent)
+        from django.shortcuts import get_object_or_404
+        parent = get_object_or_404(authorized, pk=queryset.parent_id)
+        serializer = SystemConfigChinldernSerializer(parent, request=request)
         return DetailResponse(msg="查询成功", data=serializer.data)
 
 
-class InitSettingsViewSet(APIView):
+from coreadmin.access.entrypoints import CanonicalEntryMixin
+
+
+class InitSettingsViewSet(CanonicalEntryMixin, APIView):
     """
     获取初始化配置
     """

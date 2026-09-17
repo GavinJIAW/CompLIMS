@@ -64,13 +64,23 @@ class RoleMenuButtonSerializer(CustomModelSerializer):
     data_range = serializers.SerializerMethodField()
     role_menu_btn_perm_id = serializers.SerializerMethodField()
     dept = serializers.SerializerMethodField()
+    canonical_action = serializers.SerializerMethodField()
+    grantable = serializers.SerializerMethodField()
+
+    def get_canonical_action(self, instance):
+        from coreadmin.access.projection import alias_diagnostic
+        return alias_diagnostic(instance.value)['canonical_action']
+
+    def get_grantable(self, instance):
+        from coreadmin.access.projection import alias_diagnostic
+        return alias_diagnostic(instance.value)['grantable']
 
     def get_isCheck(self, instance):
         params = self.request.query_params
         data = self.request.data
         return RoleMenuButtonPermission.objects.filter(
             menu_button_id=instance.id,
-            role_id=params.get('roleId', data.get('roleId')),
+            role_id=self.context.get('role_id', params.get('roleId', data.get('roleId'))),
         ).exists()
 
     def get_data_range(self, instance):
@@ -96,13 +106,13 @@ class RoleMenuButtonSerializer(CustomModelSerializer):
         data = self.request.data
         obj = RoleMenuButtonPermission.objects.filter(
             menu_button_id=instance.id,
-            role_id=params.get('roleId', data.get('roleId')),
+            role_id=self.context.get('role_id', params.get('roleId', data.get('roleId'))),
         ).first()
         return obj
 
     class Meta:
         model = MenuButton
-        fields = ['id', 'menu', 'name', 'isCheck', 'data_range', 'role_menu_btn_perm_id', 'dept']
+        fields = ['id', 'menu', 'name', 'isCheck', 'data_range', 'role_menu_btn_perm_id', 'dept', 'canonical_action', 'grantable']
 
 
 class RoleMenuFieldSerializer(CustomModelSerializer):
@@ -260,11 +270,9 @@ class RoleMenuButtonPermissionViewSet(AuthorizationMutationMixin, CustomModelVie
         data = request.data
         instance = RoleMenuButtonPermission.objects.get(id=data.get('role_menu_btn_perm_id'))
         instance.data_range = data.get('data_range')
-        instance.dept.add(*data.get('dept'))
-        if not data.get('dept'):
-            instance.dept.clear()
+        instance.dept.set(data.get('dept', []) if instance.data_range == 4 else [])
         instance.save()
-        serializer = RoleMenuButtonPermissionSerializer(instance, request=request)
+        serializer = RoleMenuButtonSerializer(instance.menu_button, request=request, context={'role_id': instance.role_id})
         return DetailResponse(data=serializer.data, msg="更新成功")
 
     @action(methods=['get'], detail=False, permission_classes=[IsAuthenticated])

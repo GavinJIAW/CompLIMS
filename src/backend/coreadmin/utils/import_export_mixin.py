@@ -161,94 +161,7 @@ class ImportSerializerMixin:
 
     @action(methods=['get'],detail=False)
     def update_template(self,request):
-        queryset = self.filter_queryset(self.get_queryset())
-        assert self.import_field_dict, "'%s' 请配置对应的导入模板字段。" % self.__class__.__name__
-        assert self.import_serializer_class, "'%s' 请配置对应的导入序列化器。" % self.__class__.__name__
-        data = self.import_serializer_class(queryset, many=True, request=request).data
-        # 导出excel 表
-        response = HttpResponse(content_type="application/msexcel")
-        response["Access-Control-Expose-Headers"] = f"Content-Disposition"
-        response["content-disposition"] = f'attachment;filename={quote(str(f"导出{get_verbose_name(queryset)}.xlsx"))}'
-        wb = Workbook()
-        ws1 = wb.create_sheet("data", 1)
-        ws1.sheet_state = "hidden"
-        ws = wb.active
-        import_field_dict = {}
-        header_data = ["序号","更新主键(勿改)"]
-        hidden_header = ["#","id"]
-        #----设置选项----
-        validation_data_dict = {}
-        for index, item in enumerate(self.import_field_dict.items()):
-            items = list(item)
-            key = items[0]
-            value = items[1]
-            if isinstance(value, dict):
-                header_data.append(value.get("title"))
-                hidden_header.append(value.get('display'))
-                choices = value.get("choices", {})
-                if choices.get("data"):
-                    data_list = []
-                    data_list.extend(choices.get("data").keys())
-                    validation_data_dict[value.get("title")] = data_list
-                elif choices.get("queryset") and choices.get("values_name"):
-                    data_list = choices.get("queryset").values_list(choices.get("values_name"), flat=True)
-                    validation_data_dict[value.get("title")] = list(data_list)
-                else:
-                    continue
-                column_letter = get_column_letter(len(validation_data_dict))
-                dv = DataValidation(
-                    type="list",
-                    formula1=f"{quote_sheetname('data')}!${column_letter}$2:${column_letter}${len(validation_data_dict[value.get('title')]) + 1}",
-                    allow_blank=True,
-                )
-                ws.add_data_validation(dv)
-                dv.add(f"{get_column_letter(index + 3)}2:{get_column_letter(index + 3)}1048576")
-            else:
-                header_data.append(value)
-                hidden_header.append(key)
-        # 添加数据列
-        ws1.append(list(validation_data_dict.keys()))
-        for index, validation_data in enumerate(validation_data_dict.values()):
-            for inx, ele in enumerate(validation_data):
-                ws1[f"{get_column_letter(index + 1)}{inx + 2}"] = ele
-        #--------
-        df_len_max = [self.get_string_len(ele) for ele in header_data]
-        row = get_column_letter(len(hidden_header) + 1)
-        column = 1
-        ws.append(header_data)
-        for index, results in enumerate(data):
-            results_list = []
-            for h_index, h_item in enumerate(hidden_header):
-                for key, val in results.items():
-                    if key == h_item:
-                        if val is None or val == "":
-                            results_list.append("")
-                        elif isinstance(val,list):
-                            results_list.append(str(val))
-                        else:
-                            results_list.append(val)
-                        # 计算最大列宽度
-                        if isinstance(val,str):
-                            result_column_width = self.get_string_len(val)
-                            if h_index != 0 and result_column_width > df_len_max[h_index]:
-                                df_len_max[h_index] = result_column_width
-            ws.append([index+1,*results_list])
-            column += 1
-        # 　更新列宽
-        for index, width in enumerate(df_len_max):
-            ws.column_dimensions[get_column_letter(index + 1)].width = width
-        tab = Table(displayName="Table", ref=f"A1:{row}{column}")  # 名称管理器
-        style = TableStyleInfo(
-            name="TableStyleLight11",
-            showFirstColumn=True,
-            showLastColumn=True,
-            showRowStripes=True,
-            showColumnStripes=True,
-        )
-        tab.tableStyleInfo = style
-        ws.add_table(tab)
-        wb.save(response)
-        return response
+        return self.authorized_workbook(request, self.import_serializer_class, self.import_field_dict)
 
 
 class ExportSerializerMixin:
@@ -302,59 +215,27 @@ class ExportSerializerMixin:
         :param kwargs:
         :return:
         """
+        return self.authorized_workbook(request, self.export_serializer_class, self.export_field_label)
+
+    def authorized_workbook(self, request, serializer_class, configured_columns):
+        from rest_framework.exceptions import MethodNotAllowed
+        if not serializer_class or not configured_columns:
+            raise MethodNotAllowed(request.method)
         queryset = self.filter_queryset(self.get_queryset())
-        assert self.export_field_label, "'%s' 请配置对应的导出模板字段。" % self.__class__.__name__
-        assert self.export_serializer_class, "'%s' 请配置对应的导出序列化器。" % self.__class__.__name__
-        data = self.export_serializer_class(queryset, many=True, request=request).data
-        # try:
-        #     async_export_data.delay(
-        #         data,
-        #         str(f"导出{get_verbose_name(queryset)}-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}.xlsx"),
-        #         DownloadCenter.objects.create(creator=request.user, task_name=f'{get_verbose_name(queryset)}数据导出任务', dept_belong_id=request.user.dept_id).pk,
-        #         self.export_field_label
-        #     )
-        #     return SuccessResponse(msg="导入任务已创建，请前往‘下载中心’等待下载")
-        # except:
-        #     pass
-        # 导出excel 表
-        response = HttpResponse(content_type="application/msexcel")
-        response["Access-Control-Expose-Headers"] = f"Content-Disposition"
-        response["content-disposition"] = f'attachment;filename={quote(str(f"导出{get_verbose_name(queryset)}.xlsx"))}'
-        wb = Workbook()
-        ws = wb.active
-        header_data = ["序号", *self.export_field_label.values()]
-        hidden_header = ["#", *self.export_field_label.keys()]
-        df_len_max = [self.get_string_len(ele) for ele in header_data]
-        row = get_column_letter(len(self.export_field_label) + 1)
-        column = 1
-        ws.append(header_data)
-        for index, results in enumerate(data):
-            results_list = []
-            for h_index, h_item in enumerate(hidden_header):
-                for key,val in results.items():
-                    if key == h_item:
-                        if val is None or val=="":
-                            results_list.append("")
-                        else:
-                            results_list.append(val)
-                        # 计算最大列宽度
-                        result_column_width = self.get_string_len(val)
-                        if h_index !=0 and result_column_width > df_len_max[h_index]:
-                            df_len_max[h_index] = result_column_width
-            ws.append([index + 1, *results_list])
-            column += 1
-        # 　更新列宽
-        for index, width in enumerate(df_len_max):
-            ws.column_dimensions[get_column_letter(index + 1)].width = width
-        tab = Table(displayName="Table", ref=f"A1:{row}{column}")  # 名称管理器
-        style = TableStyleInfo(
-            name="TableStyleLight11",
-            showFirstColumn=True,
-            showLastColumn=True,
-            showRowStripes=True,
-            showColumnStripes=True,
-        )
-        tab.tableStyleInfo = style
-        ws.add_table(tab)
-        wb.save(response)
+        readable = self.field_policy.query_fields()
+        columns = {}
+        for key, specification in configured_columns.items():
+            output = specification.get('display', key) if isinstance(specification, dict) else key
+            if output in readable:
+                columns[output] = specification.get('title', key) if isinstance(specification, dict) else specification
+        data = serializer_class(queryset, many=True, request=request).data
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment;filename=authorized-export.xlsx'
+        response['Access-Control-Expose-Headers'] = 'Content-Disposition'
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.append(list(columns.values()))
+        for item in data:
+            sheet.append([str(item[key]) if isinstance(item.get(key), (list, dict)) else item.get(key) for key in columns])
+        workbook.save(response)
         return response

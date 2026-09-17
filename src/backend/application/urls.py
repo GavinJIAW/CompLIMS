@@ -18,9 +18,7 @@ from django.urls import path, include, re_path
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
-from rest_framework_simplejwt.views import (
-    TokenRefreshView,
-)
+from coreadmin.access.entrypoints import CanonicalTokenRefreshView
 
 from application import dispatch
 from django.conf import settings
@@ -46,7 +44,7 @@ urlpatterns = (
             path("api/system/", include("coreadmin.system.urls")),
             path("api/login/", LoginView.as_view(), name="token_obtain_pair"),
             path("api/logout/", LogoutView.as_view(), name="token_obtain_pair"),
-            path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+            path("api/token/refresh/", CanonicalTokenRefreshView.as_view(), name="token_refresh"),
 
             path("api/captcha/", CaptchaView.as_view()),
             path("api/init/dictionary/", InitDictionaryViewSet.as_view()),

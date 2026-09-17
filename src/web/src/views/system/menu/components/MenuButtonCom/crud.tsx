@@ -135,6 +135,14 @@ export const createCrudOptions = function ({crudExpose, context}: CreateCrudOpti
                 },
             },
             columns: {
+                canonical_action: {
+                    title: '服务端操作', type: 'text', form: { show: false },
+                    search: { show: false }, column: { minWidth: 180 },
+                },
+                mapping_status: {
+                    title: '登记策略（UNREGISTERED 不授权）', type: 'text',
+                    form: { show: false }, search: { show: false }, column: { minWidth: 220 },
+                },
                 $checked: {
 					title: '选择',
 					form: { show: false },

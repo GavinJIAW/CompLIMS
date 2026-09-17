@@ -68,11 +68,19 @@ class GrantManagementTests(TestCase):
         return method, base + detail + action + '/', payload
 
     def test_normal_read_permissions_are_preserved(self):
+        from coreadmin.foundation_tests.access_fixtures import grant
+        from coreadmin.access.fields import READ
+        aliases = {'role': ('role:Search', 'Role'), 'role_menu_permission': ('role_menu_permission:Search', 'RoleMenuPermission'),
+                   'role_menu_button_permission': ('role_menu_button_permission:Search', 'RoleMenuButtonPermission'),
+                   'menu_button': ('btn:Search', 'MenuButton'), 'column': ('column:Search', 'MenuField'),
+                   'api_white_list': ('api_white_list:Search', 'ApiWhiteList')}
+        for resource, (alias, model) in aliases.items():
+            grant(self.normal, alias, model, fields=READ[resource])
         client = APIClient()
         client.force_authenticate(self.normal)
         for resource in MUTATIONS:
             with self.subTest(resource=resource):
-                response = client.get('/api/system/' + resource + '/', {'menu': self.menu.pk})
+                response = client.get('/api/system/' + resource + '/', {'menu': self.menu.pk} if resource == 'column' else {})
                 self.assertEqual(response.status_code, 200)
                 self.assertEqual(response.data['code'], 2000)
 

@@ -123,7 +123,10 @@ class DeptViewSet(CustomModelViewSet):
     @action(methods=["GET"], detail=False, permission_classes=[IsAuthenticated])
     def all_dept(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
-        data = queryset.filter(status=True).order_by('sort').values('name', 'id', 'parent')
+        data = []
+        for obj in queryset.filter(status=True).order_by('sort'):
+            values = {'name': obj.name, 'id': obj.id, 'parent': obj.parent_id}
+            data.append({key: value for key, value in values.items() if key in self.field_policy.allowed(obj)})
         return DetailResponse(data=data, msg="获取成功")
 
     @action(methods=['POST'], detail=False, permission_classes=[SuperuserPermission])
@@ -159,49 +162,30 @@ class DeptViewSet(CustomModelViewSet):
     @action(methods=['GET'], detail=False, permission_classes=[ActiveAuthenticatedPermission])
     def dept_info(self, request):
         """部门信息"""
-        def inner(did, li):
-            sub = Dept.objects.filter(parent_id=did)
-            if not sub.exists():
-                return li
-            for i in sub:
-                li.append(i.pk)
-                inner(i, li)
-            return li
-        dept_id = request.query_params.get('dept_id')
-        show_all = request.query_params.get('show_all')
-        if dept_id is None:
-            return ErrorResponse(msg="部门不存在")
-        if not show_all:
-            show_all = 0
-        if int(show_all):  # 递归当前部门下的所有部门，查询用户
-            all_did = [dept_id]
-            inner(dept_id, all_did)
-            users = Users.objects.filter(dept_id__in=all_did)
-        else:
-            if dept_id != '':
-                users = Users.objects.filter(dept_id=dept_id)
-            else:
-                users = Users.objects.none()
-        dept_obj = Dept.objects.get(id=dept_id) if dept_id != '' else None
-        sub_dept = Dept.objects.filter(parent_id=dept_obj.pk) if dept_id != '' else []
+        from coreadmin.access.context import descendants
+        from django.shortcuts import get_object_or_404
+        from rest_framework.exceptions import ValidationError
+        authorized = self.access_context.scope(self.get_queryset())
+        dept_obj = get_object_or_404(authorized, pk=request.query_params.get('dept_id'))
+        show_all = request.query_params.get('show_all', '0')
+        if show_all not in ('0', '1', ''):
+            raise ValidationError({'show_all': 'Expected 0 or 1.'})
+        dept_ids = descendants(dept_obj.pk) if show_all == '1' else {dept_obj.pk}
+        permitted_ids = authorized.filter(pk__in=dept_ids).values_list('pk', flat=True)
+        users = Users.objects.exclude(is_superuser=True).filter(dept_id__in=permitted_ids)
         data = {
-            'dept_name': dept_obj and dept_obj.name,
-            'dept_user': users.count(),
-            'owner': dept_obj and dept_obj.owner,
-            'description': dept_obj and dept_obj.description,
-            'gender': {
-                'male': users.filter(gender=1).count(),
-                'female': users.filter(gender=2).count(),
-                'unknown': users.filter(gender=0).count(),
-            },
-            'sub_dept_map': []
+            'dept_name': dept_obj.name, 'dept_user': users.count(),
+            'owner': dept_obj.owner, 'description': dept_obj.description,
+            'gender': {'male': users.filter(gender=1).count(),
+                       'female': users.filter(gender=2).count(),
+                       'unknown': users.filter(gender=0).count()},
+            'sub_dept_map': [],
         }
-        for dept in sub_dept:
-            all_did = [dept.pk]
-            inner(dept.pk, all_did)
-            sub_data = {
-                'name': dept.name,
-                'count': Users.objects.filter(dept_id__in=all_did).count()
-            }
-            data['sub_dept_map'].append(sub_data)
+        for child in authorized.filter(parent=dept_obj):
+            child_ids = authorized.filter(pk__in=descendants(child.pk)).values_list('pk', flat=True)
+            data['sub_dept_map'].append({'name': child.name, 'count': Users.objects.exclude(is_superuser=True).filter(dept_id__in=child_ids).count()})
+        if not request.user.is_superuser:
+            allowed = self.field_policy.allowed(dept_obj)
+            aliases = {'dept_name': 'name'}
+            data = {key: value for key, value in data.items() if aliases.get(key, key) in allowed}
         return SuccessResponse(data)

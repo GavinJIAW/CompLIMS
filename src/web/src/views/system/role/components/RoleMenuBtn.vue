@@ -28,10 +28,10 @@
 				/>
 
 			</div>
-			<span>配置操作功能接口权限，配置数据权限点击小齿轮</span>
+			<span>仅已登记的操作别名可授予权限；范围只作用于当前操作。权限管理等固定管理员操作不接受角色委派。</span>
 		</div>
 
-		<el-checkbox v-for="btn in RoleMenuBtn.$state" :key="btn.id" v-model="btn.isCheck" @change="handleCheckChange(btn)">
+		<el-checkbox v-for="btn in RoleMenuBtn.$state" :key="btn.id" v-model="btn.isCheck" :disabled="btn.grantable === false" @change="handleCheckChange(btn)">
 			<div class="btn-item">
 				{{ btn.data_range !== null ? `${btn.name}(${formatDataRange(btn.data_range, btn.dept)})` : btn.name }}
 				<span v-show="btn.isCheck" @click.stop.prevent="handleSettingClick(btn)">
@@ -94,8 +94,8 @@ const default_selectBtn = ref<RoleMenuBtnType>({
 	/** 按钮名称 */
 	name: '',
 	/** 数据权限范围 */
-	data_range: Local.get('role_default_data_range'),
-	dept: Local.get('role_default_custom_dept'),
+	data_range: Local.get('role_default_data_range') ?? 0,
+	dept: Local.get('role_default_custom_dept') ?? [],
 });
 
 // 选中的按钮
@@ -136,8 +136,8 @@ const defaultTreeProps = {
  */
 const defaulthandlePermissionRangeChange = async (val: number) => {
 	if (val < 4) {
-		// default_selectBtn.value.dept = [];
-		// Local.set('role_default_custom_dept', []);
+		default_selectBtn.value.dept = [];
+		Local.set('role_default_custom_dept', []);
 	}
 	default_selectBtn.value.data_range = val;
 	Local.set('role_default_data_range', val);
@@ -231,7 +231,7 @@ const handleSettingClick = async (btn: RoleMenuBtnType) => {
 const deptData = ref<number[]>([]);
 // 页面打开后获取列表数据
 onMounted(async () => {
-	const res = await getRoleToDeptAll({ role: RoleDrawer.roleId, menu_button: selectBtn.value.id });
+	const res = await getRoleToDeptAll({ role: RoleDrawer.roleId });
 	const depts = XEUtils.toArrayTree(res.data, { parentKey: 'parent', strict: false });
 	deptData.value = depts;
 });

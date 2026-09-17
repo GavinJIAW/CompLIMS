@@ -119,9 +119,9 @@ class MenuViewSet(CustomModelViewSet):
         if user.is_superuser:
             queryset = self.queryset.filter(status=1).order_by("sort")
         else:
-            role_list = user.role.values_list('id', flat=True)
+            role_list = user.role.filter(status=True).values_list('id', flat=True)
             menu_list = RoleMenuPermission.objects.filter(role__in=role_list).values_list('menu_id', flat=True)
-            queryset = Menu.objects.filter(id__in=menu_list).order_by("sort")
+            queryset = Menu.objects.filter(id__in=menu_list, status=True).order_by("sort")
         serializer = WebRouterSerializer(queryset, many=True, request=request)
         data = serializer.data
         return SuccessResponse(data=data, total=len(data), msg="获取成功")
@@ -132,9 +132,9 @@ class MenuViewSet(CustomModelViewSet):
         user = request.user
         queryset = self.queryset.all()
         if not user.is_superuser:
-            role_list = user.role.values_list('id', flat=True)
+            role_list = user.role.filter(status=True).values_list('id', flat=True)
             menu_list = RoleMenuPermission.objects.filter(role__in=role_list).values_list('menu_id')
-            queryset = Menu.objects.filter(id__in=menu_list)
+            queryset = Menu.objects.filter(id__in=menu_list, status=True)
         serializer = WebRouterSerializer(queryset, many=True, request=request)
         data = serializer.data
         return SuccessResponse(data=data, total=len(data), msg="获取成功")

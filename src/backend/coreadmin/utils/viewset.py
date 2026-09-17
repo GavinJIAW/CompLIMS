@@ -1,24 +1,19 @@
 # -*- coding: utf-8 -*-
 
 
-import copy
-
-from django.db import transaction
-from django_filters import DateTimeFromToRangeFilter
-from django_filters.rest_framework import FilterSet
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied, MethodNotAllowed, ValidationError
 from rest_framework.viewsets import ModelViewSet
 
 from coreadmin.utils.filters import DataLevelPermissionsFilter, CoreModelFilterBankend
 from coreadmin.utils.import_export_mixin import ExportSerializerMixin, ImportSerializerMixin
 from coreadmin.utils.json_response import SuccessResponse, ErrorResponse, DetailResponse
 from coreadmin.utils.permission import CustomPermission
-from coreadmin.utils.models import get_custom_app_models, CoreModel
-from coreadmin.system.models import FieldPermission, MenuField
 from django_restql.mixins import QueryArgumentsMixin
+from coreadmin.access.context import context_for
+from coreadmin.access.registry import Policy
 
 
 class ReadOnlyAPIMixin:
@@ -31,21 +26,7 @@ class ReadOnlyAPIMixin:
 
 
 class PatchAsUpdateFilterMixin:
-    """Opt-in compatibility for B1B: apply existing PUT filters to PATCH.
-
-    The legacy data filter has no PATCH method index. Preserve its PUT scope
-    rules without changing that shared filter or the actual request lifecycle.
-    """
-
-    def filter_queryset(self, queryset):
-        method = self.request.method
-        if method != 'PATCH':
-            return super().filter_queryset(queryset)
-        try:
-            self.request.method = 'PUT'
-            return super().filter_queryset(queryset)
-        finally:
-            self.request.method = method
+    """Compatibility import only. Canonical policy handles PATCH without rewriting it."""
 
 
 class CustomModelViewSet(ModelViewSet, ImportSerializerMixin, ExportSerializerMixin, QueryArgumentsMixin):
@@ -65,20 +46,47 @@ class CustomModelViewSet(ModelViewSet, ImportSerializerMixin, ExportSerializerMi
     update_serializer_class = None
     filter_fields = '__all__'
     search_fields = ()
-    extra_filter_class = [CoreModelFilterBankend,DataLevelPermissionsFilter]
+    extra_filter_class = [CoreModelFilterBankend]
     permission_classes = [CustomPermission]
     import_field_dict = {}
     export_field_label = {}
 
+    def check_permissions(self, request):
+        # Central entrypoint also covers actions with old decorator overrides.
+        context = context_for(request, self)
+        if not context.allowed():
+            raise PermissionDenied()
+        if context.action.policy == Policy.B1_SHUTDOWN:
+            raise MethodNotAllowed(request.method)
+        from coreadmin.access.targets import validate_targets
+        validate_targets(self, request, context)
+        request._canonical_access_view = self
+        from coreadmin.access.fields import FieldPolicy, SELF_READ
+        self.field_policy = FieldPolicy(context, self.queryset.model)
+        if (context.action.policy == Policy.ROLE_GRANTABLE or context.action.code in SELF_READ
+                or context.action.name in {'list', 'retrieve', 'export_data', 'update_template'}):
+            self.field_policy.validate_query(request, self)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, MethodNotAllowed):
+            return ErrorResponse(msg='This API action is disabled.', status=405)
+        return super().handle_exception(exc)
+
+    def options(self, request, *args, **kwargs):
+        return DetailResponse(data={}, msg='Metadata available only through approved projections.')
+
     def get_object(self):
-        try:
-            return super().get_object()  # 调用父类的get_object方法
-        except Exception as e:
-            raise NotFound(detail="无操作权限,请联系管理员!")  # 如果找不到对象，返回自定义的404错误
+        return super().get_object()
 
     def filter_queryset(self, queryset):
-        for backend in set(set(self.filter_backends) | set(self.extra_filter_class or [])):
+        queryset = context_for(self.request, self).scope(queryset)
+        backends = dict.fromkeys([*self.filter_backends, *(self.extra_filter_class or [])])
+        for backend in backends:
+            if backend is DataLevelPermissionsFilter:
+                continue
             queryset = backend().filter_queryset(self.request, queryset, self)
+        if not self.access_context.admin and not self.request.query_params.get('ordering'):
+            queryset = queryset.order_by('pk')
         return queryset
 
     def get_queryset(self):
@@ -98,42 +106,29 @@ class CustomModelViewSet(ModelViewSet, ImportSerializerMixin, ExportSerializerMi
         serializer_class = self.get_serializer_class()
         kwargs.setdefault('context', self.get_serializer_context())
         # 全部以可见字段为准
-        can_see = self.get_menu_field(serializer_class)
-        # 排除掉序列化器级的字段(排除字段权限中未授权的字段)
-        # if not self.request.user.is_superuser:
-        #     exclude_set = set(serializer_class._declared_fields.keys()) - set(can_see)
-        #     for field in exclude_set:
-        #         serializer_class._declared_fields.pop(field)
-        #     meta = copy.deepcopy(serializer_class.Meta)
-        #     meta.fields = list(can_see)
-        #     serializer_class.Meta = meta
-        # 在分页器中使用
+        can_see = sorted(self.field_policy.query_fields()) if hasattr(self, 'field_policy') else []
         self.request.permission_fields = can_see
+        if 'data' in kwargs and hasattr(self, 'field_policy'):
+            data = kwargs['data']
+            rows = data if isinstance(data, list) else [data]
+            for row in rows:
+                self.field_policy.validate_write(row, args[0] if args else kwargs.get('instance'))
+                from coreadmin.access.targets import validate_write_relations
+                validate_write_relations(self.access_context, row)
         if isinstance(self.request.data, list):
-            with transaction.atomic():
-                return serializer_class(many=True, *args, **kwargs)
-        else:
-            return serializer_class(*args, **kwargs)
-
-    def get_menu_field(self, serializer_class):
-        """获取字段权限"""
-
-        if not any(model['object'] is serializer_class.Meta.model for model in get_custom_app_models()):
-            return []
-
-        # 匿名用户没有角色
-        ret = FieldPermission.objects.filter(field__model=serializer_class.Meta.model.__name__)
-        if hasattr(self.request.user, 'role'):
-            roles = self.request.user.role.values_list('id', flat=True)
-            ret = ret.filter(is_query=True, role__in=roles)
-
-        return ret.values_list('field__field_name', flat=True)
+            kwargs.setdefault('many', True)
+        return serializer_class(*args, **kwargs)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data, request=request)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         return DetailResponse(data=serializer.data, msg="新增成功")
+
+    def perform_create(self, serializer):
+        # Use the exact proposed scope context, independently of RESTQL's
+        # presentation field selection. Clients cannot supply attribution.
+        serializer.save(**self.access_context.create_attribution())
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -180,7 +175,14 @@ class CustomModelViewSet(ModelViewSet, ImportSerializerMixin, ExportSerializerMi
         request_data = request.data
         keys = request_data.get('keys', None)
         if keys:
-            self.get_queryset().filter(id__in=keys).delete()
+            if not isinstance(keys, list) or any(isinstance(key, bool) for key in keys):
+                raise ValidationError({'keys': 'Expected a list of IDs.'})
+            from coreadmin.access.targets import ids
+            keys = ids(keys)
+            targets = context_for(request, self).scope(self.get_queryset()).filter(pk__in=keys)
+            if set(targets.values_list('pk', flat=True)) != keys:
+                raise NotFound()
+            targets.delete()
             return SuccessResponse(data=[], msg="删除成功")
         else:
             return ErrorResponse(msg="未获取到keys字段")

@@ -23,17 +23,19 @@ export const handleColumnPermission = async (func: Function, crudOptions: any,ex
 		}
 	}
 	const columns = crudOptions.columns;
-	const excludeColumns = ['checked','_index','id', 'create_datetime', 'update_datetime','dept_belong_id','description'].concat(excludeColumn)
+	const excludeColumns = ['checked','_index','id'].concat(excludeColumn)
 	XEUtils.eachTree(columns, (item, key) => {
-		if (!excludeColumns.includes(String(key)) && key in res.data) {
+		if (!excludeColumns.includes(String(key))) {
+			const permission = res.data[key] || { is_query: false, is_create: false, is_update: false };
+			item.column = item.column || {};
 			// 如果列表不可见，则禁止在列设置中选择
 			// 只有列表不可见，才修改列配置，这样才不影响默认的配置
-			if (!res.data[key]['is_query']) {
+			if (!permission.is_query) {
 				item.column.show = false;
 				item.column.columnSetDisabled = true;
 			}
-			item.addForm = { show: res.data[key]['is_create'] };
-			item.editForm = { show: res.data[key]['is_update'] };
+			item.addForm = { show: permission.is_create };
+			item.editForm = { show: permission.is_update };
 		}
 	});
 	return crudOptions

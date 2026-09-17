@@ -213,12 +213,12 @@ export const createCrudOptions = function ({crudExpose}: CreateCrudOptionsProps)
                             tooltip: {
                                 placement: 'top-start',
                             },
-                            text: '请正确填写，以免请求时被拦截。匹配单例使用正则,例如:/api/xx/.*?/',
+                            text: '仅保留历史接口元数据。此记录不授予操作权限，也不绕过数据范围；实际授权由服务端 ActionRegistry 管理。',
                         },
                     },
                 },
                 enable_datasource: {
-                    title: '数据权限认证',
+                    title: '历史范围标记（不生效）',
                     search: {
                         disabled: false,
                     },

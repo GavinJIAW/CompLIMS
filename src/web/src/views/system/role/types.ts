@@ -56,6 +56,8 @@ export interface RoleMenuTreeType {
  * 菜单-按钮数据类型
  */
 export interface RoleMenuBtnType {
+	canonical_action?: string;
+	grantable?: boolean;
 	id: string | number;
 	menu_btn_pre_id: string | number;
 	/** 是否选中 */
