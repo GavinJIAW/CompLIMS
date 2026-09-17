@@ -161,7 +161,34 @@ class ImportSerializerMixin:
 
     @action(methods=['get'],detail=False)
     def update_template(self,request):
-        return self.authorized_workbook(request, self.import_serializer_class, self.import_field_dict)
+        queryset, objects, data, columns = self.workbook_projection(
+            request, self.import_serializer_class, self.import_field_dict)
+        workbook = Workbook()
+        sheet = workbook.active
+        validation_sheet = workbook.create_sheet('data')
+        validation_sheet.sheet_state = 'hidden'
+        sheet.append(['序号', '更新主键(勿改)', *[title for _, title, _ in columns]])
+        for number, (obj, item) in enumerate(zip(objects, data), 1):
+            # Structural identity comes only from the authorized row, even if
+            # RESTQL omitted id from its presentation serializer.
+            sheet.append([number, obj.pk, *[self.workbook_cell(item.get(key)) for key, _, _ in columns]])
+        validation_column = 0
+        for business_column, (key, title, specification) in enumerate(columns, 3):
+            choices = specification.get('choices', {}) if isinstance(specification, dict) else {}
+            values = self.workbook_choice_values(key, choices)
+            if not values:
+                continue
+            validation_column += 1
+            letter = get_column_letter(validation_column)
+            validation_sheet.cell(1, validation_column, title)
+            for row, value in enumerate(values, 2):
+                validation_sheet.cell(row, validation_column, self.workbook_cell(value))
+            validation = DataValidation(type='list', allow_blank=True,
+                formula1=f"{quote_sheetname('data')}!${letter}$2:${letter}${len(values) + 1}")
+            sheet.add_data_validation(validation)
+            target = get_column_letter(business_column)
+            validation.add(f'{target}2:{target}1048576')
+        return self.finish_workbook(workbook, queryset)
 
 
 class ExportSerializerMixin:
@@ -215,27 +242,75 @@ class ExportSerializerMixin:
         :param kwargs:
         :return:
         """
-        return self.authorized_workbook(request, self.export_serializer_class, self.export_field_label)
+        queryset, _, data, columns = self.workbook_projection(
+            request, self.export_serializer_class, self.export_field_label)
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.append(['序号', *[title for _, title, _ in columns]])
+        for number, item in enumerate(data, 1):
+            sheet.append([number, *[self.workbook_cell(item.get(key)) for key, _, _ in columns]])
+        return self.finish_workbook(workbook, queryset)
 
-    def authorized_workbook(self, request, serializer_class, configured_columns):
+    def workbook_projection(self, request, serializer_class, configured_columns):
+        """Shared authorization projection; the two file layouts remain distinct."""
         from rest_framework.exceptions import MethodNotAllowed
         if not serializer_class or not configured_columns:
             raise MethodNotAllowed(request.method)
         queryset = self.filter_queryset(self.get_queryset())
+        objects = list(queryset)
+        serializer = serializer_class(objects, many=True, request=request)
         readable = self.field_policy.query_fields()
-        columns = {}
+        columns = []
         for key, specification in configured_columns.items():
             output = specification.get('display', key) if isinstance(specification, dict) else key
-            if output in readable:
-                columns[output] = specification.get('title', key) if isinstance(specification, dict) else specification
-        data = serializer_class(queryset, many=True, request=request).data
-        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response['Content-Disposition'] = 'attachment;filename=authorized-export.xlsx'
-        response['Access-Control-Expose-Headers'] = 'Content-Disposition'
-        workbook = Workbook()
+            if output != 'id' and output in readable and output in serializer.child.fields:
+                title = specification.get('title', key) if isinstance(specification, dict) else specification
+                columns.append((output, title, specification))
+        return queryset, objects, serializer.data, columns
+
+    def workbook_choice_values(self, output, choices):
+        if choices.get('data'):
+            return list(choices['data'])
+        queryset = choices.get('queryset')
+        field = choices.get('values_name')
+        if queryset is None or not field:
+            return []
+        # The current queryset-backed template choices are User.dept/role.
+        # Reuse their registered child policies; configuration is not a grant.
+        from coreadmin.access.fields import RELATIONS, FieldPolicy
+        from coreadmin.access.context import AccessContext
+        from coreadmin.access.registry import REGISTRY
+        from coreadmin.system.models import Dept, Role
+        binding = RELATIONS.get(self.field_policy.resource, {}).get(output)
+        models = {'dept': Dept, 'role': Role}
+        if not binding or models.get(binding[0]) is not queryset.model:
+            return []
+        context = AccessContext(self.request.user, REGISTRY[binding[0], 'retrieve', 'GET'])
+        if not context.allowed():
+            return []
+        policy = FieldPolicy(context, queryset.model)
+        if field not in policy.ceiling('read') or '__' in field:
+            return []
+        return [getattr(obj, field) for obj in context.scope(queryset)
+                if field in policy.allowed(obj)]
+
+    @staticmethod
+    def workbook_cell(value):
+        return str(value) if isinstance(value, (list, dict, tuple)) else value
+
+    def finish_workbook(self, workbook, queryset):
+        """Common formatting only: preserve business filename, widths and table."""
         sheet = workbook.active
-        sheet.append(list(columns.values()))
-        for item in data:
-            sheet.append([str(item[key]) if isinstance(item.get(key), (list, dict)) else item.get(key) for key in columns])
+        for index, cells in enumerate(sheet.columns, 1):
+            sheet.column_dimensions[get_column_letter(index)].width = max(
+                self.get_string_len('' if cell.value is None else str(cell.value)) for cell in cells)
+        table = Table(displayName='Table',
+                      ref=f'A1:{get_column_letter(sheet.max_column)}{max(2, sheet.max_row)}')
+        table.tableStyleInfo = TableStyleInfo(name='TableStyleLight11', showFirstColumn=True,
+            showLastColumn=True, showRowStripes=True, showColumnStripes=True)
+        sheet.add_table(table)
+        response = HttpResponse(content_type='application/msexcel')
+        response['Content-Disposition'] = f'attachment;filename={quote(f"导出{get_verbose_name(queryset)}.xlsx")}'
+        response['Access-Control-Expose-Headers'] = 'Content-Disposition'
         workbook.save(response)
         return response

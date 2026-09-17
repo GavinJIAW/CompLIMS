@@ -147,7 +147,7 @@ class ObjectFieldPolicyTests(TestCase):
                 self.assertEqual(response.status_code, 200)
                 rows = list(load_workbook(BytesIO(response.content), read_only=True).active.values)
                 self.assertEqual(len(rows), 2)
-                self.assertEqual(rows[1], (self.a.username,))
+                self.assertEqual(rows[1], (1, self.a.username))
                 self.assertNotIn(self.a.email, str(rows))
                 self.assertNotIn(self.b.username, str(rows))
 
@@ -156,7 +156,7 @@ class ObjectFieldPolicyTests(TestCase):
         response = self.client_user.get('/api/system/user/update_template/')
         self.assertEqual(response.status_code, 200)
         rows = list(load_workbook(BytesIO(response.content), read_only=True).active.values)
-        self.assertEqual(rows[1], (self.a.username,))
+        self.assertEqual(rows[1], (1, self.a.id, self.a.username))
         self.assertNotIn(self.a.email, str(rows))
 
     def test_nested_role_cannot_borrow_parent_user_field_grant(self):
