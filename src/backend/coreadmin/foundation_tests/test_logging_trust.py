@@ -44,8 +44,8 @@ urlpatterns = [path('b1d/echo/', EchoView.as_view()), path('b1d/broken/', Broken
 @override_settings(API_LOG_ENABLE=True, API_LOG_METHODS='ALL', ROOT_URLCONF=__name__)
 class MiddlewareTrustTests(TestCase):
     def setUp(self):
-        self.user = Users.objects.create(username='b1d-user', password='!')
-        self.admin = Users.objects.create(username='b1d-admin', password='!', is_superuser=True)
+        self.user = Users.objects.create(username='b1d-user', password='!', pwd_change_count=1)
+        self.admin = Users.objects.create(username='b1d-admin', password='!', is_superuser=True, pwd_change_count=1)
         self.client = APIClient()
         self.client.force_authenticate(self.user)
 
@@ -227,9 +227,9 @@ class MiddlewareTrustTests(TestCase):
 class LogAPITests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.normal = Users.objects.create(username='log-normal', password='!')
-        cls.inactive = Users.objects.create(username='log-inactive', password='!', is_superuser=True, is_active=False)
-        cls.admin = Users.objects.create(username='log-admin', password='!', is_superuser=True)
+        cls.normal = Users.objects.create(username='log-normal', password='!', pwd_change_count=1)
+        cls.inactive = Users.objects.create(username='log-inactive', password='!', is_superuser=True, is_active=False, pwd_change_count=1)
+        cls.admin = Users.objects.create(username='log-admin', password='!', is_superuser=True, pwd_change_count=1)
         cls.operation_log = OperationLog.objects.create(request_path='/historical/')
         cls.login_log = LoginLog.objects.create(username='historical')
         for method in (0, 1, 2, 3, 5):

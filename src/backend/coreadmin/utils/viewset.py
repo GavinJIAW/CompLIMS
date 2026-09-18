@@ -1,3 +1,5 @@
+from django.db import transaction, connection
+from coreadmin.system.services.writes import atomic_command
 # -*- coding: utf-8 -*-
 
 
@@ -58,6 +60,8 @@ class CustomModelViewSet(ModelViewSet, ImportSerializerMixin, ExportSerializerMi
             raise PermissionDenied()
         if context.action.policy == Policy.B1_SHUTDOWN:
             raise MethodNotAllowed(request.method)
+        from coreadmin.utils.authentication import must_change_gate
+        must_change_gate(request.user, context.action.code, context.action.policy == Policy.PUBLIC)
         from coreadmin.access.targets import validate_targets
         validate_targets(self, request, context)
         request._canonical_access_view = self
@@ -76,7 +80,16 @@ class CustomModelViewSet(ModelViewSet, ImportSerializerMixin, ExportSerializerMi
         return DetailResponse(data={}, msg='Metadata available only through approved projections.')
 
     def get_object(self):
-        return super().get_object()
+        obj = super().get_object()
+        if connection.in_atomic_block and self.request.method in ('PUT', 'PATCH', 'DELETE'):
+            # Lock the object, then repeat B2 resolution against its current state.
+            from django.shortcuts import get_object_or_404
+            get_object_or_404(self.queryset.model.objects.select_for_update(), pk=obj.pk)
+            self.access_context.__dict__.pop('grants', None)
+            self.access_context.__dict__.pop('child_depts', None)
+            self.field_policy.__dict__.pop('configured', None)
+            obj = super().get_object()
+        return obj
 
     def filter_queryset(self, queryset):
         queryset = context_for(self.request, self).scope(queryset)
@@ -119,6 +132,7 @@ class CustomModelViewSet(ModelViewSet, ImportSerializerMixin, ExportSerializerMi
             kwargs.setdefault('many', True)
         return serializer_class(*args, **kwargs)
 
+    @atomic_command
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data, request=request)
         serializer.is_valid(raise_exception=True)
@@ -128,7 +142,11 @@ class CustomModelViewSet(ModelViewSet, ImportSerializerMixin, ExportSerializerMi
     def perform_create(self, serializer):
         # Use the exact proposed scope context, independently of RESTQL's
         # presentation field selection. Clients cannot supply attribution.
-        serializer.save(**self.access_context.create_attribution())
+        if self.access_context.action.resource == 'message_center':
+            from coreadmin.system.services.messages import MessageService
+            MessageService.create(serializer, **self.access_context.create_attribution())
+        else:
+            serializer.save(**self.access_context.create_attribution())
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -144,6 +162,7 @@ class CustomModelViewSet(ModelViewSet, ImportSerializerMixin, ExportSerializerMi
         serializer = self.get_serializer(instance)
         return DetailResponse(data=serializer.data, msg="获取成功")
 
+    @atomic_command
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
@@ -157,6 +176,7 @@ class CustomModelViewSet(ModelViewSet, ImportSerializerMixin, ExportSerializerMi
             instance._prefetched_objects_cache = {}
         return DetailResponse(data=serializer.data, msg="更新成功")
 
+    @atomic_command
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         instance.delete()
@@ -169,6 +189,7 @@ class CustomModelViewSet(ModelViewSet, ImportSerializerMixin, ExportSerializerMi
         properties={'keys': keys}
     ), operation_summary='批量删除')
     @action(methods=['delete'], detail=False)
+    @atomic_command
     def multiple_delete(self, request, *args, **kwargs):
         if not self.bulk_delete_enabled:
             return ErrorResponse(msg='Bulk deletion is temporarily disabled.', status=405)
@@ -179,6 +200,10 @@ class CustomModelViewSet(ModelViewSet, ImportSerializerMixin, ExportSerializerMi
                 raise ValidationError({'keys': 'Expected a list of IDs.'})
             from coreadmin.access.targets import ids
             keys = ids(keys)
+            targets = context_for(request, self).scope(self.get_queryset()).filter(pk__in=keys)
+            if set(targets.values_list('pk', flat=True)) != keys:
+                raise NotFound()
+            list(self.queryset.model.objects.select_for_update().filter(pk__in=keys).order_by('pk'))
             targets = context_for(request, self).scope(self.get_queryset()).filter(pk__in=keys)
             if set(targets.values_list('pk', flat=True)) != keys:
                 raise NotFound()

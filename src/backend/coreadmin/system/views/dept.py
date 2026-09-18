@@ -1,3 +1,4 @@
+from coreadmin.system.services.writes import atomic_command
 # -*- coding: utf-8 -*-
 from rest_framework import serializers
 from rest_framework.decorators import action
@@ -61,6 +62,12 @@ class DeptCreateUpdateSerializer(CustomModelSerializer):
     部门管理 创建/更新时的列化器
     """
 
+    def validate(self, attrs):
+        from coreadmin.system.services.writes import validate_dept_parent
+        parent = attrs.get('parent', self.instance.parent if self.instance else self.request.user.dept)
+        validate_dept_parent(self.instance, parent)
+        return super().validate(attrs)
+
     def create(self, validated_data):
         value = validated_data.get('parent', None)
         if value is None:
@@ -91,6 +98,7 @@ class DeptViewSet(CustomModelViewSet):
     serializer_class = DeptSerializer
     create_serializer_class = DeptCreateUpdateSerializer
     update_serializer_class = DeptCreateUpdateSerializer
+    partial_update_serializer_class = DeptCreateUpdateSerializer
     filter_fields = ['name', 'id', 'parent']
     search_fields = []
     # extra_filter_class = []
@@ -130,7 +138,9 @@ class DeptViewSet(CustomModelViewSet):
         return DetailResponse(data=data, msg="获取成功")
 
     @action(methods=['POST'], detail=False, permission_classes=[SuperuserPermission])
+    @atomic_command
     def move_up(self, request):
+        list(Dept.objects.select_for_update().order_by("pk"))
         """部门上移"""
         dept_id = request.data.get('dept_id')
         try:
@@ -145,7 +155,9 @@ class DeptViewSet(CustomModelViewSet):
         return SuccessResponse(data=[], msg="上移成功")
 
     @action(methods=['POST'], detail=False, permission_classes=[SuperuserPermission])
+    @atomic_command
     def move_down(self, request):
+        list(Dept.objects.select_for_update().order_by("pk"))
         """部门下移"""
         dept_id = request.data['dept_id']
         try:

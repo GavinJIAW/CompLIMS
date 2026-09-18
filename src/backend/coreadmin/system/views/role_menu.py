@@ -1,3 +1,4 @@
+from coreadmin.system.services.grants import grant_command
 # -*- coding: utf-8 -*-
 
 
@@ -62,6 +63,7 @@ class RoleMenuPermissionViewSet(AuthorizationMutationMixin, CustomModelViewSet):
     extra_filter_class = []
 
     @action(methods=['post'],detail=False)
+    @grant_command
     def save_auth(self,request):
         """
         保存页面菜单授权

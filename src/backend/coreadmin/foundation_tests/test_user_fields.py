@@ -11,11 +11,11 @@ from .test_grant_management import database_snapshot
 class UserFieldsTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.admin = Users.objects.create(username='admin', name='Admin', password='!', is_superuser=True)
+        cls.admin = Users.objects.create(username='admin', name='Admin', password='!', is_superuser=True, pwd_change_count=1)
         cls.dept = Dept.objects.create(name='Department', key='department')
         cls.role = Role.objects.create(name='Role', key='role')
         cls.post = Post.objects.create(name='Post', code='post')
-        cls.target = Users.objects.create(username='target', name='Target', password='!stored-test-marker', dept=cls.dept, dept_belong_id=str(cls.dept.pk), login_error_count=4)
+        cls.target = Users.objects.create(username='target', name='Target', password='!stored-test-marker', dept=cls.dept, dept_belong_id=str(cls.dept.pk), login_error_count=4, pwd_change_count=1)
         cls.target.role.add(cls.role)
         cls.target.post.add(cls.post)
 
@@ -79,8 +79,8 @@ class UserFieldsTests(TestCase):
 
     def test_safe_bulk_create(self):
         response = self.client.post('/api/system/user/', [
-            {'username': 'bulk-one', 'name': 'One'},
-            {'username': 'bulk-two', 'name': 'Two'},
+            {'username': 'bulk-one', 'name': 'One', 'password': 'Valid-test-password-2026!'},
+            {'username': 'bulk-two', 'name': 'Two', 'password': 'Valid-test-password-2026!'},
         ], format='json')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['code'], 2000)

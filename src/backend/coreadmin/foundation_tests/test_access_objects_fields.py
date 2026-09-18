@@ -15,10 +15,10 @@ class ObjectFieldPolicyTests(TestCase):
     def setUpTestData(cls):
         cls.dept = Dept.objects.create(name='One')
         cls.other_dept = Dept.objects.create(name='Two', parent=cls.dept)
-        cls.actor = Users.objects.create(username='actor', name='Actor', dept=cls.dept)
-        cls.admin = Users.objects.create(username='admin', is_superuser=True)
-        cls.a = Users.objects.create(username='a', name='Visible A', email='a@example.test', creator=cls.actor, dept_belong_id=cls.dept.id, dept=cls.dept)
-        cls.b = Users.objects.create(username='b', name='Hidden B', email='b@example.test', dept_belong_id=cls.other_dept.id, dept=cls.other_dept)
+        cls.actor = Users.objects.create(username='actor', name='Actor', dept=cls.dept, pwd_change_count=1)
+        cls.admin = Users.objects.create(username='admin', is_superuser=True, pwd_change_count=1)
+        cls.a = Users.objects.create(username='a', name='Visible A', email='a@example.test', creator=cls.actor, dept_belong_id=cls.dept.id, dept=cls.dept, pwd_change_count=1)
+        cls.b = Users.objects.create(username='b', name='Hidden B', email='b@example.test', dept_belong_id=cls.other_dept.id, dept=cls.other_dept, pwd_change_count=1)
         cls.client_user = APIClient()
         cls.client_user.force_authenticate(cls.actor)
 
@@ -84,7 +84,7 @@ class ObjectFieldPolicyTests(TestCase):
 
     def test_create_scope_and_field_ceiling_bulk_zero_partial_write(self):
         grant(self.actor, 'user:Create', 'Users', fields=['name'], create=['username', 'name', 'password', 'is_superuser'], scope=0)
-        response = self.client_user.post('/api/system/user/', {'username': 'new', 'name': 'New'}, format='json')
+        response = self.client_user.post('/api/system/user/', {'username': 'new', 'name': 'New', 'password': 'Valid-test-password-2026!'}, format='json')
         self.assertEqual(response.status_code, 200)
         created = Users.objects.get(username='new')
         self.assertEqual(created.creator_id, self.actor.id)
@@ -195,10 +195,10 @@ class ObjectFieldPolicyTests(TestCase):
         self.assertFalse(Users.objects.filter(pk=self.a.id).exists())
 
     def test_real_jwt_disabled_role_revocation(self):
-        from rest_framework_simplejwt.tokens import RefreshToken
+        from coreadmin.system.services.auth import AuthService
         permission = grant(self.actor, 'user:Retrieve', 'Users', fields=['name'])
         client = APIClient()
-        client.credentials(HTTP_AUTHORIZATION='JWT ' + str(RefreshToken.for_user(self.actor).access_token))
+        client.credentials(HTTP_AUTHORIZATION='JWT ' + AuthService.issue(self.actor)['access'])
         url = f'/api/system/user/{self.a.id}/'
         self.assertEqual(client.get(url).status_code, 200)
         Role.objects.filter(pk=permission.role_id).update(status=False)

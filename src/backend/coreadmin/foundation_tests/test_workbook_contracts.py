@@ -15,12 +15,12 @@ from coreadmin.system.views.user import UserViewSet
 class WorkbookContractTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.actor = Users.objects.create(username='workbook-actor')
-        cls.admin = Users.objects.create(username='workbook-admin', is_superuser=True)
+        cls.actor = Users.objects.create(username='workbook-actor', pwd_change_count=1)
+        cls.admin = Users.objects.create(username='workbook-admin', is_superuser=True, pwd_change_count=1)
         cls.own = Users.objects.create(username='own-workbook', name='Visible name',
-            email='HIDDEN_EMAIL@example.test', creator=cls.actor)
-        cls.second = Users.objects.create(username='second-workbook', creator=cls.actor)
-        cls.other = Users.objects.create(username='OUT_OF_SCOPE_USER')
+            email='HIDDEN_EMAIL@example.test', creator=cls.actor, pwd_change_count=1)
+        cls.second = Users.objects.create(username='second-workbook', creator=cls.actor, pwd_change_count=1)
+        cls.other = Users.objects.create(username='OUT_OF_SCOPE_USER', pwd_change_count=1)
 
     def setUp(self):
         self.client = APIClient()

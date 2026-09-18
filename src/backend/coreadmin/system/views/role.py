@@ -1,3 +1,4 @@
+from coreadmin.system.services.grants import grant_command
 # -*- coding: utf-8 -*-
 
 
@@ -130,6 +131,7 @@ class RoleViewSet(AuthorizationMutationMixin, PatchAsUpdateFilterMixin, CustomMo
 
 
     @action(methods=['PUT'], detail=True, permission_classes=[IsAuthenticated])
+    @grant_command
     def set_role_users(self, request, pk):
         """
         设置 角色-用户
@@ -179,6 +181,7 @@ class RoleViewSet(AuthorizationMutationMixin, PatchAsUpdateFilterMixin, CustomMo
         return SuccessResponse(data=page)
 
     @action(methods=['DELETE'], detail=True, permission_classes=[IsAuthenticated, CustomPermission])
+    @grant_command
     def remove_role_user(self, request, pk):
         """
         角色-删除用户
@@ -194,6 +197,7 @@ class RoleViewSet(AuthorizationMutationMixin, PatchAsUpdateFilterMixin, CustomMo
         return SuccessResponse(msg="删除成功")
 
     @action(methods=['POST'], detail=True, permission_classes=[IsAuthenticated, CustomPermission])
+    @grant_command
     def add_role_users(self, request, pk):
         """
         角色-添加用户

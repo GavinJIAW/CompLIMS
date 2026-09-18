@@ -8,7 +8,7 @@ from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.auth.models import AnonymousUser
 from django.urls.resolvers import ResolverMatch
-from rest_framework_simplejwt.authentication import JWTAuthentication
+from coreadmin.utils.authentication import SessionJWTAuthentication as JWTAuthentication
 from user_agents import parse
 
 from coreadmin.system.models import LoginLog

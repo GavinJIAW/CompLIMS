@@ -1,3 +1,4 @@
+from coreadmin.system.services.writes import atomic_command
 # -*- coding: utf-8 -*-
 from django.apps import apps
 from rest_framework import serializers
@@ -66,6 +67,7 @@ class MenuFieldViewSet(AuthorizationMutationMixin, PatchAsUpdateFilterMixin, Cus
         return DetailResponse(res)
 
     @action(methods=['POST'], detail=False, permission_classes=[IsAuthenticated])
+    @atomic_command
     def auto_match_fields(self, request):
         """自动匹配已有的字段"""
         menu_id = request.data.get('menu')

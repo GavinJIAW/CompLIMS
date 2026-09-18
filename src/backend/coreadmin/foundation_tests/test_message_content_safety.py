@@ -10,7 +10,7 @@ WEB = Path(__file__).resolve().parents[3] / 'web' / 'src'
 
 class MessageContentTests(TestCase):
     def test_api_preserves_untrusted_string_without_rewriting_history(self):
-        user = Users.objects.create(username='message-reader', password='!', is_superuser=True)
+        user = Users.objects.create(username='message-reader', password='!', is_superuser=True, pwd_change_count=1)
         client = APIClient()
         client.force_authenticate(user)
         for content in PAYLOADS:

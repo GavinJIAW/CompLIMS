@@ -1,4 +1,5 @@
 import hashlib
+import uuid
 import os
 from time import time
 from pathlib import PurePosixPath
@@ -6,6 +7,7 @@ from django.contrib.auth.models import AbstractUser, UserManager
 from django.db import models
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from application import dispatch
+from coreadmin.system.services.effects import after_commit
 from coreadmin.utils.models import CoreModel, table_prefix
 
 
@@ -23,17 +25,26 @@ class Role(CoreModel):
 
 
 class CustomUserManager(UserManager):
+    def create_user(self, username, email=None, password=None, **extra_fields):
+        from coreadmin.system.services.auth import password_policy
+        password_policy(password, self.model(username=username, email=email))
+        extra_fields['credential_version'] = 'DJANGO_NATIVE'
+        extra_fields['pwd_change_count'] = 0
+        return super().create_user(username, email, password, **extra_fields)
 
     def create_superuser(self, username, email=None, password=None, **extra_fields):
-        user = super(CustomUserManager, self).create_superuser(username, email, password, **extra_fields)
-        user.set_password(password)
-        try:
-            user.role.add(Role.objects.get(name="管理员"))
-            user.save(using=self._db)
+        from django.db import transaction
+        from coreadmin.system.services.auth import password_policy
+        with transaction.atomic(using=self._db):
+            role = Role.objects.using(self._db).select_for_update().filter(name="管理员").first()
+            if role is None:
+                raise ValidationError("角色`管理员`不存在")
+            password_policy(password, self.model(username=username, email=email))
+            extra_fields['credential_version'] = 'DJANGO_NATIVE'
+            extra_fields['pwd_change_count'] = 0
+            user = super().create_superuser(username, email, password, **extra_fields)
+            user.role.add(role)
             return user
-        except ObjectDoesNotExist:
-            user.delete()
-            raise ValidationError("角色`管理员`不存在, 创建失败, 请先执行python manage.py init")
 
 
 class Users(CoreModel, AbstractUser):
@@ -60,24 +71,26 @@ class Users(CoreModel, AbstractUser):
     )
     post = models.ManyToManyField(to="Post", blank=True, verbose_name="关联岗位", db_constraint=False,
                                   help_text="关联岗位")
-    role = models.ManyToManyField(to="Role", blank=True, verbose_name="关联角色", db_constraint=False,
+    role = models.ManyToManyField(to="Role", blank=True, verbose_name="关联角色", db_constraint=True,
                                   help_text="关联角色")
     dept = models.ForeignKey(
         to="Dept",
         verbose_name="所属部门",
         on_delete=models.PROTECT,
-        db_constraint=False,
+        db_constraint=True,
         null=True,
         blank=True,
         help_text="关联部门",
     )
     login_error_count = models.IntegerField(default=0, verbose_name="登录错误次数", help_text="登录错误次数")
     pwd_change_count = models.IntegerField(default=0,blank=True, verbose_name="密码修改次数", help_text="密码修改次数")
+    credential_version = models.CharField(max_length=20, default="LEGACY_UNKNOWN",
+        choices=(("LEGACY_UNKNOWN", "Legacy unknown"), ("DJANGO_NATIVE", "Django native")))
     objects = CustomUserManager()
 
     def set_password(self, raw_password):
-        if raw_password:
-            super().set_password(hashlib.md5(raw_password.encode(encoding="UTF-8")).hexdigest())
+        super().set_password(raw_password)
+        self.credential_version = "DJANGO_NATIVE"
 
     def save(self, *args, **kwargs):
         if self.name == "":
@@ -121,7 +134,7 @@ class Dept(CoreModel):
         on_delete=models.CASCADE,
         default=None,
         verbose_name="上级部门",
-        db_constraint=False,
+        db_constraint=True,
         null=True,
         blank=True,
         help_text="上级部门",
@@ -168,6 +181,7 @@ class Dept(CoreModel):
         return list(set(dept_list))
 
     class Meta:
+        constraints = [models.CheckConstraint(check=~models.Q(parent=models.F("id")), name="b3_dept_no_self_parent")]
         db_table = table_prefix + "system_dept"
         verbose_name = "部门表"
         verbose_name_plural = verbose_name
@@ -234,10 +248,11 @@ class Menu(CoreModel):
 
 class MenuField(CoreModel):
     model = models.CharField(max_length=64, verbose_name='表名')
-    menu = models.ForeignKey(to='Menu', on_delete=models.CASCADE, verbose_name='菜单', db_constraint=False)
+    menu = models.ForeignKey(to='Menu', on_delete=models.CASCADE, verbose_name='菜单', db_constraint=True)
     field_name = models.CharField(max_length=64, verbose_name='模型表字段名')
     title = models.CharField(max_length=64, verbose_name='字段显示名')
     class Meta:
+        constraints = [models.UniqueConstraint(fields=["menu", "model", "field_name"], name="b3_menu_field_unique")]
         db_table = table_prefix + "system_menu_field"
         verbose_name = "菜单字段表"
         verbose_name_plural = verbose_name
@@ -245,13 +260,14 @@ class MenuField(CoreModel):
 
 
 class FieldPermission(CoreModel):
-    role = models.ForeignKey(to='Role', on_delete=models.CASCADE, verbose_name='角色', db_constraint=False)
-    field = models.ForeignKey(to='MenuField', on_delete=models.CASCADE,related_name='menu_field', verbose_name='字段', db_constraint=False)
+    role = models.ForeignKey(to='Role', on_delete=models.CASCADE, verbose_name='角色', db_constraint=True)
+    field = models.ForeignKey(to='MenuField', on_delete=models.CASCADE,related_name='menu_field', verbose_name='字段', db_constraint=True)
     is_query = models.BooleanField(default=1, verbose_name='是否可查询')
     is_create = models.BooleanField(default=1, verbose_name='是否可创建')
     is_update = models.BooleanField(default=1, verbose_name='是否可更新')
 
     class Meta:
+        constraints = [models.UniqueConstraint(fields=["role", "field"], name="b3_role_field_unique")]
         db_table = table_prefix + "system_field_permission"
         verbose_name = "字段权限表"
         verbose_name_plural = verbose_name
@@ -261,7 +277,7 @@ class FieldPermission(CoreModel):
 class MenuButton(CoreModel):
     menu = models.ForeignKey(
         to="Menu",
-        db_constraint=False,
+        db_constraint=True,
         related_name="menuPermission",
         on_delete=models.CASCADE,
         verbose_name="关联菜单",
@@ -290,7 +306,7 @@ class MenuButton(CoreModel):
 class RoleMenuPermission(CoreModel):
     role = models.ForeignKey(
         to="Role",
-        db_constraint=False,
+        db_constraint=True,
         related_name="role_menu",
         on_delete=models.CASCADE,
         verbose_name="关联角色",
@@ -298,7 +314,7 @@ class RoleMenuPermission(CoreModel):
     )
     menu = models.ForeignKey(
         to="Menu",
-        db_constraint=False,
+        db_constraint=True,
         related_name="role_menu",
         on_delete=models.CASCADE,
         verbose_name="关联菜单",
@@ -306,6 +322,7 @@ class RoleMenuPermission(CoreModel):
     )
 
     class Meta:
+        constraints = [models.UniqueConstraint(fields=["role", "menu"], name="b3_role_menu_unique")]
         db_table = table_prefix + "role_menu_permission"
         verbose_name = "角色菜单权限表"
         verbose_name_plural = verbose_name
@@ -315,7 +332,7 @@ class RoleMenuPermission(CoreModel):
 class RoleMenuButtonPermission(CoreModel):
     role = models.ForeignKey(
         to="Role",
-        db_constraint=False,
+        db_constraint=True,
         related_name="role_menu_button",
         on_delete=models.CASCADE,
         verbose_name="关联角色",
@@ -323,13 +340,13 @@ class RoleMenuButtonPermission(CoreModel):
     )
     menu_button = models.ForeignKey(
         to="MenuButton",
-        db_constraint=False,
+        db_constraint=True,
         related_name="menu_button_permission",
         on_delete=models.CASCADE,
         verbose_name="关联菜单按钮",
         help_text="关联菜单按钮",
-        null=True,
-        blank=True
+        null=False,
+        blank=False
     )
     DATASCOPE_CHOICES = (
         (0, "仅本人数据权限"),
@@ -340,10 +357,12 @@ class RoleMenuButtonPermission(CoreModel):
     )
     data_range = models.IntegerField(default=0, choices=DATASCOPE_CHOICES, verbose_name="数据权限范围",
                                      help_text="数据权限范围")
-    dept = models.ManyToManyField(to="Dept", blank=True, verbose_name="数据权限-关联部门", db_constraint=False,
+    dept = models.ManyToManyField(to="Dept", blank=True, verbose_name="数据权限-关联部门", db_constraint=True,
                                   help_text="数据权限-关联部门")
 
     class Meta:
+        constraints = [models.UniqueConstraint(fields=["role", "menu_button"], name="b3_role_button_unique"),
+            models.CheckConstraint(check=models.Q(data_range__in=[0, 1, 2, 3, 4]), name="b3_grant_scope_valid")]
         db_table = table_prefix + "role_menu_button_permission"
         verbose_name = "角色按钮权限表"
         verbose_name_plural = verbose_name
@@ -389,11 +408,11 @@ class Dictionary(CoreModel):
 
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
         super().save(force_insert, force_update, using, update_fields)
-        dispatch.refresh_dictionary()  # 有更新则刷新字典配置
+        after_commit(dispatch.refresh_dictionary)  # 有更新则刷新字典配置
 
     def delete(self, using=None, keep_parents=False):
         res = super().delete(using, keep_parents)
-        dispatch.refresh_dictionary()
+        after_commit(dispatch.refresh_dictionary)
         return res
 
 
@@ -531,7 +550,7 @@ class SystemConfig(CoreModel):
         to="self",
         verbose_name="父级",
         on_delete=models.CASCADE,
-        db_constraint=False,
+        db_constraint=True,
         null=True,
         blank=True,
         help_text="父级",
@@ -568,6 +587,7 @@ class SystemConfig(CoreModel):
     setting = models.JSONField(null=True, blank=True, verbose_name="配置", help_text="配置")
 
     class Meta:
+        constraints = [models.UniqueConstraint(fields=["key"], condition=models.Q(parent__isnull=True), name="b3_root_config_key_unique")]
         db_table = table_prefix + "system_config"
         verbose_name = "系统配置表"
         verbose_name_plural = verbose_name
@@ -579,11 +599,11 @@ class SystemConfig(CoreModel):
 
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
         super().save(force_insert, force_update, using, update_fields)
-        dispatch.refresh_system_config()  # 有更新则刷新系统配置
+        after_commit(dispatch.refresh_system_config)  # 有更新则刷新系统配置
 
     def delete(self, using=None, keep_parents=False):
         res = super().delete(using, keep_parents)
-        dispatch.refresh_system_config()
+        after_commit(dispatch.refresh_system_config)
         return res
 
 
@@ -636,13 +656,14 @@ class MessageCenter(CoreModel):
 
 
 class MessageCenterTargetUser(CoreModel):
-    users = models.ForeignKey(Users, related_name="target_user", on_delete=models.CASCADE, db_constraint=False,
+    users = models.ForeignKey(Users, related_name="target_user", on_delete=models.CASCADE, db_constraint=True,
                               verbose_name="关联用户表", help_text="关联用户表")
-    messagecenter = models.ForeignKey(MessageCenter, on_delete=models.CASCADE, db_constraint=False,
+    messagecenter = models.ForeignKey(MessageCenter, on_delete=models.CASCADE, db_constraint=True,
                                       verbose_name="关联消息中心表", help_text="关联消息中心表")
     is_read = models.BooleanField(default=False, blank=True, null=True, verbose_name="是否已读", help_text="是否已读")
 
     class Meta:
+        constraints = [models.UniqueConstraint(fields=["messagecenter", "users"], name="b3_message_user_unique")]
         db_table = table_prefix + "message_center_target_user"
         verbose_name = "消息中心目标用户表"
         verbose_name_plural = verbose_name
@@ -684,3 +705,18 @@ class DownloadCenter(CoreModel):
         verbose_name = "下载中心"
         verbose_name_plural = verbose_name
         ordering = ("-create_datetime",)
+
+
+class AuthSession(models.Model):
+    """The sole server-side authority for a JWT session and refresh succession."""
+    sid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(Users, on_delete=models.CASCADE, related_name="auth_sessions")
+    current_refresh_jti = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_refreshed_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField()
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    revoke_reason = models.CharField(max_length=40, blank=True, default="")
+
+    class Meta:
+        db_table = "auth_session"

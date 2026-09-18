@@ -7,8 +7,8 @@ from coreadmin.system.models import Users, Role, Menu, MenuButton, RoleMenuPermi
 class ProjectionTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.user = Users.objects.create(username='projection')
-        cls.admin = Users.objects.create(username='projection-admin', is_superuser=True)
+        cls.user = Users.objects.create(username='projection', pwd_change_count=1)
+        cls.admin = Users.objects.create(username='projection-admin', is_superuser=True, pwd_change_count=1)
 
     def client_for(self, actor):
         client = APIClient(); client.force_authenticate(actor)
@@ -59,6 +59,9 @@ class ProjectionTests(TestCase):
     def test_non_viewset_options_and_self_service_identity(self):
         client = self.client_for(self.user)
         self.assertEqual(client.options('/api/login/').data['data'], {})
+        from coreadmin.system.services.auth import AuthService
+        from rest_framework_simplejwt.tokens import AccessToken
+        client.force_authenticate(self.user, token=AccessToken(AuthService.issue(self.user)['access']))
         self.assertEqual(client.post('/api/logout/').status_code, 200)
         self.user.is_active = False
         self.assertEqual(client.post('/api/logout/').status_code, 403)

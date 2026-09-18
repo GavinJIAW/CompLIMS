@@ -21,10 +21,10 @@ ACTORS = ('anonymous', 'normal', 'inactive', 'admin')
 class DangerousEndpointTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.normal = Users.objects.create(username='b1c-normal', password='!')
-        cls.other = Users.objects.create(username='b1c-other', password='!')
-        cls.inactive = Users.objects.create(username='b1c-inactive', password='!', is_active=False, is_superuser=True)
-        cls.admin = Users.objects.create(username='b1c-admin', password='!', is_superuser=True)
+        cls.normal = Users.objects.create(username='b1c-normal', password='!', pwd_change_count=1)
+        cls.other = Users.objects.create(username='b1c-other', password='!', pwd_change_count=1)
+        cls.inactive = Users.objects.create(username='b1c-inactive', password='!', is_active=False, is_superuser=True, pwd_change_count=1)
+        cls.admin = Users.objects.create(username='b1c-admin', password='!', is_superuser=True, pwd_change_count=1)
         cls.dept = Dept.objects.create(name='One', key='one', sort=1)
         cls.dept2 = Dept.objects.create(name='Two', key='two', sort=2)
         from coreadmin.foundation_tests.access_fixtures import grant

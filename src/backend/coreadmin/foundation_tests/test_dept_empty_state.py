@@ -15,10 +15,10 @@ class DeptEmptyStateTests(TestCase):
              'gender': {'male': 0, 'female': 0, 'unknown': 0}, 'sub_dept_map': []}
 
     def setUp(self):
-        self.actor = Users.objects.create(username='dept-uat')
+        self.actor = Users.objects.create(username='dept-uat', pwd_change_count=1)
         self.dept = Dept.objects.create(name='REAL_DEPARTMENT', owner='REAL_OWNER')
         self.other = Dept.objects.create(name='OTHER_DEPARTMENT')
-        Users.objects.create(username='real-user', dept=self.dept, gender=1)
+        Users.objects.create(username='real-user', dept=self.dept, gender=1, pwd_change_count=1)
         grant(self.actor, 'dept:HeaderInfo', 'Dept', fields=['name'], scope=4, departments=[self.dept])
         self.client = APIClient()
         self.client.force_authenticate(self.actor)
@@ -67,14 +67,14 @@ class DeptEmptyStateTests(TestCase):
             self.assertEqual(self.client.get(self.url, {'dept_id': value, 'show_all': '0'}).status_code, 404)
 
     def test_empty_selection_does_not_bypass_action(self):
-        inactive = Users.objects.create(username='inactive-dept', is_active=False, is_superuser=True)
-        no_action = Users.objects.create(username='no-dept-action')
+        inactive = Users.objects.create(username='inactive-dept', is_active=False, is_superuser=True, pwd_change_count=1)
+        no_action = Users.objects.create(username='no-dept-action', pwd_change_count=1)
         for actor in (None, inactive, no_action):
             self.client.force_authenticate(actor)
             self.assertIn(self.client.get(self.url + '?dept_id=&show_all=0').status_code, (401, 403))
 
     def test_superuser_empty_selection_positive(self):
-        admin = Users.objects.create(username='dept-admin', is_superuser=True)
+        admin = Users.objects.create(username='dept-admin', is_superuser=True, pwd_change_count=1)
         self.client.force_authenticate(admin)
         response = self.client.get(self.url + '?dept_id=&show_all=0')
         self.assertEqual(response.status_code, 200)

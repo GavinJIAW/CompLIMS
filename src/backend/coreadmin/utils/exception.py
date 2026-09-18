@@ -1,3 +1,4 @@
+from django.db import IntegrityError
 # -*- coding: utf-8 -*-
 
 
@@ -29,6 +30,13 @@ def CustomExceptionHandler(ex, context):
     :param context:
     :return:
     """
+    if isinstance(ex, IntegrityError):
+        set_rollback()
+        cause = ex.__cause__
+        if getattr(cause, 'pgcode', None) == '23505':
+            return ErrorResponse(msg='Resource already exists.', code=409, status=409)
+        logger.error('Database integrity failure', exc_info=False)
+        return ErrorResponse(msg='Database operation failed.', code=4000, status=500)
     msg = ''
     code = 4000
     # 调用默认的异常处理函数

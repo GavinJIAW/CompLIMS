@@ -1,9 +1,7 @@
 from collections.abc import Mapping
 
-import hashlib
 import re
 
-from django.contrib.auth.hashers import make_password, check_password
 from django_restql.fields import DynamicSerializerMethodField
 from rest_framework import serializers
 from rest_framework.decorators import action
@@ -29,9 +27,6 @@ def recursion(instance, parent, result):
         array = recursion(new_instance, parent, result)
         res += array
     return res
-
-def validate_complex_password(password):
-    return password
 
 class UserSerializer(CustomModelSerializer):
     """
@@ -96,17 +91,17 @@ class UserCreateSerializer(UserWriteSerializer):
         ],
     )
     password = serializers.CharField(
-        required=False, write_only=True,
+        required=True, write_only=True, trim_whitespace=False,
     )
 
     def validate_password(self, value):
-        """
-        对密码进行验证
-        """
-        md5 = hashlib.md5()
-        md5.update(value.encode('utf-8'))
-        md5_password = md5.hexdigest()
-        return make_password(md5_password)
+        from coreadmin.system.services.auth import password_policy
+        password_policy(value)
+        return value
+
+    def create(self, validated_data):
+        from coreadmin.system.services.auth import UserService
+        return UserService.create(validated_data, super().create)
 
     class Meta:
         model = Users
@@ -131,7 +126,8 @@ class UserUpdateSerializer(UserWriteSerializer):
         # Server-controlled reset; client-supplied counters are rejected above.
         if validated_data.get('is_active'):
             validated_data['login_error_count'] = 0
-        return super().update(instance, validated_data)
+        from coreadmin.system.services.auth import UserService
+        return UserService.update(instance, validated_data, super().update)
 
     class Meta:
         model = Users
@@ -197,15 +193,6 @@ class ExportUserProfileSerializer(CustomModelSerializer):
 
 class UserProfileImportSerializer(CustomModelSerializer):
     password = serializers.CharField(read_only=True, required=False)
-
-    def save(self, **kwargs):
-        data = super().save(**kwargs)
-        password = hashlib.new(
-            "md5", str(self.initial_data.get("password", "admin123456")).encode(encoding="UTF-8")
-        ).hexdigest()
-        data.set_password(password)
-        data.save()
-        return data
 
     class Meta:
         model = Users
@@ -328,87 +315,25 @@ class UserViewSet(PatchAsUpdateFilterMixin, CustomModelViewSet):
 
     @action(methods=["PUT"], detail=False, permission_classes=[IsAuthenticated])
     def change_password(self, request, *args, **kwargs):
-        """密码修改"""
-        data = request.data
-        old_pwd = data.get("oldPassword")
-        new_pwd = data.get("newPassword")
-        new_pwd2 = data.get("newPassword2")
-        if old_pwd is None or new_pwd is None or new_pwd2 is None:
-            return ErrorResponse(msg="参数不能为空")
-        if new_pwd != new_pwd2:
-            return ErrorResponse(msg="两次密码不匹配")
-        if not validate_complex_password(new_pwd):
-            return ErrorResponse(data=None, msg="密码必须包含字母、数字和符号，且长度至少为8个字符")
-        verify_password = check_password(old_pwd, request.user.password)
-        if not verify_password:
-            old_pwd_md5 = hashlib.md5(old_pwd.encode(encoding='UTF-8')).hexdigest()
-            verify_password = check_password(str(old_pwd_md5), request.user.password)
-            # 创建用户时、自定义密码无法修改问题
-            if not verify_password:
-                old_pwd_md5 = hashlib.md5(old_pwd_md5.encode(encoding='UTF-8')).hexdigest()
-                verify_password = check_password(str(old_pwd_md5), request.user.password)
-        if verify_password:
-            # request.user.password = make_password(hashlib.md5(new_pwd.encode(encoding='UTF-8')).hexdigest())
-            request.user.password = make_password(hashlib.md5(new_pwd.encode(encoding='UTF-8')).hexdigest())
-            request.user.pwd_change_count += 1
-            request.user.save()
-            return DetailResponse(data=None, msg="修改成功")
-        else:
-            return ErrorResponse(msg="旧密码不正确")
+        from coreadmin.system.services.auth import AuthService
+        AuthService.change_password(request.user.pk, request.data.get('oldPassword'),
+            request.data.get('newPassword'), request.data.get('newPassword2'))
+        return DetailResponse(msg="密码已修改，请重新登录")
 
     @action(methods=["post"], detail=False, permission_classes=[IsAuthenticated])
     def login_change_password(self, request, *args, **kwargs):
-        """初次登录进行密码修改"""
-        data = request.data
-        new_pwd = data.get("password")
-        new_pwd2 = data.get("password_regain")
-        if new_pwd != new_pwd2:
-            return ErrorResponse(msg="两次密码不匹配")
-        else:
-            if not validate_complex_password(new_pwd):
-                return ErrorResponse(data=None, msg="密码必须包含字母、数字和符号，且长度至少为8个字符")
-            request.user.password = make_password(new_pwd)
-            request.user.pwd_change_count += 1
-            request.user.save()
-            return DetailResponse(data=None, msg="修改成功")
+        # First-login clients now use change_password with the current password.
+        return ErrorResponse(msg="Use change_password with the current password.", status=405)
 
     @action(methods=["PUT"], detail=True, permission_classes=[IsAuthenticated])
-    def reset_to_default_password(self, request,pk):
-        """恢复默认密码"""
-        if not self.request.user.is_superuser:
-            return ErrorResponse(msg="只允许超级管理员对其进行密码重置")
-        instance = Users.objects.filter(id=pk).first()
-        if instance:
-            default_password = dispatch.get_system_config_values("base.default_password")
-            md5_pwd = hashlib.md5(default_password.encode(encoding='UTF-8')).hexdigest()
-            instance.password = make_password(md5_pwd)
-            instance.save()
-            return DetailResponse(data=None, msg="密码重置成功")
-        else:
-            return ErrorResponse(msg="未获取到用户")
+    def reset_to_default_password(self, request, pk):
+        return ErrorResponse(msg="Shared default passwords are disabled.", status=405)
 
     @action(methods=["PUT"], detail=True)
     def reset_password(self, request, pk):
-        """
-        密码重置
-        """
-        if not self.request.user.is_superuser:
-            return ErrorResponse(msg="只允许超级管理员对其进行密码重置")
-        instance = Users.objects.filter(id=pk).first()
-        data = request.data
-        new_pwd = data.get("newPassword")
-        new_pwd2 = data.get("newPassword2")
-        if instance:
-            if new_pwd != new_pwd2:
-                return ErrorResponse(msg="两次密码不匹配")
-            else:
-                if not validate_complex_password(new_pwd):
-                    return ErrorResponse(data=None, msg="密码必须包含字母、数字和符号，且长度至少为8个字符")
-                instance.password = make_password(new_pwd)
-                instance.save()
-                return DetailResponse(data=None, msg="修改成功")
-        else:
-            return ErrorResponse(msg="未获取到用户")
+        from coreadmin.system.services.auth import AuthService
+        AuthService.reset_password(pk, request.data.get('newPassword'), request.data.get('newPassword2'))
+        return DetailResponse(msg="密码已重置，用户需要重新登录并改密")
 
     def list(self, request, *args, **kwargs):
         from coreadmin.access.context import context_for, descendants

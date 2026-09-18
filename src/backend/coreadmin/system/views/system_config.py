@@ -32,7 +32,7 @@ class SystemConfigCreateSerializer(CustomModelSerializer):
         验证key是否允许重复
         parent为空时不允许重复,反之允许
         """
-        instance = SystemConfig.objects.filter(key=value, parent__isnull=True).exists()
+        instance = SystemConfig.objects.filter(key=value, parent__isnull=True).exclude(pk=self.instance.pk if self.instance else None).exists()
         if instance:
             raise CustomValidationError('已存在相同变量名')
         return value
@@ -128,17 +128,8 @@ class SystemConfigViewSet(PatchAsUpdateFilterMixin, CustomModelViewSet):
         return super().get_permissions()
 
     def save_content(self, request):
-        body = request.data
-        data_mapping = {item['id']: item for item in body}
-        for obj_id, data in data_mapping.items():
-            instance_obj = SystemConfig.objects.filter(id=obj_id).first()
-            if instance_obj is None:
-                # return SystemConfig.objects.create(**data)
-                serializer = SystemConfigCreateSerializer(data=data)
-            else:
-                serializer = SystemConfigCreateSerializer(instance_obj, data=data)
-            if serializer.is_valid(raise_exception=True):
-                serializer.save()
+        from coreadmin.system.services.config import ConfigService
+        ConfigService.save_batch(request.data)
         return DetailResponse(msg="保存成功")
 
     def get_association_table(self, request):

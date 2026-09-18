@@ -1,3 +1,4 @@
+from coreadmin.system.services.writes import atomic_command
 # -*- coding: utf-8 -*-
 
 
@@ -140,7 +141,9 @@ class MenuViewSet(CustomModelViewSet):
         return SuccessResponse(data=data, total=len(data), msg="获取成功")
 
     @action(methods=['POST'], detail=False, permission_classes=[SuperuserPermission])
+    @atomic_command
     def move_up(self, request):
+        list(Menu.objects.select_for_update().order_by("pk"))
         """菜单上移"""
         menu_id = request.data.get('menu_id')
         try:
@@ -155,7 +158,9 @@ class MenuViewSet(CustomModelViewSet):
         return SuccessResponse(data=[], msg="上移成功")
 
     @action(methods=['POST'], detail=False, permission_classes=[SuperuserPermission])
+    @atomic_command
     def move_down(self, request):
+        list(Menu.objects.select_for_update().order_by("pk"))
         """菜单下移"""
         menu_id = request.data['menu_id']
         try:

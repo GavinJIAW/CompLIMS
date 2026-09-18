@@ -2,7 +2,7 @@
 from unittest.mock import patch
 from django.test import TestCase
 from rest_framework.test import APIClient, APIRequestFactory
-from rest_framework_simplejwt.tokens import RefreshToken
+from coreadmin.system.services.auth import AuthService
 from coreadmin.system.models import Users, Role, Menu, MenuButton, RoleMenuButtonPermission, ApiWhiteList
 from coreadmin.utils.permission import CustomPermission
 from coreadmin.system.views.system_config import InitSettingsViewSet
@@ -11,10 +11,10 @@ from coreadmin.system.views.system_config import InitSettingsViewSet
 class PublicEntrypointTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.normal = Users.objects.create(username='b1e-normal', password='!')
-        cls.inactive = Users.objects.create(username='b1e-inactive', password='!', is_active=False)
-        cls.admin = Users.objects.create(username='b1e-admin', password='!', is_superuser=True)
-        cls.inactive_admin = Users.objects.create(username='b1e-inactive-admin', password='!', is_superuser=True, is_active=False)
+        cls.normal = Users.objects.create(username='b1e-normal', password='!', pwd_change_count=1)
+        cls.inactive = Users.objects.create(username='b1e-inactive', password='!', is_active=False, pwd_change_count=1)
+        cls.admin = Users.objects.create(username='b1e-admin', password='!', is_superuser=True, pwd_change_count=1)
+        cls.inactive_admin = Users.objects.create(username='b1e-inactive-admin', password='!', is_superuser=True, is_active=False, pwd_change_count=1)
         role = Role.objects.create(name='Legacy', key='b1e-legacy')
         menu = Menu.objects.create(name='Legacy menu')
         button = MenuButton.objects.create(menu=menu, name='Read', value='b1e-read', api='/api/system/dictionary/', method=0)
@@ -52,7 +52,7 @@ class PublicEntrypointTests(TestCase):
                     self.assertEqual(client.get('/api/system/dictionary/').status_code, 200 if actor.is_active else 403)
 
     def test_old_jwt_rejected_after_deactivation(self):
-        token = str(RefreshToken.for_user(self.normal).access_token)
+        token = AuthService.issue(self.normal)['access']
         client = APIClient()
         client.credentials(HTTP_AUTHORIZATION='JWT ' + token)
         self.assertEqual(client.get('/api/init/dictionary/?dictionary_key=gender').status_code, 200)
@@ -75,7 +75,7 @@ class PublicEntrypointTests(TestCase):
             self.assertEqual(client.get('/api/captcha/').status_code, 200)
         # Missing credentials must reach validation, not an authentication gate.
         self.assertEqual(client.post('/api/login/', {}, format='json').status_code, 400)
-        refresh = str(RefreshToken.for_user(self.normal))
+        refresh = AuthService.issue(self.normal)['refresh']
         self.assertEqual(client.post('/api/token/refresh/', {'refresh': refresh}, format='json').status_code, 200)
 
     def test_health_endpoints_remain_public(self):

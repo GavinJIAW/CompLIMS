@@ -17,10 +17,10 @@ class GrantManagementTests(TestCase):
     def setUpTestData(cls):
         cls.dept = Dept.objects.create(name='Test department', key='test-dept')
         cls.role = Role.objects.create(name='Target role', key='target-role')
-        cls.normal = Users.objects.create(username='normal', name='Normal', password='!', dept=cls.dept)
-        cls.inactive = Users.objects.create(username='inactive', name='Inactive', password='!', is_superuser=True, is_active=False)
-        cls.admin = Users.objects.create(username='admin', name='Admin', password='!', is_superuser=True)
-        cls.member = Users.objects.create(username='member', name='Member', password='!')
+        cls.normal = Users.objects.create(username='normal', name='Normal', password='!', dept=cls.dept, pwd_change_count=1)
+        cls.inactive = Users.objects.create(username='inactive', name='Inactive', password='!', is_superuser=True, is_active=False, pwd_change_count=1)
+        cls.admin = Users.objects.create(username='admin', name='Admin', password='!', is_superuser=True, pwd_change_count=1)
+        cls.member = Users.objects.create(username='member', name='Member', password='!', pwd_change_count=1)
         cls.member.role.add(cls.role)
         cls.menu = Menu.objects.create(name='Target menu', component_name='test_menu')
         cls.button = MenuButton.objects.create(menu=cls.menu, name='Target button', value='target', api='/target/', method=0)
@@ -47,7 +47,11 @@ class GrantManagementTests(TestCase):
         }
         pk, payload = fixtures[resource]
         base = '/api/system/' + resource + '/'
-        if action == 'create': return 'post', base, payload
+        if action == 'create':
+            if resource in ('role_menu_permission', 'role_menu_button_permission'):
+                new_role = Role.objects.create(name='Unassigned', key='unassigned')
+                payload = dict(payload, role=new_role.pk)
+            return 'post', base, payload
         if action == 'update': return 'put', base + str(pk) + '/', payload
         if action == 'partial_update': return 'patch', base + str(pk) + '/', payload
         if action == 'destroy': return 'delete', base + str(pk) + '/', {}

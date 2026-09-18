@@ -159,7 +159,7 @@ class MessageCenterCreateSerializer(CustomModelSerializer):
         if target_type in [3]:  # 系统通知
             users = Users.objects.values_list('id', flat=True)
         targetuser_data = []
-        for user in users:
+        for user in sorted(set(users)):
             targetuser_data.append({
                 "messagecenter": data.id,
                 "users": user
@@ -198,15 +198,8 @@ class MessageCenterViewSet(CustomModelViewSet):
         """
         重写查看
         """
-        instance = self.get_object()
-        pk = instance.pk
-        user_id = self.request.user.id
-        queryset = MessageCenterTargetUser.objects.filter(users__id=user_id, messagecenter__id=pk).first()
-        if queryset:
-            queryset.is_read = True
-            queryset.save()
-        serializer = self.get_serializer(instance)
-        return DetailResponse(data=serializer.data, msg="获取成功")
+        from coreadmin.system.services.messages import MessageService
+        return MessageService.read(self)
 
     @action(methods=['GET'], detail=False, permission_classes=[IsAuthenticated])
     def get_self_receive(self, request):

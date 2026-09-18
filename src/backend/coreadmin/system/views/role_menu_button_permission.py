@@ -1,3 +1,4 @@
+from coreadmin.system.services.grants import grant_command
 # -*- coding: utf-8 -*-
 
 
@@ -183,6 +184,7 @@ class RoleMenuButtonPermissionViewSet(AuthorizationMutationMixin, CustomModelVie
         return DetailResponse(data=serializer.data)
 
     @action(methods=['PUT'], detail=False, permission_classes=[IsAuthenticated])
+    @grant_command
     def set_role_menu(self, request):
         """
         设置 角色-菜单
@@ -219,6 +221,7 @@ class RoleMenuButtonPermissionViewSet(AuthorizationMutationMixin, CustomModelVie
         return DetailResponse(data={'menu_btn': menu_btn_serializer.data, 'menu_field': menu_field_serializer.data})
 
     @action(methods=['PUT'], detail=True, permission_classes=[IsAuthenticated])
+    @grant_command
     def set_role_menu_field(self, request, pk):
         """
         设置 角色-菜单-列字段
@@ -236,6 +239,7 @@ class RoleMenuButtonPermissionViewSet(AuthorizationMutationMixin, CustomModelVie
         return DetailResponse(data=[], msg="更新成功")
 
     @action(methods=['PUT'], detail=False, permission_classes=[IsAuthenticated])
+    @grant_command
     def set_role_menu_btn(self, request):
         """
         设置 角色-菜单-按钮
@@ -263,6 +267,7 @@ class RoleMenuButtonPermissionViewSet(AuthorizationMutationMixin, CustomModelVie
         return DetailResponse(data=serializer.data, msg="更新成功")
 
     @action(methods=['PUT'], detail=False, permission_classes=[IsAuthenticated])
+    @grant_command
     def set_role_menu_btn_data_range(self, request):
         """
         设置 角色-菜单-按钮-权限

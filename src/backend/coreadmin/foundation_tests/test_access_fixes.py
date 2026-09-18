@@ -8,8 +8,8 @@ from coreadmin.system.models import Area, Dept, Users, Role, FieldPermission
 
 class AreaRelationTests(TestCase):
     def setUp(self):
-        self.actor = Users.objects.create(username='area-reader')
-        self.admin = Users.objects.create(username='area-admin', is_superuser=True)
+        self.actor = Users.objects.create(username='area-reader', pwd_change_count=1)
+        self.admin = Users.objects.create(username='area-admin', is_superuser=True, pwd_change_count=1)
         self.department = Dept.objects.create(name='Parent scope')
         self.parent = Area.objects.create(name='Protected parent', code='parent-code', level=1,
                                           dept_belong_id=self.department.pk)
@@ -55,10 +55,10 @@ class AreaRelationTests(TestCase):
 
 class DeptChildFieldTests(TestCase):
     def setUp(self):
-        self.actor = Users.objects.create(username='dept-reader')
+        self.actor = Users.objects.create(username='dept-reader', pwd_change_count=1)
         self.parent = Dept.objects.create(name='Parent', creator=self.actor)
         self.child = Dept.objects.create(name='Protected child', parent=self.parent)
-        Users.objects.create(username='child-member', dept=self.child)
+        Users.objects.create(username='child-member', dept=self.child, pwd_change_count=1)
         self.parent_grant = grant(self.actor, 'dept:HeaderInfo', 'Dept',
                                   fields=['name', 'sub_dept_map', 'dept_user'], scope=0)
         self.child_grant = grant(self.actor, 'dept:HeaderInfo', 'Dept', scope=4,
@@ -96,7 +96,7 @@ class DeptChildFieldTests(TestCase):
         self.assertEqual(self.data(), before)
 
     def test_admin_child_output_remains_available(self):
-        admin = Users.objects.create(username='dept-admin', is_superuser=True)
+        admin = Users.objects.create(username='dept-admin', is_superuser=True, pwd_change_count=1)
         self.client.force_authenticate(admin)
         self.assertEqual(self.data()['sub_dept_map'], [{'name': self.child.name, 'count': 1}])
 
@@ -104,8 +104,8 @@ class DeptChildFieldTests(TestCase):
 class SystemConfigQueryTests(TestCase):
     def setUp(self):
         from coreadmin.system.models import SystemConfig
-        self.admin = Users.objects.create(username='config-admin', is_superuser=True)
-        self.normal = Users.objects.create(username='config-reader')
+        self.admin = Users.objects.create(username='config-admin', is_superuser=True, pwd_change_count=1)
+        self.normal = Users.objects.create(username='config-reader', pwd_change_count=1)
         self.root = SystemConfig.objects.create(title='Root', key='root')
         self.child = SystemConfig.objects.create(title='Child', key='child', parent=self.root)
         self.client = APIClient()
@@ -144,7 +144,7 @@ class SystemConfigQueryTests(TestCase):
 
 class AreaDerivedWriteTests(TestCase):
     def setUp(self):
-        self.actor = Users.objects.create(username='area-writer')
+        self.actor = Users.objects.create(username='area-writer', pwd_change_count=1)
         self.parent = Area.objects.create(name='Parent', code='parent-not-pk', level=2, creator=self.actor)
         self.area = Area.objects.create(name='Before', code='before-code', level=3,
                                         pinyin='before', initials='B', pcode=self.parent, creator=self.actor)
@@ -190,7 +190,7 @@ class AreaDerivedWriteTests(TestCase):
     def test_dynamic_grants_cannot_expand_derived_field_ceiling(self):
         grant(self.actor, 'area:Create', 'Area', scope=0, create=['level', 'pinyin', 'initials'])
         self.assertEqual(self.client.post('/api/system/area/', {'name': '北京', 'code': 'forged', 'level': 9}, format='json').status_code, 400)
-        admin = Users.objects.create(username='area-write-admin', is_superuser=True)
+        admin = Users.objects.create(username='area-write-admin', is_superuser=True, pwd_change_count=1)
         self.client.force_authenticate(admin)
         self.assertEqual(self.client.patch(f'/api/system/area/{self.area.pk}/', {'level': 9}, format='json').status_code, 400)
 
@@ -198,17 +198,17 @@ class AreaDerivedWriteTests(TestCase):
 class MessageClosureTests(TestCase):
     def setUp(self):
         from coreadmin.system.models import MessageCenter, MessageCenterTargetUser
-        from rest_framework_simplejwt.tokens import RefreshToken
-        self.recipient = Users.objects.create(username='message-recipient')
-        self.sender = Users.objects.create(username='message-sender')
-        self.other = Users.objects.create(username='message-other')
+        from coreadmin.system.services.auth import AuthService
+        self.recipient = Users.objects.create(username='message-recipient', pwd_change_count=1)
+        self.sender = Users.objects.create(username='message-sender', pwd_change_count=1)
+        self.other = Users.objects.create(username='message-other', pwd_change_count=1)
         self.content = '<script>window.__B2_FIX__=1</script>\n<b>Plain message</b>'
         self.own = MessageCenter.objects.create(title='Own', content=self.content, creator=self.sender)
         self.relation = MessageCenterTargetUser.objects.create(messagecenter=self.own, users=self.recipient, is_read=False)
         self.other_message = MessageCenter.objects.create(title='Other only', content='Other content', creator=self.sender)
         MessageCenterTargetUser.objects.create(messagecenter=self.other_message, users=self.other, is_read=False)
         self.client = APIClient()
-        self.client.credentials(HTTP_AUTHORIZATION='JWT ' + str(RefreshToken.for_user(self.recipient).access_token))
+        self.client.credentials(HTTP_AUTHORIZATION='JWT ' + AuthService.issue(self.recipient)['access'])
 
     def snapshot(self):
         from coreadmin.system.models import MessageCenter, MessageCenterTargetUser

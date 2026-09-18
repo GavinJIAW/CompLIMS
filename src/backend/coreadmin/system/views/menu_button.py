@@ -1,3 +1,4 @@
+from coreadmin.system.services.writes import atomic_command
 # -*- coding: utf-8 -*-
 
 
@@ -92,6 +93,7 @@ class MenuButtonViewSet(AuthorizationMutationMixin, CustomModelViewSet):
         return DetailResponse(data=button_aliases(request.user))
 
     @action(methods=['post'], detail=False, permission_classes=[IsAuthenticated])
+    @atomic_command
     def batch_create(self, request, *args, **kwargs):
         """
         批量创建菜单“增删改查查”权限
