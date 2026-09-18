@@ -482,3 +482,8 @@ TABLE_PREFIX = locals().get('TABLE_PREFIX', "")
 SYSTEM_CONFIG = {}
 # 字典配置
 DICTIONARY_CONFIG = {}
+
+
+# Formal files are private, outside the public MEDIA_ROOT. Tests override this.
+MANAGED_FILE_ROOT = os.environ.get('MANAGED_FILE_ROOT', str(Path.home() / '.complims' / 'managed-files'))
+MANAGED_FILE_MAX_SIZE_BYTES = int(os.environ.get('MANAGED_FILE_MAX_SIZE_BYTES', '104857600'))

@@ -40,6 +40,7 @@ RESOURCES = {
     'dictionary': ('dictionary', 'DictionaryViewSet'),
     'area': ('area', 'AreaViewSet'),
     'file': ('file_list', 'FileViewSet'),
+    'managed_file': ('managed_file', 'ManagedFileViewSet'),
     'api_white_list': ('api_white_list', 'ApiWhiteListViewSet'),
     'system_config': ('system_config', 'SystemConfigViewSet'),
     'message_center': ('message_center', 'MessageCenterViewSet'),
@@ -73,6 +74,8 @@ def register(resource, names, policy, methods, shutdown_guard='active'):
 R, S, O, X = (Policy.ROLE_GRANTABLE, Policy.FIXED_SUPERUSER,
                Policy.SELF_SERVICE, Policy.B1_SHUTDOWN)
 for resource in RESOURCES:
+    if resource == 'managed_file':
+        continue  # B5 has a fixed multipart/read contract, no inherited workbook actions.
     read_policy = S if resource in {'file', 'operation_log', 'login_log'} else (
         O if resource == 'download_center' else R)
     register(resource, 'list retrieve', read_policy, 'GET HEAD')
@@ -94,6 +97,12 @@ for resource in RESOURCES:
     # Safe metadata is a separate policy: identity only, no serializer discovery.
     register(resource, 'metadata', O, 'OPTIONS')
 register('user', 'export_data', R, 'POST')
+register('managed_file', 'list retrieve download', O, 'GET HEAD')
+register('managed_file', 'create', O, 'POST')
+register('managed_file', 'metadata', O, 'OPTIONS')
+register('managed_file', 'update', X, 'PUT PATCH')
+register('managed_file', 'destroy multiple_delete', X, 'DELETE')
+
 
 register('menu', 'web_router get_all_menu', O, 'GET HEAD')
 register('menu', 'move_up move_down', S, 'POST')

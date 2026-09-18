@@ -52,3 +52,21 @@ LOGGING = {
     "root": {"handlers": ["null"], "level": "CRITICAL"},
     "loggers": {"django": {"handlers": ["null"], "propagate": False}},
 }
+
+
+# Reserve an isolated temporary path without I/O during settings import.
+# The service creates it on first upload; startup-only tests remain side-effect free.
+import atexit
+import shutil
+import uuid
+MANAGED_FILE_ROOT = str(Path(os.environ.get('TEMP') or os.environ.get('TMP') or '/tmp')
+    / ('complims-managed-test-' + uuid.uuid4().hex))
+MANAGED_FILE_MAX_SIZE_BYTES = 104857600
+
+
+def _cleanup_managed_test_storage(root=MANAGED_FILE_ROOT):
+    if Path(root).is_dir():
+        shutil.rmtree(root)
+
+
+atexit.register(_cleanup_managed_test_storage)

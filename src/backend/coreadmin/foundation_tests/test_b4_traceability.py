@@ -232,8 +232,9 @@ class MigrationTests(TransactionTestCase):
                     *[field.attname for field in model._meta.local_fields if field.name != 'request_target']))
                     for model in registry.get_app_config('system').get_models(include_auto_created=True)}
             before = snapshot(apps)
-            MigrationExecutor(connection).migrate(latest)
-            current = MigrationExecutor(connection).loader.project_state(latest).apps
+            b4 = [('system', '0003_operationlog_request_target')]
+            MigrationExecutor(connection).migrate(b4)
+            current = MigrationExecutor(connection).loader.project_state(b4).apps
             self.assertEqual(before, snapshot(current))
             self.assertIsNone(OperationLog.objects.get(pk=log.pk).request_target)
             with connection.cursor() as cursor:

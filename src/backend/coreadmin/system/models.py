@@ -1,4 +1,5 @@
 import hashlib
+from django.core.validators import RegexValidator
 import uuid
 import os
 from time import time
@@ -721,3 +722,21 @@ class AuthSession(models.Model):
 
     class Meta:
         db_table = "auth_session"
+
+
+class ManagedFile(models.Model):
+    """Immutable private file identity, independent of legacy media URLs."""
+    id = models.BigAutoField(primary_key=True)
+    original_name = models.CharField(max_length=255)
+    storage_key = models.CharField(max_length=64, unique=True, editable=False)
+    size = models.BigIntegerField(editable=False)
+    sha256 = models.CharField(max_length=64, editable=False, db_index=True,
+        validators=[RegexValidator(r"^[0-9a-f]{64}$", "Expected SHA-256 hex digest.")])
+    content_type = models.CharField(max_length=255)
+    uploader = models.ForeignKey(Users, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = table_prefix + 'system_managed_file'
+        ordering = ('-id',)
+        constraints = [models.CheckConstraint(check=models.Q(size__gt=0), name='managed_file_size_positive')]

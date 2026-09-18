@@ -18,6 +18,7 @@ from coreadmin.system.views.system_config import SystemConfigViewSet
 from coreadmin.system.views.user import UserViewSet
 from coreadmin.system.views.menu_field import MenuFieldViewSet
 from coreadmin.system.views.download_center import DownloadCenterViewSet
+from coreadmin.system.views.managed_file import ManagedFileViewSet
 
 system_url = routers.SimpleRouter()
 system_url.register(r'menu', MenuViewSet)
@@ -37,6 +38,7 @@ system_url.register(r'role_menu_permission', RoleMenuPermissionViewSet)
 system_url.register(r'column', MenuFieldViewSet)
 system_url.register(r'login_log', LoginLogViewSet)
 system_url.register(r'download_center', DownloadCenterViewSet)
+system_url.register(r'managed_file', ManagedFileViewSet)
 
 
 urlpatterns = [
