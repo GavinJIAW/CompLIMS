@@ -1,4 +1,5 @@
 import { request } from '/@/utils/service';
+import { RoleUserStores } from '../../stores/RoleUserStores';
 import { UserPageQuery} from '@fast-crud/fast-crud';
 
 /**
@@ -7,11 +8,11 @@ import { UserPageQuery} from '@fast-crud/fast-crud';
  * @returns
  */
 export function getRoleUsersAuthorized(query: UserPageQuery) {
-	query["authorized"] = 1;  // 授权的用户
+	const params = { ...query, role_id: RoleUserStores().getCurrentRoleId(), authorized: 1 };  // 授权的用户
 	return request({
 		url: '/api/system/role/get_role_users/',
 		method: 'get',
-		params: query,
+		params,
 	});
 }
 /**
@@ -20,7 +21,8 @@ export function getRoleUsersAuthorized(query: UserPageQuery) {
  * @param user_id 用户id数组
  * @returns
  */
-export function removeRoleUser(role_id: number, user_id: Array<number>) {
+export function removeRoleUser(user_id: Array<number>) {
+	const role_id = RoleUserStores().getCurrentRoleId();
 	return request({
 		url: `/api/system/role/${role_id}/remove_role_user/`,
 		method: 'delete',
@@ -35,7 +37,8 @@ export function removeRoleUser(role_id: number, user_id: Array<number>) {
  * @param data 用户id数组
  * @returns
  */
-export function addRoleUsers(role_id: number, data: Array<Number>) {
+export function addRoleUsers(data: Array<Number>) {
+	const role_id = RoleUserStores().getCurrentRoleId();
 	return request({ 
 		url: `/api/system/role/${role_id}/add_role_users/`,
 		method: 'post',

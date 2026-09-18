@@ -23,7 +23,7 @@ export const createCrudOptions = function ({ crudExpose, context }: CreateCrudOp
     return undefined;
   };
   const delRequest = async ({ row }: DelReq) => {
-    return await removeRoleUser(crudExpose.crudRef.value.getSearchFormData().role_id, [row.id]);
+    return await removeRoleUser([row.id]);
   };
   const addRequest = async ({ form }: AddReq) => {
     return undefined;
@@ -79,7 +79,6 @@ export const createCrudOptions = function ({ crudExpose, context }: CreateCrudOp
             click: (ctx: any) => {
               context!.subUserRef.value.dialog = true;
 							nextTick(() => {
-								context!.subUserRef.value.setSearchFormData({ form: { role_id: crudExpose.crudRef.value.getSearchFormData().role_id } });
 								context!.subUserRef.value.doRefresh();
 							});
 						},

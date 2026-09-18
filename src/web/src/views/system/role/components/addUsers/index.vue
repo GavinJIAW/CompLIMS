@@ -62,7 +62,7 @@ const handleDialogConfirm = async () => {
 	if (selectedRows.value.length === 0) {
 		return;
 	}
-	await addRoleUsers(crudRef.value.getSearchFormData().role_id, XEUtils.pluck(selectedRows.value, 'id')).then(res => {
+	await addRoleUsers(XEUtils.pluck(selectedRows.value, 'id')).then(res => {
 		successNotification(res.msg);
 	})
 	parentRefreshCallbackFunc && parentRefreshCallbackFunc();  // 刷新父组件

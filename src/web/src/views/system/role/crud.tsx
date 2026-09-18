@@ -78,7 +78,6 @@ export const createCrudOptions = function ({ crudExpose, context }: CreateCrudOp
 							const { row } = ctx;
 							context!.RoleUserDrawer.handleDrawerOpen(row);
 							nextTick(() => {
-								context!.RoleUserRef.value.setSearchFormData({ form: { role_id: row.id } });
 								context!.RoleUserRef.value.doRefresh();
 							});
 						},

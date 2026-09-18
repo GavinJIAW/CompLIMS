@@ -60,6 +60,7 @@ const drawer = ref(false);
 //抽屉关闭确认
 const handleClose = (done: () => void) => {
 	selectedRows.value = [];
+	RoleUserDrawer.handleDrawerClose();
 	done();
 };
 
@@ -84,7 +85,7 @@ const multipleDel = async ()  => {
 		return
 	} 
 	await ElMessageBox.confirm(`确定要删除这 “${selectedRows.value.length}” 位用户的权限吗`, "确认");
-		const req = await removeRoleUser(crudRef.value.getSearchFormData().role_id, XEUtils.pluck(selectedRows.value, 'id'));
+		const req = await removeRoleUser(XEUtils.pluck(selectedRows.value, 'id'));
 		selectedRows.value = [];
 		successNotification(req.msg)
 		crudExpose.doRefresh()

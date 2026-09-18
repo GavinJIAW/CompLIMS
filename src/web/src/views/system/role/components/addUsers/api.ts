@@ -1,4 +1,5 @@
 import { request } from '/@/utils/service';
+import { RoleUserStores } from '../../stores/RoleUserStores';
 import { UserPageQuery} from '@fast-crud/fast-crud';
 
 /**
@@ -8,11 +9,11 @@ import { UserPageQuery} from '@fast-crud/fast-crud';
  * @returns
  */
 export function getRoleUsersUnauthorized(query: UserPageQuery) {
-	query["authorized"] = 0;  // 未授权的用户
+	const params = { ...query, role_id: RoleUserStores().getCurrentRoleId(), authorized: 0 };  // 未授权的用户
 	return request({
 		url: '/api/system/role/get_role_users/',
 		method: 'get',
-		params: query,
+		params,
 	});
 }
 /**
@@ -21,7 +22,8 @@ export function getRoleUsersUnauthorized(query: UserPageQuery) {
  * @param users_id 用户id数组
  * @returns
  */
-export function addRoleUsers(role_id: number, users_id: Array<Number>) {
+export function addRoleUsers(users_id: Array<Number>) {
+	const role_id = RoleUserStores().getCurrentRoleId();
 	return request({ 
 		url: `/api/system/role/${role_id}/add_role_users/`,
 		method: 'post',
