@@ -92,3 +92,26 @@ class ConcurrencyTests(TransactionTestCase):
             if tokens:
                 client.credentials(HTTP_AUTHORIZATION='JWT '+tokens['access'])
                 self.assertEqual(client.get('/api/system/user/user_info/').status_code,401)
+
+    def test_self_password_change_vs_refresh_revokes_entire_old_family(self):
+        pair = AuthService.issue(self.admin)
+        other = AuthService.issue(self.admin)
+        def refresh():
+            try:
+                return AuthService.refresh(pair['refresh'])
+            except AuthenticationFailed:
+                return None
+        def change():
+            AuthService.change_password(self.admin.pk, PASSWORD, PASSWORD + 'new', PASSWORD + 'new')
+        results = self.race(refresh, change)
+        self.assertFalse(AuthSession.objects.filter(user=self.admin, revoked_at__isnull=True).exists())
+        client = APIClient()
+        for tokens in (pair, other, results[0]):
+            if tokens:
+                client.credentials(HTTP_AUTHORIZATION='JWT ' + tokens['access'])
+                self.assertEqual(client.get('/api/system/user/user_info/').status_code, 401)
+                with self.assertRaises(AuthenticationFailed):
+                    AuthService.refresh(tokens['refresh'])
+        _, fresh = AuthService.credentials(self.admin.username, PASSWORD + 'new', issue=True)
+        client.credentials(HTTP_AUTHORIZATION='JWT ' + fresh['access'])
+        self.assertEqual(client.get('/api/system/user/user_info/').status_code, 200)
