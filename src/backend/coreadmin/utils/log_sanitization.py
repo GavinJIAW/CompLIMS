@@ -17,6 +17,7 @@ TRUNCATED = '[TRUNCATED]'
 def sensitive_key(key):
     normalized = str(key).lower().replace('_', '').replace('-', '')
     return ('password' in normalized or normalized.endswith('token') or 'secret' in normalized
+            or normalized.startswith('jwt') or normalized.endswith('jwt')
             or normalized in {'passwd', 'pwd', 'authorization', 'access', 'refresh', 'apikey',
                               'credential', 'credentials', 'cookie', 'sessionid', 'captcha', 'captchakey'})
 
@@ -59,9 +60,11 @@ def sanitize_log_value(value):
             return '[MAX DEPTH]'
         if isinstance(item, dict):
             result = {}
+            sensitive_value = isinstance(item.get('key'), str) and sensitive_key(item['key'])
             for key, child in islice(item.items(), MAX_LOG_COLLECTION_ITEMS):
                 safe_key = bounded_string(str(key)) if isinstance(key, (str, int, float, bool)) else '[UNSUPPORTED KEY]'
-                result[safe_key] = REDACTED if isinstance(key, str) and sensitive_key(key) else walk(child, depth + 1)
+                redact = isinstance(key, str) and (sensitive_key(key) or (key == 'value' and sensitive_value))
+                result[safe_key] = REDACTED if redact else walk(child, depth + 1)
                 if remaining <= 0:
                     break
             if len(item) > MAX_LOG_COLLECTION_ITEMS or remaining <= 0:
@@ -77,6 +80,17 @@ def sanitize_log_value(value):
                 result.append(TRUNCATED)
             return result
         if isinstance(item, str):
+            if item.lstrip().startswith(('{', '[')):
+                if len(item) > MAX_LOG_SERIALIZED_SIZE:
+                    return TRUNCATED
+                try:
+                    structured = json.loads(item)
+                except (ValueError, RecursionError):
+                    pass
+                else:
+                    if isinstance(structured, (dict, list)):
+                        encoded = json.dumps(walk(structured, depth + 1), ensure_ascii=True)
+                        return encoded if len(encoded) <= MAX_LOG_STRING_LENGTH else TRUNCATED
             return bounded_string(item)
         if item is None or isinstance(item, (bool, int)):
             return item

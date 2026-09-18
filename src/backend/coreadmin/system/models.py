@@ -417,6 +417,7 @@ class Dictionary(CoreModel):
 
 
 class OperationLog(CoreModel):
+    request_target = models.TextField(verbose_name="请求目标", null=True, blank=True, help_text="服务端目标标识摘要")
     request_modular = models.CharField(max_length=64, verbose_name="请求模块", null=True, blank=True,
                                        help_text="请求模块")
     request_path = models.CharField(max_length=400, verbose_name="请求地址", null=True, blank=True,

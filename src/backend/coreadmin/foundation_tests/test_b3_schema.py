@@ -80,12 +80,13 @@ class MigrationTests(TransactionTestCase):
         self.old = [('system', '0001_initial')]
         self.new = [('system', '0002_b3_integrity_auth')]
         executor = MigrationExecutor(connection)
+        self.latest = executor.loader.graph.leaf_nodes()
         executor.migrate(self.old)
         self.old_apps = executor.loader.project_state(self.old).apps
 
     def tearDown(self):
         # Tests remove their deliberately dirty records before upgrading.
-        MigrationExecutor(connection).migrate(self.new)
+        MigrationExecutor(connection).migrate(self.latest)
         super().tearDown()
 
     def test_clean_old_data_upgrade_preserves_unknown_credentials(self):

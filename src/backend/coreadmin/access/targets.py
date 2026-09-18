@@ -73,6 +73,7 @@ OPTIONAL_ADMIN_TARGETS = {
 
 def validate_targets(view, request, context):
     code = context.action.code
+    targets = {}
     sources = {'body': request.data, 'query': request.query_params, 'path': view.kwargs}
     for required, bindings in ((True, ADMIN_TARGETS.get(code, [])),
                                (False, OPTIONAL_ADMIN_TARGETS.get(code, []))):
@@ -87,18 +88,19 @@ def validate_targets(view, request, context):
             queryset = getattr(models, model_name).objects.all()
             if model_name == 'Users':
                 queryset = queryset.exclude(is_superuser=True)
-            resolve_ids(queryset, value)
+            resolved = resolve_ids(queryset, value)
+            targets.setdefault(queryset.model._meta.model_name, set()).update(resolved)
     if code == 'role_menu_button_permission.set_role_menu_field':
         if not isinstance(request.data, list):
             raise ValidationError('Expected field grants.')
-        resolve_ids(models.MenuField.objects.all(), [item.get('id') for item in request.data])
+        targets['menufield'] = resolve_ids(models.MenuField.objects.all(), [item.get('id') for item in request.data])
     if code in {'role_menu_button_permission.set_role_menu_btn', 'role_menu_button_permission.set_role_menu_btn_data_range'}:
         if request.data.get('data_range', 0) not in (0, 1, 2, 3, 4):
             raise ValidationError({'data_range': 'Invalid scope.'})
     if code == 'system_config.save_content':
         if not isinstance(request.data, list):
             raise ValidationError('Expected configuration items.')
-        resolve_ids(models.SystemConfig.objects.all(), [row.get('id') for row in request.data])
+        targets['systemconfig'] = resolve_ids(models.SystemConfig.objects.all(), [row.get('id') for row in request.data])
         from coreadmin.access.fields import FieldPolicy
         policy = FieldPolicy(context, models.SystemConfig)
         for row in request.data:
@@ -108,6 +110,10 @@ def validate_targets(view, request, context):
         dept_id, _ = dept_info_selection(request.query_params)
         if dept_id is not None:
             resolve_ids(context.scope(view.get_queryset()), dept_id)
+
+    if targets:
+        from coreadmin.utils.log_targets import record_targets
+        record_targets(request, targets)
 
 
 def validate_write_relations(context, data):

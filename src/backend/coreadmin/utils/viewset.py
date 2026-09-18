@@ -16,6 +16,7 @@ from coreadmin.utils.permission import CustomPermission
 from django_restql.mixins import QueryArgumentsMixin
 from coreadmin.access.context import context_for
 from coreadmin.access.registry import Policy
+from coreadmin.utils.log_targets import record_targets
 
 
 class ReadOnlyAPIMixin:
@@ -89,6 +90,7 @@ class CustomModelViewSet(ModelViewSet, ImportSerializerMixin, ExportSerializerMi
             self.access_context.__dict__.pop('child_depts', None)
             self.field_policy.__dict__.pop('configured', None)
             obj = super().get_object()
+        record_targets(self.request, {obj._meta.model_name: [obj.pk]})
         return obj
 
     def filter_queryset(self, queryset):
@@ -137,6 +139,8 @@ class CustomModelViewSet(ModelViewSet, ImportSerializerMixin, ExportSerializerMi
         serializer = self.get_serializer(data=request.data, request=request)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
+        instances = serializer.instance if isinstance(serializer.instance, list) else [serializer.instance]
+        record_targets(request, {self.queryset.model._meta.model_name: [obj.pk for obj in instances]})
         return DetailResponse(data=serializer.data, msg="新增成功")
 
     def perform_create(self, serializer):
@@ -207,6 +211,7 @@ class CustomModelViewSet(ModelViewSet, ImportSerializerMixin, ExportSerializerMi
             targets = context_for(request, self).scope(self.get_queryset()).filter(pk__in=keys)
             if set(targets.values_list('pk', flat=True)) != keys:
                 raise NotFound()
+            record_targets(request, {self.queryset.model._meta.model_name: keys})
             targets.delete()
             return SuccessResponse(data=[], msg="删除成功")
         else:

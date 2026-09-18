@@ -20,7 +20,7 @@ READ = {key: frozenset((AUDIT_READ + ' ' + fields).split()) for key, fields in {
     'role': 'name key sort status users',
     'dept': 'name key sort owner phone email status parent parent_name status_label has_children hasChild dept_user_count dept_name dept_user gender sub_dept_map',
     'user': 'username name email mobile avatar gender user_type is_active dept role post dept_name dept_name_all role_info last_login date_joined',
-    'operation_log': 'request_modular request_path request_body request_method request_msg request_ip request_browser response_code request_os json_result status',
+    'operation_log': 'request_modular request_path request_body request_target request_method request_msg request_ip request_browser response_code request_os json_result status',
     'dictionary': 'label value type color is_value status sort remark parent',
     'area': 'name code level pinyin initials enable pcode pcode_count hasChild pcode_info',
     'file': 'name file_url engine mime_type size md5sum upload_method file_type url',

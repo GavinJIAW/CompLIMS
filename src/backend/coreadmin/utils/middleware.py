@@ -114,6 +114,7 @@ class ApiLoggingMiddleware(MiddlewareMixin):
                 'request_path': bounded_string(path, 400),
                 'request_modular': bounded_string(str(module), 64),
                 'request_body': serialize_log_value(self.request_payload(request, metadata)),
+                'request_target': getattr(request, '_operation_log_request_target', None),
                 'response_code': bounded_string(str(code), 32) if isinstance(code, (str, int)) else None,
                 'request_os': bounded_string(get_os(request), 64),
                 'request_browser': bounded_string(get_browser(request), 64),
