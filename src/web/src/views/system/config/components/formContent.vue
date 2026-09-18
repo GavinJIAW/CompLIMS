@@ -261,6 +261,8 @@ const onSubmit = (formEl: FormInstance | undefined) => {
       api.saveContent(formList.value).then((res:any) => {
         successMessage('保存成功');
         refreshView&&refreshView();
+      }).catch(() => {
+        // The request layer already displays the error; retain the edited form.
       });
     } else {
       console.log('error submit!!');

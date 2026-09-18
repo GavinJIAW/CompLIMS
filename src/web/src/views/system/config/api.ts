@@ -52,10 +52,23 @@ export function GetAssociationTable() {
 	});
 }
 
-export function saveContent(data: any) {
+// Custom mutation contract: id is a target identity, not a writable model field.
+const saveContentFields = [
+    'id', 'title', 'key', 'value', 'parent', 'sort', 'status', 'description',
+    'data_options', 'form_item_type', 'rule', 'placeholder', 'setting',
+] as const;
+
+export function projectSystemConfigSaveContent(items: Record<string, unknown>[]) {
+    return items.map(item => Object.fromEntries(
+        saveContentFields.filter(field => Object.prototype.hasOwnProperty.call(item, field))
+            .map(field => [field, item[field]])
+    ));
+}
+
+export function saveContent(data: Record<string, unknown>[]) {
 	return request({
 		url: apiPrefix + 'save_content/',
 		method: 'put',
-		data: data,
+		data: projectSystemConfigSaveContent(data),
 	});
 }
