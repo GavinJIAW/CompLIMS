@@ -89,7 +89,7 @@ export const createCrudOptions = function ({ crudExpose, context }: CreateCrudOp
       },
       rowHandle: {
         //固定右侧
-        fixed: 'left',
+        fixed: 'right',
         width: 120,
         show: auth('role:AuthorizedDel'),
         buttons: {
