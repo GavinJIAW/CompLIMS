@@ -13,13 +13,15 @@ export const SystemConfigStore = defineStore('SystemConfig', {
 	}),
 	actions: {
 		async getSystemConfigs() {
-			request({
+			return request({
 				url: urlPrefix,
 				method: 'get',
 			}).then((ret: { data: [] }) => {
 				// 转换数据格式并保存到pinia
 				this.systemConfig = JSON.parse(JSON.stringify(ret.data));
-			});
+			}).catch(() => {
+                console.warn('Optional bootstrap data unavailable: getSystemConfigs');
+            });
 		},
 	},
 	persist: {

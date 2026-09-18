@@ -11,6 +11,7 @@ import { showUpgrade } from "/@/utils/upgrade";
 export const NextLoading = {
 	// 创建 loading
 	start: () => {
+		if (document.querySelector('.loading-next')) return;
 		// 显示升级提示
 		showUpgrade()
 		const bodys: Element = document.body;

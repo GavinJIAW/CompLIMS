@@ -1,5 +1,8 @@
 import {createRouter, createWebHashHistory} from 'vue-router';
 import NProgress from 'nprogress';
+import { ElMessage } from 'element-plus';
+import { NextLoading } from '/@/utils/loading';
+import { projectRouteTree, validRoutePath } from '/@/utils/navigation';
 import 'nprogress/nprogress.css';
 import pinia from '/@/stores/index';
 import {storeToRefs} from 'pinia';
@@ -53,7 +56,7 @@ export const router = createRouter({
  * @returns 返回处理后的一维路由菜单数组
  */
 export function formatFlatteningRoutes(arr: any) {
-    if (arr.length <= 0) return false;
+    arr = projectRouteTree(arr);
     for (let i = 0; i < arr.length; i++) {
         if (arr[i].children) {
             arr = arr.slice(0, i + 1).concat(arr[i].children, arr.slice(i + 1));
@@ -70,13 +73,15 @@ export function formatFlatteningRoutes(arr: any) {
  * @returns 返回将一维数组重新处理成 `定义动态路由（dynamicRoutes）` 的格式
  */
 export function formatTwoStageRoutes(arr: any) {
-    if (arr.length <= 0) return false;
+    if (!Array.isArray(arr)) throw new Error('Invalid flattened routes');
     const newArr: any = [];
     const cacheList: Array<string> = [];
-    arr.forEach((v: any) => {
+    arr.filter(validRoutePath).forEach((v: any) => {
         if (v.path === '/') {
             newArr.push({component: v.component,name: v.name,path: v.path,redirect: v.redirect,meta: v.meta,children: []});
         } else {
+            if (!newArr.length) throw new Error('Missing root layout route');
+            v.meta = v.meta || {};
             // 判断是否是动态路由（xx/:id/:name），用于 tagsView 等中使用
             // 修复：https://gitee.com/lyt-top/vue-next-admin/issues/I3YX6G
             if (v.path.indexOf('/:') > -1) {
@@ -86,7 +91,7 @@ export function formatTwoStageRoutes(arr: any) {
             newArr[0].children.push({...v});
             // 存 name 值，keep-alive 中 include 使用，实现路由的缓存
             // 路径：/@/layout/routerView/parent.vue
-            if (newArr[0].meta.isKeepAlive && v.meta.isKeepAlive && v.component_name != "") {
+            if (newArr[0].meta?.isKeepAlive && v.meta.isKeepAlive && v.component_name != "") {
                 cacheList.push(v.name);
                 const stores = useKeepALiveNames(pinia);
                 stores.setCacheKeepAlive(cacheList);
@@ -105,12 +110,13 @@ const checkToken = ()=>{
         Session.set('token', _oauth2_token);
         const cleanUrl = window.location.href.split('?')[0];
         window.history.replaceState({}, '', cleanUrl);
-        useUserInfo(pinia).setUserInfos();
+        // User info is loaded by the awaited route bootstrap below.
 
     }
 }
 // 路由加载前
 router.beforeEach(async (to, from, next) => {
+    try {
     // 检查浏览器本地版本与线上版本是否一致，判断是否需要刷新页面进行更新
     await checkVersion()
     checkToken()
@@ -153,6 +159,12 @@ router.beforeEach(async (to, from, next) => {
                 next();
             }
         }
+    }
+    } catch {
+        NextLoading.done();
+        NProgress.done();
+        ElMessage.error('页面初始化失败，请重试或刷新页面');
+        next(false);
     }
 });
 

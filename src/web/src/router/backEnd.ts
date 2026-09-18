@@ -13,7 +13,8 @@ import { useMenuApi } from '/@/api/menu/index';
 import { handleMenu } from '../utils/menu';
 import { BtnPermissionStore } from '/@/plugin/permission/store.permission';
 import {SystemConfigStore} from "/@/stores/systemConfig";
-import {useDeptInfoStore} from "/@/stores/modules/dept";
+import { projectRouteTree } from "/@/utils/navigation";
+import NProgress from "nprogress";
 import {DictionaryStore} from "/@/stores/dictionary";
 import {useFrontendMenuStore} from "/@/stores/frontendMenu";
 import {toRaw} from "vue";
@@ -39,25 +40,30 @@ const dynamicViewsModules: Record<string, Function> = Object.assign({}, { ...lay
  * @method setFilterMenuAndCacheTagsViewRoutes 设置路由到 vuex routesList 中（已处理成多级嵌套路由）及缓存多级嵌套数组处理后的一维数组
  */
 export async function initBackEndControlRoutes() {
-	// 界面 loading 动画开始执行
-	if (window.nextLoading === undefined) NextLoading.start();
-	// 无 token 停止执行下一步
-	if (!Session.get('token')) return false;
-	// 触发初始化用户信息 pinia
-	// https://gitee.com/lyt-top/vue-next-admin/issues/I5F1HP
-	await useUserInfo().getApiUserInfo();
-	// 获取路由菜单数据
-	const res = await getBackEndControlRoutes();
-	// 无登录权限时，添加判断
-	// https://gitee.com/lyt-top/vue-next-admin/issues/I64HVO
-	// if (res.data.length <= 0) return Promise.resolve(true);
-	// 处理路由（component），替换 dynamicRoutes（/@/router/route）第一个顶级 children 的路由
-	const {frameIn,frameOut} = handleMenu(res.data)
-	dynamicRoutes[0].children = await backEndComponent(frameIn);
-	// 添加动态路由
-	await setAddRoute();
-	// 设置路由到 vuex routesList 中（已处理成多级嵌套路由）及缓存多级嵌套数组处理后的一维数组
-	await setFilterMenuAndCacheTagsViewRoutes();
+    try {
+        // 界面 loading 动画开始执行
+        if (!Session.get('token')) throw new Error('Authentication required for route bootstrap');
+        NextLoading.start();
+        // 触发初始化用户信息 pinia
+        // https://gitee.com/lyt-top/vue-next-admin/issues/I5F1HP
+        await useUserInfo().getApiUserInfo();
+        // 获取路由菜单数据
+        const res = await getBackEndControlRoutes();
+        // 无登录权限时，添加判断
+        // https://gitee.com/lyt-top/vue-next-admin/issues/I64HVO
+        // if (res.data.length <= 0) return Promise.resolve(true);
+        // 处理路由（component），替换 dynamicRoutes（/@/router/route）第一个顶级 children 的路由
+        const {frameIn,frameOut} = handleMenu(res.data)
+        dynamicRoutes[0].children = await backEndComponent(frameIn);
+        // 添加动态路由
+        await setAddRoute();
+        // 设置路由到 vuex routesList 中（已处理成多级嵌套路由）及缓存多级嵌套数组处理后的一维数组
+        await setFilterMenuAndCacheTagsViewRoutes();
+    } catch (error) {
+        NextLoading.done();
+        NProgress.done();
+        throw error;
+    }
 }
 
 export async function setRouters(){
@@ -85,8 +91,8 @@ export async function setRouters(){
  */
 export function setFilterMenuAndCacheTagsViewRoutes() {
 	const storesRoutesList = useRoutesList(pinia);
-	storesRoutesList.setRoutesList(dynamicRoutes[0].children as any);
 	setCacheTagsViewRoutes();
+	storesRoutesList.setRoutesList(dynamicRoutes[0].children as any);
 }
 
 /**
@@ -107,6 +113,7 @@ export function setFilterRouteEnd() {
 	let filterRouteEnd: any = formatTwoStageRoutes(formatFlatteningRoutes(dynamicRoutes));
 	// notFoundAndNoPower 防止 404、401 不在 layout 布局中，不设置的话，404、401 界面将全屏显示
 	// 关联问题 No match found for location with path 'xxx'
+	if (!filterRouteEnd.length) throw new Error('Missing root layout route');
 	filterRouteEnd[0].children = [...filterRouteEnd[0].children, ...notFoundAndNoPower];
 	return filterRouteEnd;
 }
@@ -133,8 +140,6 @@ export async function getBackEndControlRoutes() {
 	await BtnPermissionStore().getBtnPermissionStore();
 	// 获取系统配置
 	SystemConfigStore().getSystemConfigs()
-	// 获取所有部门信息
-	useDeptInfoStore().requestDeptInfo()
 	// 获取字典信息
 	DictionaryStore().getSystemDictionarys()
 	return menuApi.getSystemMenu();
@@ -146,7 +151,7 @@ export async function getBackEndControlRoutes() {
  * @description 路径：/src/views/system/menu/component/addMenu.vue
  */
 export function setBackEndControlRefreshRoutes() {
-	getBackEndControlRoutes();
+	return getBackEndControlRoutes();
 }
 
 /**
@@ -155,8 +160,7 @@ export function setBackEndControlRefreshRoutes() {
  * @returns 返回处理成函数后的 component
  */
 export function backEndComponent(routes: any) {
-	if (!routes) return;
-	return routes.map((item: any) => {
+	return projectRouteTree(routes).map((item: any) => {
 		if (item.component) item.component = dynamicImport(dynamicViewsModules, item.component as string);
 		if(item.is_catalog){
 			// 对目录的处理
@@ -184,7 +188,7 @@ export function backEndComponent(routes: any) {
 				item.component = dynamicImport(dynamicViewsModules, 'layout/routerView/link.vue')
 			}
 		}
-		item.children && backEndComponent(item.children);
+		if (item.children) item.children = backEndComponent(item.children);
 		return item;
 	});
 }
@@ -196,6 +200,7 @@ export function backEndComponent(routes: any) {
  * @returns 返回处理成函数后的 component
  */
 export function dynamicImport(dynamicViewsModules: Record<string, Function>, component: string) {
+	if (typeof component !== 'string' || !component.trim()) return undefined;
 	const keys = Object.keys(dynamicViewsModules);
 	const matchKeys = keys.filter((key) => {
 		const k = key.replace(/..\/views|../, '');

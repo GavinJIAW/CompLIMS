@@ -16,10 +16,13 @@ watch(()=>{
   return props.modelValue
 },async (newVal)=>{
   const deptInfoStore = useDeptInfoStore()
-  const result = await deptInfoStore.getParentDeptById(newVal)
+  data.value = undefined;
+  const result = await deptInfoStore.getParentDeptById(newVal).catch(() => {
+    console.warn("Department display unavailable");
+    return undefined;
+  })
   if(result?.nodes){
     let name = ""
-    console.log(result)
     result.nodes.forEach((item:any,index:number)=>{
       name +=  index>0?`/${item.name}`:item.name
     })

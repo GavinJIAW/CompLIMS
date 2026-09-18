@@ -33,7 +33,7 @@ export const DictionaryStore = defineStore('Dictionary', {
 	}),
 	actions: {
 		async getSystemDictionarys() {
-			request({
+			return request({
 				url: '/api/init/dictionary/?dictionary_key=all',
 				method: 'get',
 			}).then((ret: { data: [] }) => {
@@ -55,7 +55,9 @@ export const DictionaryStore = defineStore('Dictionary', {
 					})
 				this.data[item.value]=childrens
 				});
-			});
+			}).catch(() => {
+                console.warn('Optional bootstrap data unavailable: getSystemDictionarys');
+            });
 		},
 	},
 	persist: {

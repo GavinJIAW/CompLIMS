@@ -1,5 +1,5 @@
 import XEUtils from "xe-utils"
-import {dynamicRoutes, staticRoutes} from "/@/router/route";
+import { projectRouteTree } from "./navigation";
 
 /**
  * @description: 处理后端菜单数据格式
@@ -7,6 +7,7 @@ import {dynamicRoutes, staticRoutes} from "/@/router/route";
  * @return {*}
  */
 export const handleMenu = (menuData: Array<any>) => {
+    if (!Array.isArray(menuData)) throw new Error("Invalid navigation response");
     // 先处理menu meta数据转换
     const handleMeta = (item: any) => {
         item.meta = {
@@ -54,7 +55,11 @@ export const handleMenu = (menuData: Array<any>) => {
         // } else {
         //     defaultRoutes.push(handleMeta(val))
         // }
-        defaultRoutes.push(handleMeta(val))
+        if (!val || typeof val !== "object") {
+            console.warn("Invalid navigation record: missing object");
+            return;
+        }
+        defaultRoutes.push(handleMeta({ ...val }))
     })
     const data = XEUtils.toArrayTree(defaultRoutes, {
         parentKey: 'parent',
@@ -73,7 +78,7 @@ export const handleMenu = (menuData: Array<any>) => {
                 icon: 'iconfont icon-shouye'
             }
         },
-        ...data
+        ...projectRouteTree(data)
     ]
     return {frameIn:dynamicRoutes,frameOut:iframeRoutes}
 }

@@ -59,8 +59,6 @@ import { useI18n } from 'vue-i18n';
 import Cookies from 'js-cookie';
 import { storeToRefs } from 'pinia';
 import { useThemeConfig } from '/@/stores/themeConfig';
-import { initFrontEndControlRoutes } from '/@/router/frontEnd';
-import { initBackEndControlRoutes } from '/@/router/backEnd';
 import { Session } from '/@/utils/storage';
 import { formatAxis } from '/@/utils/formatTime';
 import { NextLoading } from '/@/utils/loading';
@@ -159,19 +157,9 @@ export default defineComponent({
 			if (!formRef.value) return
 			await formRef.value.validate((valid: any) => {
 				if (valid) {
-					loginApi.loginChangePwd({ ...state.ruleForm, password: Md5.hashStr(state.ruleForm.password), password_regain: Md5.hashStr(state.ruleForm.password_regain) }).then((res: any) => {
+					loginApi.loginChangePwd({ ...state.ruleForm, password: Md5.hashStr(state.ruleForm.password), password_regain: Md5.hashStr(state.ruleForm.password_regain) }).then(async (res: any) => {
 						if (res.code === 2000) {
-							if (!themeConfig.value.isRequestRoutes) {
-								// 前端控制路由，2、请注意执行顺序
-								initFrontEndControlRoutes();
-								loginSuccess();
-							} else {
-								// 模拟后端控制路由，isRequestRoutes 为 true，则开启后端控制路由
-								// 添加完动态路由，再进行 router 跳转，否则可能报错 No match found for location with path "/"
-								initBackEndControlRoutes();
-								// 执行完 initBackEndControlRoutes，再执行 signInSuccess
-								loginSuccess();
-							}
+							await loginSuccess();
 						}
 					}).catch((err: any) => {
 						// 登录错误之后，刷新验证码
@@ -186,31 +174,22 @@ export default defineComponent({
 
 
 		// 登录成功后的跳转
-		const loginSuccess = () => {
-
-			//获取所有字典
-			DictionaryStore().getSystemDictionarys();
-
-			// 初始化登录成功时间问候语
-			let currentTimeInfo = currentTime.value;
-			// 登录成功，跳到转首页
-			// 如果是复制粘贴的路径，非首页/登录页，那么登录成功后重定向到对应的路径中
-			if (route.query?.redirect) {
-				router.push({
-					path: <string>route.query?.redirect,
-					query: Object.keys(<string>route.query?.params).length > 0 ? JSON.parse(<string>route.query?.params) : '',
-				});
-			} else {
-				router.push('/');
-			}
-			// 登录成功提示
-			// 关闭 loading
-			state.loading.signIn = true;
-			const signInText = t('message.signInText');
-			ElMessage.success(`${currentTimeInfo}，${signInText}`);
-			// 添加 loading，防止第一次进入界面时出现短暂空白
-			NextLoading.start();
-		};
+		const loginSuccess = async () => {
+            state.loading.signIn = true;
+            NextLoading.start();
+            try {
+                const target = route.query?.redirect
+                    ? { path: String(route.query.redirect), query: route.query.params ? JSON.parse(String(route.query.params)) : {} }
+                    : '/';
+                const failure = await router.push(target);
+                if (!failure) ElMessage.success(`${currentTime.value}，${t('message.signInText')}`);
+            } catch {
+                errorMessage('页面初始化失败，请重试或刷新页面');
+            } finally {
+                state.loading.signIn = false;
+                NextLoading.done();
+            }
+        };
 		onMounted(() => {
 			state.ruleForm.username = Cookies.get('username')
 			//获取系统配置
