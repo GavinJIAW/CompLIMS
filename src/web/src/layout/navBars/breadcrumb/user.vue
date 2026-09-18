@@ -85,6 +85,7 @@
 </template>
 
 <script setup lang="ts" name="layoutBreadcrumbUser">
+import { logout } from "/@/views/system/login/api";
 import { defineAsyncComponent, ref, computed, reactive, onMounted, unref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessageBox, ElMessage } from 'element-plus';
@@ -175,6 +176,7 @@ const onHandleCommandClick = (path: string) => {
 			},
 		})
 			.then(async () => {
+				await logout();
 				// 清除缓存/token等
 				Session.clear();
 				// 使用 reload 时，不需要调用 resetRoute() 重置路由

@@ -113,7 +113,7 @@ import { useRouter } from 'vue-router';
 import { useUserInfo } from '/@/stores/userInfo';
 import { successMessage } from '/@/utils/message';
 import {dictionary} from "/@/utils/dictionary";
-import {Md5} from "ts-md5";
+
 const router = useRouter();
 
 // 头像裁剪组件
@@ -222,13 +222,13 @@ const userPasswordInfo = reactive({
 });
 
 const validatePass = (rule, value, callback) => {
-	const pwdRegex = new RegExp('(?=.*[0-9])(?=.*[a-zA-Z]).{8,30}');
+	const pwdRegex = new RegExp('^.{12,}$');
 	if (value === '') {
 		callback(new Error('请输入密码'));
 	} else if (value === userPasswordInfo.oldPassword) {
 		callback(new Error('原密码与新密码一致'));
 	} else if (!pwdRegex.test(value)) {
-		callback(new Error('您的密码复杂度太低(密码中必须包含字母、数字)'));
+		callback(new Error('密码至少需要12个字符，且须满足服务端安全策略'));
 	} else {
 		if (userPasswordInfo.newPassword2 !== '') {
 			userPasswordFormRef.value.validateField('newPassword2');
@@ -267,8 +267,9 @@ const settingPassword = () => {
 			api.UpdatePassword(userPasswordInfo).then((res: any) => {
 				ElMessage.success('密码修改成功');
         setTimeout(() => {
-          Session.remove('token');
-          router.push('/login');
+          Session.clear();
+          window.location.assign('/#/login');
+          window.location.reload();
 			}, 1000);
 			});
 		} else {

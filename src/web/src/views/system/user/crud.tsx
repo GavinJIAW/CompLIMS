@@ -13,7 +13,7 @@ import { request } from '/@/utils/service';
 import { dictionary } from '/@/utils/dictionary';
 import { successMessage } from '/@/utils/message';
 import { auth } from '/@/utils/authFunction';
-import { Md5 } from 'ts-md5';
+
 import { commonCrudConfig } from "/@/utils/commonCrud";
 import { ElMessageBox } from 'element-plus';
 import {exportData} from "./api";
@@ -36,9 +36,19 @@ export const createCrudOptions = function ({ crudExpose }: CreateCrudOptionsProp
         return await api.exportData(query)
     }
 
-    const resetToDefaultPasswordRequest = async (row: EditReq) => {
-        await api.resetToDefaultPassword(row.id)
-        successMessage("重置密码成功")
+    const resetPasswordRequest = async (row: EditReq) => {
+        try {
+            const { value } = await ElMessageBox.prompt('请输入明确的临时密码（至少12个字符）', '重设密码', {
+                inputType: 'password',
+                inputValidator: (value) => !!value && value.length >= 12 || '密码至少需要12个字符',
+                confirmButtonText: '重设',
+                cancelButtonText: '取消',
+            });
+            await api.resetPassword(row.id, value);
+            successMessage('密码已重设，用户下次登录必须改密');
+        } catch {
+            // Cancel or server validation: no success notification.
+        }
     }
 
     return {
@@ -106,7 +116,7 @@ export const createCrudOptions = function ({ crudExpose }: CreateCrudOptionsProp
                         //@ts-ignore
                         click: (ctx: any) => {
                             const { row } = ctx;
-                            resetToDefaultPasswordRequest(row)
+                            void resetPasswordRequest(row)
                         },
                     },
                 },
@@ -169,11 +179,6 @@ export const createCrudOptions = function ({ crudExpose }: CreateCrudOptionsProp
                             placeholder: '请输入密码',
                         },
                     },
-                    valueResolve({ form }) {
-                        if (form.password) {
-                            form.password = Md5.hashStr(form.password)
-                        }
-                    }
                 },
                 name: {
                     title: '姓名',

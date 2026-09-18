@@ -9,7 +9,10 @@
 				</template>
 			</el-input>
 		</el-form-item>
-		<el-form-item class="login-animation2 login-validation-long" prop="password" :label="$t('message.loginPresentation.newPassword')">
+		<el-form-item prop="oldPassword" label="当前密码">
+            <el-input v-model="ruleForm.oldPassword" type="password" show-password autocomplete="current-password" />
+        </el-form-item>
+        <el-form-item class="login-animation2 login-validation-long" prop="password" :label="$t('message.loginPresentation.newPassword')">
 			<el-input :type="isShowPassword ? 'text' : 'password'"
 				:placeholder="$t('message.account.accountPlaceholder4')" v-model="ruleForm.password">
 				<template #prefix>
@@ -39,7 +42,7 @@
 		</el-form-item>
 		<el-form-item class="login-animation4">
 			<el-button type="primary" class="login-content-submit" @click="loginClick" :loading="loading.signIn">
-				<span>{{ $t('message.account.accountBtnText') }}</span>
+				<span>修改密码并重新登录</span>
 			</el-button>
 		</el-form-item>
 	</el-form>
@@ -67,7 +70,7 @@ import { useUserInfo } from '/@/stores/userInfo';
 import { DictionaryStore } from '/@/stores/dictionary';
 import { SystemConfigStore } from '/@/stores/systemConfig';
 import { BtnPermissionStore } from '/@/plugin/permission/store.permission';
-import { Md5 } from 'ts-md5';
+
 import { errorMessage } from '/@/utils/message';
 import { getBaseURL } from "/@/utils/baseUrl";
 import { loginChangePwd } from "/@/views/system/login/api";
@@ -85,6 +88,7 @@ export default defineComponent({
 			isShowPassword: false,
 			ruleForm: {
 				username: '',
+                oldPassword: '',
 				password: '',
 				password_regain: ''
 			},
@@ -93,19 +97,9 @@ export default defineComponent({
 			},
 		});
 
-		const validatePass = (rule, value, callback) => {
-			const pwdRegex = new RegExp('(?=.*[0-9])(?=.*[a-zA-Z]).{8,30}');
-			if (value === '') {
-				callback(new Error('请输入密码'));
-			} else if (!pwdRegex.test(value)) {
-				callback(new Error('您的密码复杂度太低(密码中必须包含字母、数字)'));
-			} else {
-				if (state.ruleForm.password !== '') {
-					formRef.value.validateField('password');
-				}
-				callback();
-			}
-		};
+        const validatePass = (rule, value, callback) => {
+            callback(value && value.length >= 12 ? undefined : new Error('密码至少需要12个字符'));
+        };
 		const validatePass2 = (rule, value, callback) => {
 			if (value === '') {
 				callback(new Error('请再次输入密码'));
@@ -117,6 +111,7 @@ export default defineComponent({
 		};
 
 		const rules = reactive<FormRules>({
+            oldPassword: [{ required: true, message: '请输入当前密码', trigger: 'blur' }],
 			username: [
 				{ required: true, message: '请填写账号', trigger: 'blur' },
 			],
@@ -153,38 +148,22 @@ export default defineComponent({
 			window.open(getBaseURL('/api/system/apply_for_trial/'));
 		};
 
-		const loginClick = async () => {
-			if (!formRef.value) return
-			await formRef.value.validate((valid: any) => {
-				if (valid) {
-					loginApi.loginChangePwd({ ...state.ruleForm, password: Md5.hashStr(state.ruleForm.password), password_regain: Md5.hashStr(state.ruleForm.password_regain) }).then(async (res: any) => {
-						if (res.code === 2000) {
-							await loginSuccess();
-						}
-					}).catch((err: any) => {
-						// 登录错误之后，刷新验证码
-						errorMessage("登录失败")
-					});
-				} else {
-					errorMessage("请填写登录信息")
-				}
-			})
-
-		};
-
-
-		// 登录成功后的跳转
-		const loginSuccess = async () => {
+        const loginClick = async () => {
+            if (!formRef.value || state.loading.signIn) return;
+            if (!await formRef.value.validate().catch(() => false)) return;
             state.loading.signIn = true;
-            NextLoading.start();
             try {
-                const target = route.query?.redirect
-                    ? { path: String(route.query.redirect), query: route.query.params ? JSON.parse(String(route.query.params)) : {} }
-                    : '/';
-                const failure = await router.push(target);
-                if (!failure) ElMessage.success(`${currentTime.value}，${t('message.signInText')}`);
+                await loginApi.loginChangePwd({
+                    oldPassword: state.ruleForm.oldPassword,
+                    newPassword: state.ruleForm.password,
+                    newPassword2: state.ruleForm.password_regain,
+                });
+                ElMessage.success('密码已修改，请重新登录');
+                Session.clear();
+                window.location.assign('/#/login');
+                window.location.reload();
             } catch {
-                errorMessage('页面初始化失败，请重试或刷新页面');
+                // The request layer displays the server validation error.
             } finally {
                 state.loading.signIn = false;
                 NextLoading.done();
@@ -202,7 +181,6 @@ export default defineComponent({
 
 		return {
 			loginClick,
-			loginSuccess,
 			state,
 			formRef,
 			rules,

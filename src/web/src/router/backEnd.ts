@@ -47,6 +47,12 @@ export async function initBackEndControlRoutes() {
         // 触发初始化用户信息 pinia
         // https://gitee.com/lyt-top/vue-next-admin/issues/I5F1HP
         await useUserInfo().getApiUserInfo();
+        if (useUserInfo().userInfos.pwd_change_count === 0) {
+            NextLoading.done();
+            NProgress.done();
+            await router.replace('/login');
+            return;
+        }
         // 获取路由菜单数据
         const res = await getBackEndControlRoutes();
         // 无登录权限时，添加判断

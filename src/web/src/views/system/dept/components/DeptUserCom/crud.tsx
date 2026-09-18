@@ -196,11 +196,6 @@ export const createCrudOptions = function ({crudExpose, context}: CreateCrudOpti
                         },
                         // value: vm.systemConfig('base.default_password'),
                     },
-                    /* valueResolve(row, key) {
-                        if (row.password) {
-                            row.password = vm.$md5(row.password)
-                        }
-                    } */
                 },
                 name: {
                     title: '姓名',

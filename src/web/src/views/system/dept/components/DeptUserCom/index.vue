@@ -67,7 +67,7 @@
 <script lang="ts" setup name="user">
 import { ref, reactive, onMounted, watch } from 'vue';
 import { useExpose, useCrud } from '@fast-crud/fast-crud';
-import { Md5 } from 'ts-md5';
+
 import { createCrudOptions } from './crud';
 import * as echarts from 'echarts';
 import { ECharts, EChartsOption, init } from 'echarts';
@@ -269,14 +269,14 @@ const handleResetPwdSubmit = async () => {
 		warningNotification('两次输入密码不一致');
 		return;
 	}
-	const pwdRegex = new RegExp('(?=.*[0-9])(?=.*[a-zA-Z]).{8,30}');
+	const pwdRegex = new RegExp('^.{12,}$');
 	if (!pwdRegex.test(resetPwdFormState.newPassword) || !pwdRegex.test(resetPwdFormState.newPassword2)) {
-		warningNotification('您的密码复杂度太低(密码中必须包含字母、数字)');
+		warningNotification('密码至少需要12个字符，且须满足服务端安全策略');
 		return;
 	}
 	const res = await resetPwd(resetPwdFormState.id, {
-		newPassword: Md5.hashStr(resetPwdFormState.newPassword),
-		newPassword2: Md5.hashStr(resetPwdFormState.newPassword2),
+		newPassword: resetPwdFormState.newPassword,
+		newPassword2: resetPwdFormState.newPassword2,
 	});
 
 	if (res?.code === 2000) {

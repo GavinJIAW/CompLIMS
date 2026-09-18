@@ -123,6 +123,15 @@ router.beforeEach(async (to, from, next) => {
     NProgress.configure({showSpinner: false});
     if (to.meta.title) NProgress.start();
     const token = Session.get('token');
+    if (token) {
+        await useUserInfo().getApiUserInfo();
+        if (userInfos.value.pwd_change_count === 0) {
+            NextLoading.done();
+            NProgress.done();
+            to.path === '/login' ? next() : next('/login');
+            return;
+        }
+    }
     if (to.path === '/login' && !token) {
         next();
         NProgress.done();
@@ -132,7 +141,7 @@ router.beforeEach(async (to, from, next) => {
             Session.clear();
             NProgress.done();
         }else if (token && to.path === '/login' && userInfos.value.pwd_change_count===0 ) {
-            next('/login');
+            next();
             NProgress.done();
         } else if (token && to.path === '/login' && userInfos.value.pwd_change_count>0) {
             next('/home');

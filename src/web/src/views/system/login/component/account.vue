@@ -69,7 +69,7 @@ import { useUserInfo } from '/@/stores/userInfo';
 import { DictionaryStore } from '/@/stores/dictionary';
 import { SystemConfigStore } from '/@/stores/systemConfig';
 import { BtnPermissionStore } from '/@/plugin/permission/store.permission';
-import { Md5 } from 'ts-md5';
+
 import { errorMessage } from '/@/utils/message';
 import {getBaseURL} from "/@/utils/baseUrl";
 
@@ -144,11 +144,12 @@ export default defineComponent({
 			if (!formRef.value) return
 			await formRef.value.validate((valid: any) => {
 				if (valid) {
-					loginApi.login({ ...state.ruleForm, password: Md5.hashStr(state.ruleForm.password) }).then(async (res: any) => {
+					loginApi.login({ ...state.ruleForm, password: state.ruleForm.password }).then(async (res: any) => {
 						if (res.code === 2000) {
               const {data} = res
               Cookies.set('username', res.data.username);
               Session.set('token', res.data.access);
+              Session.set('refresh', res.data.refresh);
               useUserInfo().setPwdChangeCount(data.pwd_change_count)
               if(data.pwd_change_count==0){
                 return router.push('/login');

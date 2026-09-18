@@ -16,8 +16,8 @@ export function login(params: object) {
 
 export function loginChangePwd(data: object) {
     return request({
-        url: '/api/system/user/login_change_password/',
-        method: 'post',
+        url: '/api/system/user/change_password/',
+        method: 'put',
         data: data
     });
 }
@@ -34,4 +34,7 @@ export function getBackends() {
         url: '/api/dvadmin3_social_oauth2/backend/get_login_backend/',
         method: 'get',
     });
+}
+export function logout() {
+    return request({ url: '/api/logout/', method: 'post', data: {} });
 }

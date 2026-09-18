@@ -68,9 +68,10 @@ export function exportData(params:any){
 }
 
 
-export function resetToDefaultPassword(id:any){
+export function resetPassword(id: any, password: string){
     return request({
-        url: apiPrefix  + id + '/reset_to_default_password/',
-        method: 'put'
+        url: apiPrefix  + id + '/reset_password/',
+        method: 'put',
+        data: { newPassword: password, newPassword2: password }
     })
 }

@@ -45,7 +45,7 @@ function createService() {
 		(config) => projectCrudPayload(config),
 		(error) => {
 			// 发送失败
-			console.log(error);
+			// Do not log Axios config: it can contain credentials.
 			return Promise.reject(error);
 		}
 	);
@@ -123,7 +123,12 @@ function createService() {
 					error.message = '请求错误';
 					break;
 				case 401:
-					// Local.clear();
+                    if (String(error.config?.url || '').includes('/api/login/')) {
+                        const detail = error.response?.data?.msg?.detail;
+                        error.message = detail === 'RESET REQUIRED' ? '请联系管理员重设密码（RESET REQUIRED）' : '账号或密码无效';
+                        break;
+                    }
+                    // Local.clear();
 					Session.clear();
 					error.message = '登录授权过期，请重新登录';
 					ElMessageBox.alert(error.message, '提示', {
@@ -163,7 +168,7 @@ function createService() {
 				default:
 					break;
 			}
-			errorLog(error);
+			errorLog(new Error(status ? error.message : 'Request failed'));
 			if (status === 401) {
 				// const userStore = useUserStore();
 				// userStore.logout();
