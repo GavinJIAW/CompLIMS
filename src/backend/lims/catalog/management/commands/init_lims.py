@@ -58,3 +58,6 @@ class Command(BaseCommand):
                         'is_query': True, 'is_create': writable and field.field_name != 'id',
                         'is_update': writable and field.field_name not in ('id', 'number')})
         self.stdout.write(self.style.SUCCESS('M1 menu configuration ready; role grants applied only if explicitly requested.'))
+        from lims.shared.m2_menus import initialize_m2
+        initialize_m2()
+        self.stdout.write(self.style.SUCCESS('M2 metadata ready; no M2 role grants applied.'))
