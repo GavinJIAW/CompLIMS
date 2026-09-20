@@ -35,7 +35,8 @@ export function makeCrud(resource: string, api: any, context: any) {
         modelValue:scope.form[key], 'onUpdate:modelValue':(value:any)=>{scope.form[key]=value;},
         ...(key === 'service' ? {resource:'service'} : {}),
         ...(key === 'requirement_defaults' ? {serviceId:scope.form.service} : {}),
-        ...(['items','packages'].includes(key) ? {kind:resource,permissions:permissions._rows} : {}),
+        ...(['items','packages'].includes(key) ? {kind:resource,permissions:permissions._rows,
+          showStandardCost:!!permissions.standard_cost?.is_query,showReferencePrice:!!permissions.reference_price?.is_query} : {}),
         disabled:!flags[scope.form.id ? 'is_update' : 'is_create'],
       });
     }
@@ -46,7 +47,10 @@ export function makeCrud(resource: string, api: any, context: any) {
     request:{pageRequest:(query:any)=>api.list(query), addRequest:({form}:any)=>api.create(payload(resource,form,false,permissions)), editRequest:({form,row}:any)=>api.update(row.id,payload(resource,form,true,permissions)), delRequest:({row}:any)=>api.remove(row.id)},
     actionbar:{buttons:{add:{show:auth(`${resource}:Create`) && !!permissions.number?.is_create}}},
     rowHandle:{width:180,buttons:{view:{show:false},edit:{show:auth(`${resource}:Update`)},remove:{show:auth(`${resource}:Delete`)}}},
-    form:{wrapper:{width:'min(1100px, 95vw)'},col:{span:12}},
+    form:{wrapper:{
+      ...(resource === 'cost_item' ? {is:'el-dialog',width:'min(800px, 95vw)'} : {is:'el-drawer',size:'min(1200px, 100vw)'}),
+      buttons:{cancel:{show:true,text:'取消'},ok:{text:'保存'}},
+    },col:{span:12}},
     columns,
   }};
 }

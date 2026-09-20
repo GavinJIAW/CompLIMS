@@ -1,2 +1,2 @@
-import { apiFor } from '../shared/api';
+import { apiFor } from '../../shared/api';
 export const api = apiFor('cost_package');
