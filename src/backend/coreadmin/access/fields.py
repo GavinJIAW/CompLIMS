@@ -57,7 +57,11 @@ IDENTITY = {
     'download_center': {'id'},
 }
 # Explicitly reviewed create contexts: attribution is entirely server-owned.
-CREATE_ADAPTERS = frozenset({'user', 'dictionary', 'menu', 'area'})
+from apps.lims.contract import READ as LIMS_READ, WRITE as LIMS_WRITE
+READ.update({key: frozenset(value.split()) for key, value in LIMS_READ.items()})
+WRITE.update({key: frozenset(value.split()) for key, value in LIMS_WRITE.items()})
+IDENTITY.update({key: {'id'} for key in LIMS_READ})
+CREATE_ADAPTERS = frozenset({'user', 'dictionary', 'menu', 'area'}) | frozenset(LIMS_READ)
 SELF_READ = {
     'user.update_user_info': frozenset({'name', 'email', 'mobile', 'avatar', 'gender'}),
     'menu.web_router': frozenset('id parent icon sort path name title is_link link_url is_catalog web_path component component_name cache visible is_iframe is_affix status'.split()),

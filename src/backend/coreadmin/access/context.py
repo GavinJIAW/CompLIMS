@@ -40,6 +40,8 @@ SCOPE_PROVIDERS = {
     'role_menu_permission': 'attribution', 'column': 'attribution',
     'login_log': 'attribution', 'download_center': 'attribution',
 }
+from apps.lims.contract import CLASSES as LIMS_CLASSES
+SCOPE_PROVIDERS.update({resource: 'shared_all' for resource in LIMS_CLASSES})
 
 
 class AccessContext:
@@ -59,7 +61,7 @@ class AccessContext:
         # User's B1 serializer has no department attribution input/default.
         # The other approved create adapters retain CoreModel's actor dept.
         return {'creator': self.user, 'modifier': str(self.user.pk),
-                'dept_belong_id': None if self.action.resource == 'user' else self.user.dept_id}
+                'dept_belong_id': None if self.action.resource == 'user' or SCOPE_PROVIDERS.get(self.action.resource) == 'shared_all' else self.user.dept_id}
 
     @cached_property
     def grants(self):
@@ -70,6 +72,8 @@ class AccessContext:
             menu_button__value__in=aliases_for(self.action.code),
             data_range__in=(0, 1, 2, 3, 4),
         ).select_related('menu_button').prefetch_related('dept').order_by('id')
+        if SCOPE_PROVIDERS.get(self.action.resource) == 'shared_all':
+            rows = rows.filter(data_range=3)
         return tuple(Grant(row.id, row.role_id, row.menu_button.menu_id, row.data_range,
                            frozenset(dept.id for dept in row.dept.all())) for row in rows)
 

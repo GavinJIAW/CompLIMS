@@ -179,6 +179,24 @@ ALIASES.update({
 })
 
 
+# M1 is a separate app, with exact class identities and the same policies.
+from apps.lims.contract import CLASSES as LIMS_CLASSES
+for resource, cls in LIMS_CLASSES.items():
+    CLASS_RESOURCES[('apps.lims.views', cls)] = resource
+    register(resource, 'list retrieve', R, 'GET HEAD')
+    register(resource, 'create', R, 'POST')
+    register(resource, 'update', R, 'PUT PATCH')
+    register(resource, 'destroy', R, 'DELETE')
+    register(resource, 'metadata', O, 'OPTIONS')
+    register(resource, 'field_permission', O, 'GET HEAD')
+    register(resource, 'multiple_delete', X, 'DELETE')
+    register(resource, 'import_data', X, 'GET HEAD POST')
+    register(resource, 'export_data update_template', X, 'GET HEAD')
+    for suffix, name in {'Search': 'list', 'Retrieve': 'retrieve', 'Create': 'create',
+                         'Update': 'update', 'Delete': 'destroy'}.items():
+        ALIASES[f'{resource}:{suffix}'] = f'{resource}.{name}'
+
+
 def resource_for(view):
     cls = type(view)
     return CLASS_RESOURCES.get((cls.__module__, cls.__name__))
