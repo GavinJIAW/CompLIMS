@@ -3,16 +3,19 @@ from rest_framework.test import APIClient
 from coreadmin.system.models import Users, FieldPermission, MenuField
 from coreadmin.foundation_tests.access_fixtures import grant
 from coreadmin.access.registry import resolve
-from apps.lims.contract import READ, WRITE, ROW_FIELDS
-from apps.lims import models
-from apps.lims.tests import test_models
+from lims.shared.contract import READ, WRITE, ROW_FIELDS
+from lims.costing.models import CostItem, CostPackage, CostPackageItem
+from lims.catalog.models import Service, Product, ProductCostPackage, Scheme, SchemeItem
+from lims.catalog.tests import test_models
 
 MODEL_NAMES = {'service': 'Service', 'cost_item': 'CostItem', 'cost_package': 'CostPackage', 'product': 'Product', 'scheme': 'Scheme'}
+
+MODEL_CLASSES = {'service': Service, 'cost_item': CostItem, 'cost_package': CostPackage, 'product': Product, 'scheme': Scheme}
 
 
 class RouteTests(SimpleTestCase):
     def test_every_route_method(self):
-        from apps.lims.urls import urlpatterns
+        from lims.urls import urlpatterns
         for pattern in urlpatterns:
             view = pattern.callback.cls()
             for method, action in pattern.callback.actions.items():
@@ -57,7 +60,7 @@ class ApiTests(TestCase):
                 payload.update(number='NEW', name='New')
                 response = self.client.post(self.url(resource), payload, format='json')
                 self.assertEqual(response.status_code, 200, response.data)
-                obj = getattr(models, MODEL_NAMES[resource]).objects.get(number='NEW')
+                obj = MODEL_CLASSES[resource].objects.get(number='NEW')
                 self.assertIsNone(obj.dept_belong_id)
                 self.assertEqual(self.client.get(self.url(resource, obj)).status_code, 200)
                 self.assertEqual(self.client.patch(self.url(resource, obj), {'name': 'Changed'}, format='json').status_code, 200)
@@ -137,7 +140,7 @@ class ApiTests(TestCase):
         self.assertEqual([row['sequence'] for row in response.data['data']['items']], [10, 20])
 
     def test_disabled_targets_and_existing_relationship(self):
-        row = models.CostPackageItem.objects.create(package=self.package, item=self.item, quantity=1)
+        row = CostPackageItem.objects.create(package=self.package, item=self.item, quantity=1)
         self.item.enabled = False
         self.item.save()
         payload = {'items': [{'item': self.item.pk, 'quantity': '2', 'sequence': 10}]}
@@ -161,8 +164,8 @@ class ApiTests(TestCase):
         self.assertEqual(self.client.delete(self.url('service', self.service)).status_code, 409)
 
     def test_hidden_costs_do_not_leak_through_aggregate(self):
-        models.CostPackageItem.objects.create(package=self.package, item=self.item, quantity=1)
-        models.ProductCostPackage.objects.create(product=self.product, package=self.package, quantity=1)
+        CostPackageItem.objects.create(package=self.package, item=self.item, quantity=1)
+        ProductCostPackage.objects.create(product=self.product, package=self.package, quantity=1)
         self.client.force_authenticate(self.actor)
         self.grant_all('product')
         response = self.client.get(self.url('product', self.product))
@@ -170,7 +173,7 @@ class ApiTests(TestCase):
         self.assertNotIn('unit_cost', response.data['data']['packages'][0])
 
     def test_nested_field_permission(self):
-        models.SchemeItem.objects.create(scheme=self.scheme, product=self.product, sequence=10, remark='private')
+        SchemeItem.objects.create(scheme=self.scheme, product=self.product, sequence=10, remark='private')
         self.client.force_authenticate(self.actor)
         grant(self.actor, 'scheme:Retrieve', 'Scheme', fields=['items'])
         self.assertEqual(self.client.get(self.url('scheme', self.scheme)).data['data']['items'], [{'id': self.scheme.items.get().id}])
@@ -181,14 +184,14 @@ class ApiTests(TestCase):
             self.assertIn(response.status_code, [403, 405])
 
     def test_scheme_derived_totals_and_dependency_field_authority(self):
-        models.CostPackageItem.objects.create(package=self.package, item=self.item, quantity=3)
-        models.ProductCostPackage.objects.create(product=self.product, package=self.package, quantity=2)
+        CostPackageItem.objects.create(package=self.package, item=self.item, quantity=3)
+        ProductCostPackage.objects.create(product=self.product, package=self.package, quantity=2)
         self.product.reference_price = '120.00'
         self.product.save()
         for sequence in (10, 20):
-            models.SchemeItem.objects.create(scheme=self.scheme, product=self.product, sequence=sequence)
+            SchemeItem.objects.create(scheme=self.scheme, product=self.product, sequence=sequence)
         response = self.client.get(self.url('scheme', self.scheme)).data['data']
-        from apps.lims.costs import product_cost
+        from lims.catalog.services import product_cost
         self.assertEqual(response['standard_cost'], str(product_cost(self.product) * 2))
         self.assertEqual(response['reference_price'], '240.00')
         self.client.force_authenticate(self.actor)
@@ -209,7 +212,7 @@ class ApiTests(TestCase):
             'packages': [{'package': self.package.pk, 'quantity': '1', 'sequence': 10}]}, format='json').status_code, 400)
         self.assertEqual(self.client.patch(self.url('scheme', self.scheme), {
             'items': [{'product': self.product.pk, 'sequence': 10}]}, format='json').status_code, 400)
-        row = models.SchemeItem.objects.create(scheme=self.scheme, product=self.product, sequence=10)
+        row = SchemeItem.objects.create(scheme=self.scheme, product=self.product, sequence=10)
         self.assertEqual(self.client.patch(self.url('scheme', self.scheme), {'items': [
             {'id': row.pk, 'product': self.product.pk, 'sequence': 20}]}, format='json').status_code, 200)
 

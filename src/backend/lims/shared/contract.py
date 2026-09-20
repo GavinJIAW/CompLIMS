@@ -22,3 +22,5 @@ ROW_FIELDS = {
     'ProductCostPackage': 'id package quantity sequence',
     'SchemeItem': 'id product sequence requirement_override remark',
 }
+
+MODULES = {resource: 'lims.' + ('costing' if resource in ('cost_item', 'cost_package') else 'catalog') + '.views' for resource in CLASSES}

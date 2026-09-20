@@ -1,10 +1,12 @@
 from decimal import Decimal
 from types import SimpleNamespace
 from django.test import TestCase
-from apps.lims.tests import test_models
-from apps.lims.models import CostPackageItem, ProductCostPackage
-from apps.lims.costs import package_cost, product_cost
-from apps.lims.services import master_command, save_aggregate
+from lims.catalog.tests import test_models
+from lims.costing.models import CostItem, CostPackage, CostPackageItem
+from lims.catalog.models import Service, Product, ProductCostPackage, Scheme, SchemeItem
+from lims.costing.services import package_cost
+from lims.catalog.services import product_cost
+from lims.shared.services import master_command, save_aggregate
 
 
 class CostTests(TestCase):

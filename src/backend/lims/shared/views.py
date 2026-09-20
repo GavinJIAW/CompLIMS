@@ -3,8 +3,7 @@ from rest_framework.exceptions import APIException
 from rest_framework.decorators import action
 from coreadmin.utils.viewset import CustomModelViewSet
 from coreadmin.utils.field_permission import FieldPermissionMixin
-from apps.lims import models, serializers
-from apps.lims.services import master_command, save_aggregate
+from lims.shared.services import master_command, save_aggregate
 
 
 class ReferencedMaster(APIException):
@@ -23,7 +22,7 @@ class MasterViewSet(FieldPermissionMixin, CustomModelViewSet):
         from coreadmin.access.registry import resource_for, REGISTRY
         from coreadmin.access.context import AccessContext
         from coreadmin.utils.json_response import DetailResponse
-        from apps.lims.authority import row_fields
+        from lims.shared.authority import row_fields
         resource = resource_for(self)
         result = field_metadata(request.user, resource, self.queryset.model)
         row_model = self.serializer_class.row_model
@@ -63,38 +62,3 @@ class MasterViewSet(FieldPermissionMixin, CustomModelViewSet):
 
     def perform_update(self, serializer):
         save_aggregate(serializer, modifier=str(self.request.user.pk))
-
-
-class ServiceViewSet(MasterViewSet):
-    queryset = models.Service.objects.all()
-    serializer_class = serializers.ServiceSerializer
-    filter_fields = MasterViewSet.filter_fields + ['service_type', 'internal_name', 'name_en']
-    search_fields = ['number', 'internal_name', 'name', 'name_en']
-    ordering_fields = MasterViewSet.ordering_fields + ['internal_name', 'name_en']
-
-
-class CostItemViewSet(MasterViewSet):
-    queryset = models.CostItem.objects.all()
-    serializer_class = serializers.CostItemSerializer
-    filter_fields = MasterViewSet.filter_fields + ['type', 'unit']
-
-
-class CostPackageViewSet(MasterViewSet):
-    queryset = models.CostPackage.objects.prefetch_related('items__item').all()
-    serializer_class = serializers.CostPackageSerializer
-
-
-class ProductViewSet(MasterViewSet):
-    queryset = models.Product.objects.select_related('service').prefetch_related('packages__package__items__item').all()
-    serializer_class = serializers.ProductSerializer
-    filter_fields = MasterViewSet.filter_fields + ['service', 'internal_name', 'name_en']
-    search_fields = ServiceViewSet.search_fields
-    ordering_fields = ServiceViewSet.ordering_fields + ['reference_price']
-
-
-class SchemeViewSet(MasterViewSet):
-    queryset = models.Scheme.objects.prefetch_related('items__product__service', 'items__product__packages__package__items__item').all()
-    serializer_class = serializers.SchemeSerializer
-    filter_fields = MasterViewSet.filter_fields + ['internal_name', 'name_en']
-    search_fields = ServiceViewSet.search_fields
-    ordering_fields = ServiceViewSet.ordering_fields

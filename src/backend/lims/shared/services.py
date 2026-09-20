@@ -1,8 +1,8 @@
 """Atomic current-master writes, including compatibility and aggregate replacement."""
 from contextlib import contextmanager
 from django.db import connection, transaction
-from apps.lims.models import Service, Product
-from apps.lims.templates import validate_compatibility, validate_values
+from lims.catalog.models import Service, Product
+from lims.catalog.templates import validate_compatibility, validate_values
 
 
 @contextmanager

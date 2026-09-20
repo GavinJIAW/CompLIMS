@@ -1,7 +1,7 @@
 from django.test import SimpleTestCase, TestCase
 from rest_framework.exceptions import ValidationError
-from apps.lims.templates import validate_template, validate_values, validate_compatibility, TYPES
-from apps.lims.models import Service, Product, Scheme, SchemeItem
+from lims.catalog.templates import validate_template, validate_values, validate_compatibility, TYPES
+from lims.catalog.models import Service, Product, Scheme, SchemeItem
 
 
 def field(kind='string', **kwargs):

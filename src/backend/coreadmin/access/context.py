@@ -40,7 +40,7 @@ SCOPE_PROVIDERS = {
     'role_menu_permission': 'attribution', 'column': 'attribution',
     'login_log': 'attribution', 'download_center': 'attribution',
 }
-from apps.lims.contract import CLASSES as LIMS_CLASSES
+from lims.shared.contract import CLASSES as LIMS_CLASSES
 SCOPE_PROVIDERS.update({resource: 'shared_all' for resource in LIMS_CLASSES})
 
 

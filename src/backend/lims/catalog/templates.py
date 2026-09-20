@@ -124,7 +124,7 @@ def validate_values(template, values, path='values', complete=False):
 
 def validate_compatibility(service, template):
     """Caller holds the master command lock also used by dependent writers."""
-    from apps.lims.models import Product, SchemeItem
+    from lims.catalog.models import Product, SchemeItem
     for product in Product.objects.filter(service=service):
         validate_values(template, product.requirement_defaults, f'product.{product.pk}.requirement_defaults')
     for row in SchemeItem.objects.filter(product__service=service):

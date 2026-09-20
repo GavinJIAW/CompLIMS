@@ -2,11 +2,10 @@ from decimal import Decimal, localcontext
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from coreadmin.utils.serializers import CustomModelSerializer
-from apps.lims import models
-from apps.lims.contract import READ, ROW_FIELDS
-from apps.lims.templates import validate_template, validate_values
-from apps.lims.authority import reference, readable, row_fields
-from apps.lims.costs import package_cost, product_cost, scheme_totals
+from lims.shared.contract import READ, ROW_FIELDS
+from lims.catalog.templates import validate_template, validate_values
+from lims.shared.authority import reference, readable, row_fields
+from lims.costing.services import package_cost
 
 
 class StrictRow(serializers.Serializer):
@@ -17,22 +16,6 @@ class StrictRow(serializers.Serializer):
         if not isinstance(data, dict) or set(data) - set(self.fields):
             raise ValidationError('Unknown composition fields.')
         return super().to_internal_value(data)
-
-
-class PackageRow(StrictRow):
-    item = serializers.PrimaryKeyRelatedField(queryset=models.CostItem.objects.all())
-    quantity = serializers.DecimalField(max_digits=20, decimal_places=6, min_value=Decimal('0.000001'))
-
-
-class ProductRow(StrictRow):
-    package = serializers.PrimaryKeyRelatedField(queryset=models.CostPackage.objects.all())
-    quantity = serializers.DecimalField(max_digits=20, decimal_places=6, min_value=Decimal('0.000001'))
-
-
-class SchemeRow(StrictRow):
-    product = serializers.PrimaryKeyRelatedField(queryset=models.Product.objects.select_related('service').all())
-    requirement_override = serializers.JSONField(default=dict)
-    remark = serializers.CharField(required=False, allow_blank=True, default='')
 
 
 def package_visible(actor, package):
@@ -137,74 +120,3 @@ class MasterSerializer(CustomModelSerializer):
                 output.append(values)
             result[self.row_name] = output
         return result
-
-
-class ServiceSerializer(MasterSerializer):
-    resource = 'service'
-    class Meta:
-        model = models.Service
-        fields = READ['service'].split()
-        read_only_fields = ['id', 'creator', 'modifier', 'dept_belong_id']
-
-
-class CostItemSerializer(MasterSerializer):
-    resource = 'cost_item'
-    class Meta:
-        model = models.CostItem
-        fields = READ['cost_item'].split()
-        read_only_fields = ['id', 'creator', 'modifier', 'dept_belong_id']
-
-
-class CostPackageSerializer(MasterSerializer):
-    resource, row_name, row_serializer, row_model = 'cost_package', 'items', PackageRow, models.CostPackageItem
-    target, target_resource = 'item', 'cost_item'
-    items = serializers.SerializerMethodField()
-    current_cost = serializers.SerializerMethodField()
-    def get_items(self, obj):
-        return []  # Explicit projection below, never automatic nested fields.
-    def get_current_cost(self, obj):
-        return str(package_cost(obj)) if package_visible(self.request.user, obj) else None
-    class Meta:
-        model = models.CostPackage
-        fields = READ['cost_package'].split()
-        read_only_fields = ['id', 'creator', 'modifier', 'dept_belong_id']
-
-
-class ProductSerializer(MasterSerializer):
-    resource, row_name, row_serializer, row_model = 'product', 'packages', ProductRow, models.ProductCostPackage
-    target, target_resource = 'package', 'cost_package'
-    packages = serializers.SerializerMethodField()
-    standard_cost = serializers.SerializerMethodField()
-    def get_packages(self, obj):
-        return []
-    def get_standard_cost(self, obj):
-        return str(product_cost(obj)) if all(package_visible(self.request.user, row.package) for row in obj.packages.all()) else None
-    class Meta:
-        model = models.Product
-        fields = READ['product'].split()
-        read_only_fields = ['id', 'creator', 'modifier', 'dept_belong_id']
-
-
-class SchemeSerializer(MasterSerializer):
-    resource, row_name, row_serializer, row_model = 'scheme', 'items', SchemeRow, models.SchemeItem
-    target, target_resource = 'product', 'product'
-    items = serializers.SerializerMethodField()
-    standard_cost = serializers.SerializerMethodField()
-    reference_price = serializers.SerializerMethodField()
-    def get_items(self, obj):
-        return []
-    def get_standard_cost(self, obj):
-        actor = self.request.user
-        if all(readable(actor, 'product', row.product, ['standard_cost']) and
-               all(package_visible(actor, part.package) for part in row.product.packages.all())
-               for row in obj.items.all()):
-            return str(scheme_totals(obj)[0])
-        return None
-    def get_reference_price(self, obj):
-        if all(readable(self.request.user, 'product', row.product, ['reference_price']) for row in obj.items.all()):
-            return str(scheme_totals(obj)[1])
-        return None
-    class Meta:
-        model = models.Scheme
-        fields = READ['scheme'].split()
-        read_only_fields = ['id', 'creator', 'modifier', 'dept_belong_id']

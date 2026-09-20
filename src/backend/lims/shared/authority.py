@@ -4,11 +4,12 @@ from coreadmin.access.context import AccessContext
 from coreadmin.access.registry import REGISTRY
 from coreadmin.access.fields import FieldPolicy
 from coreadmin.system.models import FieldPermission
-from apps.lims.contract import ROW_FIELDS
-from apps.lims import models
+from lims.shared.contract import ROW_FIELDS
+from lims.costing.models import CostItem, CostPackage, CostPackageItem
+from lims.catalog.models import Service, Product, ProductCostPackage, Scheme, SchemeItem
 
-MODELS = {'service': models.Service, 'cost_item': models.CostItem,
-          'cost_package': models.CostPackage, 'product': models.Product, 'scheme': models.Scheme}
+MODELS = {'service': Service, 'cost_item': CostItem,
+          'cost_package': CostPackage, 'product': Product, 'scheme': Scheme}
 
 
 def read_context(actor, resource):

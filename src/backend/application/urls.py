@@ -42,7 +42,7 @@ if getattr(settings, "INITIALIZE_ON_URL_IMPORT", True):
 urlpatterns = (
         [
             path("api/system/", include("coreadmin.system.urls")),
-            path("api/lims/", include("apps.lims.urls")),
+            path("api/lims/", include("lims.urls")),
             path("api/login/", LoginView.as_view(), name="token_obtain_pair"),
             path("api/logout/", LogoutView.as_view(), name="token_obtain_pair"),
             path("api/token/refresh/", CanonicalTokenRefreshView.as_view(), name="token_refresh"),

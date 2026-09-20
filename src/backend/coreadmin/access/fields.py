@@ -57,7 +57,7 @@ IDENTITY = {
     'download_center': {'id'},
 }
 # Explicitly reviewed create contexts: attribution is entirely server-owned.
-from apps.lims.contract import READ as LIMS_READ, WRITE as LIMS_WRITE
+from lims.shared.contract import READ as LIMS_READ, WRITE as LIMS_WRITE
 READ.update({key: frozenset(value.split()) for key, value in LIMS_READ.items()})
 WRITE.update({key: frozenset(value.split()) for key, value in LIMS_WRITE.items()})
 IDENTITY.update({key: {'id'} for key in LIMS_READ})

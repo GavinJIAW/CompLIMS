@@ -125,7 +125,8 @@ INSTALLED_APPS = [
     "captcha",
     # "channels",
     "coreadmin.system",
-    "apps.lims",
+    "lims.costing.apps.CostingConfig",
+    "lims.catalog.apps.CatalogConfig",
 
 ]
 

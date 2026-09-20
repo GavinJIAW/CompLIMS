@@ -3,11 +3,14 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from coreadmin.system.fixtures.initSerializer import MenuInitSerializer
 from coreadmin.system.models import Menu, MenuField, Role, RoleMenuPermission, RoleMenuButtonPermission, FieldPermission
-from apps.lims.contract import READ, WRITE, ROW_FIELDS
+from lims.shared.contract import READ, WRITE, ROW_FIELDS
 
 RESOURCES = [('service', 'Service', '技术服务'), ('cost_item', 'CostItem', '成本项'),
              ('cost_package', 'CostPackage', '成本包'), ('product', 'Product', '产品'), ('scheme', 'Scheme', '技术方案')]
 ROWS = {'cost_package': 'CostPackageItem', 'product': 'ProductCostPackage', 'scheme': 'SchemeItem'}
+GROUPS = {'costing': '成本管理', 'catalog': '服务目录'}
+PAGES = {'cost_item': ('costing', 'costItem'), 'cost_package': ('costing', 'costPackage'),
+         'service': ('catalog', 'service'), 'product': ('catalog', 'product'), 'scheme': ('catalog', 'scheme')}
 
 
 class Command(BaseCommand):
@@ -23,10 +26,12 @@ class Command(BaseCommand):
             role = Role.objects.select_for_update().filter(key=options['role_key'], status=True).first()
             if role is None:
                 raise CommandError('An active existing role is required.')
-        root, _ = Menu.objects.get_or_create(component_name='lims_master', defaults={
-            'name': 'LIMS 主数据', 'web_path': '/lims', 'is_catalog': True, 'sort': 20, 'status': True})
-        if role:
-            RoleMenuPermission.objects.get_or_create(role=role, menu=root)
+        roots = {}
+        for index, (key, title) in enumerate(GROUPS.items()):
+            roots[key], _ = Menu.objects.update_or_create(component_name=f'lims_{key}', defaults={
+                'name': title, 'web_path': f'/lims/{key}', 'is_catalog': True, 'sort': 20 + index, 'status': True})
+            if role:
+                RoleMenuPermission.objects.get_or_create(role=role, menu=roots[key])
         for index, (resource, model, title) in enumerate(RESOURCES):
             buttons = [{'name': label, 'value': f'{resource}:{suffix}', 'api': f'/api/lims/{resource}/', 'method': method}
                        for suffix, label, method in [('Search', '查询', 0), ('Retrieve', '详情', 0),
@@ -34,7 +39,8 @@ class Command(BaseCommand):
             fields = [{'model': model, 'field_name': key, 'title': key} for key in READ[resource].split()]
             if resource in ROWS:
                 fields += [{'model': ROWS[resource], 'field_name': key, 'title': key} for key in ROW_FIELDS[ROWS[resource]].split()]
-            data = dict(name=title, parent=root.pk, web_path=f'/lims/{resource}', component=f'lims/{resource}/index',
+            group, page = PAGES[resource]
+            data = dict(name='方案' if resource == 'scheme' else title, parent=roots[group].pk, web_path=f'/lims/{resource}', component=f'lims/{group}/{page}/index',
                         component_name=f'lims_{resource}', sort=index * 10, is_catalog=False, status=True,
                         menu_button=buttons, menu_field=fields)
             existing = Menu.objects.filter(component_name=data['component_name']).first()

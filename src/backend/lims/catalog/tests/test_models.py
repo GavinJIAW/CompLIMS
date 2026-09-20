@@ -3,8 +3,9 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError, connection, transaction
 from django.db.models import ProtectedError
 from django.test import TestCase
-from apps.lims.models import (Service, CostItem, CostPackage, CostPackageItem,
-                              Product, ProductCostPackage, Scheme, SchemeItem)
+from lims.costing.models import CostItem, CostPackage, CostPackageItem
+from lims.catalog.models import Service, Product, ProductCostPackage, Scheme, SchemeItem
+
 
 
 class ModelTests(TestCase):

@@ -179,10 +179,10 @@ ALIASES.update({
 })
 
 
-# M1 is a separate app, with exact class identities and the same policies.
-from apps.lims.contract import CLASSES as LIMS_CLASSES
+# M1 domain apps use exact class identities and the same policies.
+from lims.shared.contract import CLASSES as LIMS_CLASSES, MODULES as LIMS_MODULES
 for resource, cls in LIMS_CLASSES.items():
-    CLASS_RESOURCES[('apps.lims.views', cls)] = resource
+    CLASS_RESOURCES[(LIMS_MODULES[resource], cls)] = resource
     register(resource, 'list retrieve', R, 'GET HEAD')
     register(resource, 'create', R, 'POST')
     register(resource, 'update', R, 'PUT PATCH')

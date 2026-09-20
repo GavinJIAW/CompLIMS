@@ -1,11 +1,5 @@
-"""Exact current-master costs. No persisted totals and no intermediate rounding."""
 from decimal import Decimal, ROUND_HALF_UP, localcontext
-
-
-def package_cost(package):
-    with localcontext() as context:
-        context.prec = 80
-        return sum((row.item.unit_cost * row.quantity for row in package.items.all()), Decimal(0))
+from lims.costing.services import package_cost
 
 
 def product_cost(product):
