@@ -127,6 +127,8 @@ INSTALLED_APPS = [
     "coreadmin.system",
     "lims.costing.apps.CostingConfig",
     "lims.catalog.apps.CatalogConfig",
+    "lims.customer.apps.CustomerConfig",
+    "lims.commercial.apps.CommercialConfig",
 
 ]
 
