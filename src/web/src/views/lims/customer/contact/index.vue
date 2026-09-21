@@ -1,7 +1,7 @@
 <template>
   <fs-page><fs-crud ref="crudRef" v-bind="crudBinding" /></fs-page>
 </template>
-<script setup lang="ts" name="lims_cost_type">
+<script setup lang="ts" name="lims_contact">
 import { onMounted } from 'vue';
 import { useFs } from '@fast-crud/fast-crud';
 import { createCrudOptions } from './crud';

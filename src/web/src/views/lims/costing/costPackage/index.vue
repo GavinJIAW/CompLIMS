@@ -6,12 +6,11 @@ import { onMounted } from 'vue';
 import { useFs } from '@fast-crud/fast-crud';
 import { createCrudOptions } from './crud';
 import { api } from './api';
-const context: any = { permissions: {} };
+const context: any = { permissions: {}, refresh: () => crudExpose.doRefresh() };
 const { crudBinding, crudRef, crudExpose, resetCrudOptions } = useFs({ createCrudOptions, context });
 onMounted(async () => {
-  const result = await api.permissions();
-  context.permissions = result.data;
-  resetCrudOptions(createCrudOptions({context}).crudOptions);
+  context.permissions = (await api.field_permission()).data;
+  resetCrudOptions(createCrudOptions({ context }).crudOptions);
   await crudExpose.doRefresh();
 });
 </script>
