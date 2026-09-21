@@ -27,7 +27,12 @@ def validate_row(model, data, instance, fields):
     return serializer.validated_data
 
 
-def unique_sequences(rows):
-    values = [data.get('sequence', getattr(old, 'sequence', None)) for data, old in rows]
+def unique_sequences(model, rows):
+    values = []
+    for data, old in rows:
+        if 'sequence' in data or old is None:
+            clean = validate_row(model, {key: data[key] for key in ('sequence',) if key in data}, old, ['sequence'])
+            data['sequence'] = clean['sequence']
+        values.append(data.get('sequence', getattr(old, 'sequence', None)))
     if None in values or len(values) != len(set(values)):
         raise ValidationError({'sequence': 'Sequences are required and unique within the parent.'})

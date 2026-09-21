@@ -1,7 +1,7 @@
 """Atomic commercial aggregate commands. Master data is read only on new sources."""
 from copy import deepcopy
 from decimal import Decimal, ROUND_HALF_UP, localcontext
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from coreadmin.access.context import AccessContext
@@ -70,7 +70,7 @@ def product_snapshot(ctx, product_id, override=None):
 def prepare_items(ctx, parent, model, raw, group=None, imported=None):
     existing = {r.pk: r for r in group.items.all()} if group else {}
     rows = collection(raw, existing)
-    unique_sequences(rows)
+    unique_sequences(model, rows)
     prepared = []
     fields = CHILD_CREATE[model.__name__].split()
     for data, old in rows:
@@ -100,7 +100,7 @@ def prepare_items(ctx, parent, model, raw, group=None, imported=None):
 def prepare_groups(ctx, parent, model, item_model, raw, instance=None):
     existing = {r.pk: r for r in instance.schemes.all()} if instance else {}
     rows = collection(raw, existing)
-    unique_sequences(rows)
+    unique_sequences(model, rows)
     prepared = []
     for data, old in rows:
         check_child(ctx, parent, model, data, old)
@@ -267,7 +267,23 @@ def convert(view):
     for model in (ContractScheme, ContractSchemeItem):
         if not set(CHILD_CREATE[model.__name__].split()) <= child_fields(target, parent, model, 'create'):
             raise PermissionDenied('Contract child create fields are not writable.')
-    contract = Contract.objects.create(**incoming.validated_data, **header, source_quotation=quotation, **target.create_attribution())
+    try:
+        with transaction.atomic():
+            contract = Contract.objects.create(**incoming.validated_data, **header, source_quotation=quotation, **target.create_attribution())
+    except IntegrityError as exc:
+        # Inspect only after the insert savepoint has rolled back. PostgreSQL's
+        # diagnostic constraint must identify this exact field, not another FK,
+        # CHECK or UNIQUE failure that happens to coexist with the same number.
+        cause = exc.__cause__
+        diag = getattr(cause, 'diag', None)
+        if getattr(cause, 'pgcode', None) == '23505' and getattr(diag, 'table_name', None) == Contract._meta.db_table:
+            connection = transaction.get_connection()
+            with connection.cursor() as cursor:
+                constraints = connection.introspection.get_constraints(cursor, Contract._meta.db_table)
+            constraint = constraints.get(diag.constraint_name, {})
+            if constraint.get('unique') and constraint.get('columns') == ['number'] and Contract.objects.filter(number=incoming.validated_data['number']).exists():
+                raise Conflict('Contract number already exists.') from exc
+        raise
     for group in quotation.schemes.all():
         values = {key: deepcopy(getattr(group, key)) for key in ('sequence', 'name_snapshot', 'name_en_snapshot', 'description_snapshot', 'remark', 'source_scheme_id')}
         copy = contract.schemes.create(**values)
