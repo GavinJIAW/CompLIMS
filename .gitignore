@@ -55,3 +55,7 @@ Thumbs.db
 *.swo
 backups/
 # Django migrations and design documents are source, not runtime data.
+
+# Local source review and validation artifacts (keep the directory guide).
+/docs/review-artifacts/*
+!/docs/review-artifacts/README.md
