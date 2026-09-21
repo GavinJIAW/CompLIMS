@@ -13,16 +13,16 @@ class CostTests(TestCase):
     def setUp(self):
         test_models.ModelTests.setUp(self)
 
-    def test_exact_chain_no_intermediate_rounding(self):
+    def test_rounded_chain(self):
         CostPackageItem.objects.create(package=self.package, item=self.item, quantity=3)
         ProductCostPackage.objects.create(product=self.product, package=self.package, quantity=2)
-        self.assertEqual(package_cost(self.package), Decimal('1.250001'))
-        self.assertEqual(product_cost(self.product), Decimal('2.50'))
+        self.assertEqual(package_cost(self.package), Decimal('1.26'))
+        self.assertEqual(product_cost(self.product), Decimal('2.52'))
 
     def test_half_up(self):
-        self.item.unit_cost = Decimal('0.005')
+        self.item.unit_cost = Decimal('0.01')
         self.item.save()
-        CostPackageItem.objects.create(package=self.package, item=self.item, quantity=1)
+        CostPackageItem.objects.create(package=self.package, item=self.item, quantity=Decimal('0.5'))
         ProductCostPackage.objects.create(product=self.product, package=self.package, quantity=1)
         self.assertEqual(product_cost(self.product), Decimal('0.01'))
 
@@ -31,7 +31,7 @@ class CostTests(TestCase):
         self.item.enabled = False
         self.item.save()
         CostPackageItem.objects.create(package=self.package, item=self.item, quantity=1)
-        self.assertEqual(package_cost(self.package), Decimal('0.416667'))
+        self.assertEqual(package_cost(self.package), Decimal('0.42'))
 
     def test_aggregate_rolls_back(self):
         row = CostPackageItem.objects.create(package=self.package, item=self.item, quantity=1)

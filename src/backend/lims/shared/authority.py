@@ -5,10 +5,10 @@ from coreadmin.access.registry import REGISTRY
 from coreadmin.access.fields import FieldPolicy
 from coreadmin.system.models import FieldPermission
 from lims.shared.contract import ROW_FIELDS
-from lims.costing.models import CostItem, CostPackage, CostPackageItem
+from lims.costing.models import CostType, CostItem, CostPackage, CostPackageItem
 from lims.catalog.models import Service, Product, ProductCostPackage, Scheme, SchemeItem
 
-MODELS = {'service': Service, 'cost_item': CostItem,
+MODELS = {'cost_type': CostType, 'service': Service, 'cost_item': CostItem,
           'cost_package': CostPackage, 'product': Product, 'scheme': Scheme}
 
 

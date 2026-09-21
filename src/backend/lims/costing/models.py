@@ -4,12 +4,16 @@ from django.core.validators import MinValueValidator
 from lims.shared.base import Master, NamedMaster
 
 
+class CostType(Master):
+    class Meta(Master.Meta):
+        abstract = False
+        verbose_name = '成本类型'
+        verbose_name_plural = verbose_name
+
+
 class CostItem(Master):
-    TYPES = tuple((value, value) for value in (
-        'LABOR', 'EQUIPMENT', 'CONSUMABLE', 'CERTIFICATION',
-        'MAINTENANCE', 'REPAIR', 'OPERATION'))
-    type = models.CharField(max_length=20, choices=TYPES, verbose_name='成本类型', help_text='区分人工、设备、耗材、认证、保养、维修和运营标准成本')
-    unit_cost = models.DecimalField(max_digits=20, decimal_places=6, validators=[MinValueValidator(0)], verbose_name='单位成本', help_text='以人民币计价的最小标准单位成本，最多保留六位小数')
+    cost_type = models.ForeignKey(CostType, on_delete=models.PROTECT, related_name='cost_items', verbose_name='成本类型', help_text='成本项所属的成本分类，必须引用已启用的成本类型；停用已有类型不影响历史成本项读取')
+    unit_cost = models.DecimalField(max_digits=20, decimal_places=2, validators=[MinValueValidator(0)], verbose_name='单位成本', help_text='以人民币计价的最小标准单位成本，保留两位小数')
     unit = models.CharField(max_length=64, verbose_name='计价单位', help_text='定义单位成本或产品报价对应的标准计量单位')
     basis_data = models.JSONField(default=dict, blank=True, verbose_name='成本依据', help_text='记录成本换算依据、来源参数与说明，不执行公式或表达式')
 
@@ -17,9 +21,6 @@ class CostItem(Master):
         abstract = False
         constraints = [
             models.CheckConstraint(check=models.Q(unit_cost__gte=0), name='lims_item_cost_nonnegative'),
-            models.CheckConstraint(check=models.Q(type__in=[
-                'LABOR', 'EQUIPMENT', 'CONSUMABLE', 'CERTIFICATION',
-                'MAINTENANCE', 'REPAIR', 'OPERATION']), name='lims_item_type_valid'),
         ]
         verbose_name = '成本项'
         verbose_name_plural = verbose_name

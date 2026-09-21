@@ -1,12 +1,12 @@
 from decimal import Decimal, ROUND_HALF_UP, localcontext
-from lims.costing.services import package_cost
+from lims.costing.services import package_cost, money, line_cost
 
 
 def product_cost(product):
     with localcontext() as context:
         context.prec = 80
-        exact = sum((package_cost(row.package) * row.quantity for row in product.packages.all()), Decimal(0))
-        return exact.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+        exact = sum((line_cost(package_cost(row.package), row.quantity) for row in product.packages.all()), Decimal(0))
+        return money(exact)
 
 
 def scheme_totals(scheme):
@@ -14,5 +14,5 @@ def scheme_totals(scheme):
     with localcontext() as context:
         context.prec = 80
         rows = list(scheme.items.all())
-        return (sum((product_cost(row.product) for row in rows), Decimal('0.00')),
-                sum((row.product.reference_price for row in rows), Decimal('0.00')))
+        return (money(sum((product_cost(row.product) for row in rows), Decimal('0.00'))),
+                money(sum((row.product.reference_price for row in rows), Decimal('0.00'))))

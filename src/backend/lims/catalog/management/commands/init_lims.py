@@ -5,11 +5,11 @@ from coreadmin.system.fixtures.initSerializer import MenuInitSerializer
 from coreadmin.system.models import Menu, MenuField, Role, RoleMenuPermission, RoleMenuButtonPermission, FieldPermission
 from lims.shared.contract import READ, WRITE, ROW_FIELDS
 
-RESOURCES = [('service', 'Service', '技术服务'), ('cost_item', 'CostItem', '成本项'),
+RESOURCES = [('cost_type', 'CostType', '成本类型'), ('service', 'Service', '技术服务'), ('cost_item', 'CostItem', '成本项'),
              ('cost_package', 'CostPackage', '成本包'), ('product', 'Product', '产品'), ('scheme', 'Scheme', '技术方案')]
 ROWS = {'cost_package': 'CostPackageItem', 'product': 'ProductCostPackage', 'scheme': 'SchemeItem'}
 GROUPS = {'costing': '成本管理', 'catalog': '服务目录'}
-PAGES = {'cost_item': ('costing', 'costItem'), 'cost_package': ('costing', 'costPackage'),
+PAGES = {'cost_type': ('costing', 'costType'), 'cost_item': ('costing', 'costItem'), 'cost_package': ('costing', 'costPackage'),
          'service': ('catalog', 'service'), 'product': ('catalog', 'product'), 'scheme': ('catalog', 'scheme')}
 
 
@@ -47,6 +47,9 @@ class Command(BaseCommand):
             serializer = MenuInitSerializer(existing, data=data)
             serializer.is_valid(raise_exception=True)
             menu = serializer.save()
+            if resource == 'cost_item':
+                # Remove only the retired enum field metadata and its obsolete grants.
+                MenuField.objects.filter(menu=menu, model='CostItem', field_name='type').delete()
             if role:
                 RoleMenuPermission.objects.get_or_create(role=role, menu=menu)
                 for button in menu.menuPermission.all():

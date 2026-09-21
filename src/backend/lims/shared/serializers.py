@@ -5,7 +5,7 @@ from coreadmin.utils.serializers import CustomModelSerializer
 from lims.shared.contract import READ, ROW_FIELDS
 from lims.catalog.templates import validate_template, validate_values
 from lims.shared.authority import reference, readable, row_fields
-from lims.costing.services import package_cost
+from lims.costing.services import package_cost, money, line_cost
 
 
 class StrictRow(serializers.Serializer):
@@ -114,7 +114,7 @@ class MasterSerializer(CustomModelSerializer):
                     if cost is not None and 'quantity' in allowed:
                         with localcontext() as decimal_context:
                             decimal_context.prec = 80
-                            values.update(unit_cost=str(cost), line_cost=str(cost * row.quantity))
+                            values.update(unit_cost=str(money(cost)), line_cost=str(line_cost(cost, row.quantity)))
                 if 'quantity' in values:
                     values['quantity'] = str(values['quantity'])
                 output.append(values)

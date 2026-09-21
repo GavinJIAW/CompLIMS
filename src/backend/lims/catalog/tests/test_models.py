@@ -3,15 +3,16 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError, connection, transaction
 from django.db.models import ProtectedError
 from django.test import TestCase
-from lims.costing.models import CostItem, CostPackage, CostPackageItem
+from lims.costing.models import CostType, CostItem, CostPackage, CostPackageItem
 from lims.catalog.models import Service, Product, ProductCostPackage, Scheme, SchemeItem
 
 
 
 class ModelTests(TestCase):
     def setUp(self):
+        self.cost_type, _ = CostType.objects.get_or_create(number='LABOR', defaults={'name': '人工'})
         self.service = Service.objects.create(number='S', name='Service')
-        self.item = CostItem.objects.create(number='I', name='Item', type='LABOR', unit='hour', unit_cost='0.416667')
+        self.item = CostItem.objects.create(number='I', name='Item', cost_type=self.cost_type, unit='hour', unit_cost='0.42')
         self.package = CostPackage.objects.create(number='C', name='Package', unit='hour')
         self.product = Product.objects.create(number='P', name='Product', service=self.service, unit='test', reference_price='1.00')
         self.scheme = Scheme.objects.create(number='SC', name='Scheme')
@@ -67,13 +68,13 @@ class ModelTests(TestCase):
 
     def test_cost_and_price_constraints(self):
         self.rejected(lambda: CostItem.objects.filter(pk=self.item.pk).update(unit_cost=-1))
-        self.rejected(lambda: CostItem.objects.filter(pk=self.item.pk).update(type='OTHER'))
+        self.rejected(lambda: CostItem.objects.filter(pk=self.item.pk).update(cost_type_id=999999))
         self.rejected(lambda: Product.objects.filter(pk=self.product.pk).update(reference_price=-1))
         self.item.refresh_from_db()
-        self.assertEqual(self.item.unit_cost, Decimal('0.416667'))
+        self.assertEqual(self.item.unit_cost, Decimal('0.42'))
 
     def test_business_foreign_keys_are_required_and_constrained(self):
-        for model, names in ((Product, ['service']), (CostPackageItem, ['package', 'item']),
+        for model, names in ((CostItem, ['cost_type']), (Product, ['service']), (CostPackageItem, ['package', 'item']),
                              (ProductCostPackage, ['product', 'package']), (SchemeItem, ['scheme', 'product'])):
             for name in names:
                 field = model._meta.get_field(name)

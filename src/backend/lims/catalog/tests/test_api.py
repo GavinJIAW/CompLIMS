@@ -4,13 +4,13 @@ from coreadmin.system.models import Users, FieldPermission, MenuField
 from coreadmin.foundation_tests.access_fixtures import grant
 from coreadmin.access.registry import resolve
 from lims.shared.contract import READ, WRITE, ROW_FIELDS
-from lims.costing.models import CostItem, CostPackage, CostPackageItem
+from lims.costing.models import CostType, CostItem, CostPackage, CostPackageItem
 from lims.catalog.models import Service, Product, ProductCostPackage, Scheme, SchemeItem
 from lims.catalog.tests import test_models
 
-MODEL_NAMES = {'service': 'Service', 'cost_item': 'CostItem', 'cost_package': 'CostPackage', 'product': 'Product', 'scheme': 'Scheme'}
+MODEL_NAMES = {'cost_type': 'CostType', 'service': 'Service', 'cost_item': 'CostItem', 'cost_package': 'CostPackage', 'product': 'Product', 'scheme': 'Scheme'}
 
-MODEL_CLASSES = {'service': Service, 'cost_item': CostItem, 'cost_package': CostPackage, 'product': Product, 'scheme': Scheme}
+MODEL_CLASSES = {'cost_type': CostType, 'service': Service, 'cost_item': CostItem, 'cost_package': CostPackage, 'product': Product, 'scheme': Scheme}
 
 
 class RouteTests(SimpleTestCase):
@@ -50,8 +50,9 @@ class ApiTests(TestCase):
 
     def test_full_master_crud(self):
         for resource, payload in [
+            ('cost_type', {}),
             ('service', {'service_type': 'Mechanical'}),
-            ('cost_item', {'type': 'LABOR', 'unit': 'hour', 'unit_cost': '0.416667'}),
+            ('cost_item', {'cost_type': self.cost_type.pk, 'unit': 'hour', 'unit_cost': '0.42'}),
             ('cost_package', {'unit': 'hour', 'items': []}),
             ('product', {'service': self.service.pk, 'unit': 'test', 'reference_price': '12.00', 'packages': []}),
             ('scheme', {'items': []}),
