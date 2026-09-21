@@ -1,7 +1,8 @@
 import { request } from '/@/utils/service';
 export const writable: Record<string,string[]> = {
   service: 'number internal_name name name_en service_type requirement_template result_template enabled description'.split(' '),
-  cost_item: 'number name type unit_cost unit basis_data enabled description'.split(' '),
+  cost_type: 'number name enabled description'.split(' '),
+  cost_item: 'number name cost_type unit_cost unit basis_data enabled description'.split(' '),
   cost_package: 'number name unit items enabled description'.split(' '),
   product: 'number internal_name name name_en service requirement_defaults unit reference_price packages enabled description'.split(' '),
   scheme: 'number internal_name name name_en items enabled description'.split(' '),

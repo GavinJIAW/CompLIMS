@@ -1,0 +1,18 @@
+// Application-wide table convention; never targets ordinary form controls.
+.el-table {
+  th.el-table__cell > .cell,
+  td.el-table__cell > .cell {
+    text-align: center;
+  }
+  .el-table__cell > .cell .el-input__inner,
+  .el-table__cell > .cell .el-textarea__inner,
+  .el-table__cell > .cell .el-select__input,
+  .el-table__cell > .cell .el-select__selected-item {
+    text-align: center;
+  }
+  .el-table__cell > .cell .el-select__selection,
+  .el-table__cell > .cell .fs-row-handle,
+  .el-table__cell > .cell .fs-cell {
+    justify-content: center;
+  }
+}

@@ -9,7 +9,7 @@
       <el-table-column v-if="kind !== 'scheme'" label="单位" width="90"><template #default="{row}">{{ row.unit || '—' }}</template></el-table-column>
       <el-table-column v-if="kind !== 'scheme'" label="当前单位成本 (RMB)" min-width="150"><template #default="{row}">{{ row.unit_cost ?? '—' }}</template></el-table-column>
       <el-table-column v-if="kind !== 'scheme'" label="数量 / 用量" min-width="150"><template #default="{row}"><el-input v-if="visible('quantity')" v-model="row.quantity" :disabled="!writable('quantity', row)" placeholder="最多 6 位小数" @change="publish" /></template></el-table-column>
-      <el-table-column v-if="kind !== 'scheme'" label="行成本 (RMB)" min-width="150"><template #default="{row}">{{ multiply(row.unit_cost, row.quantity) ?? '—' }}</template></el-table-column>
+      <el-table-column v-if="kind !== 'scheme'" label="行成本 (RMB)" min-width="150"><template #default="{row}">{{ multiply(row.unit_cost, row.quantity, 2) ?? '—' }}</template></el-table-column>
       <el-table-column v-if="kind === 'scheme'" label="备注" min-width="160"><template #default="{row}"><el-input v-if="visible('remark')" v-model="row.remark" :disabled="!writable('remark', row)" @change="publish" /></template></el-table-column>
       <el-table-column label="操作" width="90"><template #default="{ $index }"><el-button type="danger" link :disabled="disabled" @click="rows.splice($index, 1); publish()">移除</el-button></template></el-table-column>
       <el-table-column v-if="kind === 'scheme' && visible('requirement_override')" type="expand"><template #default="{row}">
@@ -41,7 +41,7 @@ const targetResource = computed(() => props.kind === 'cost_package' ? 'cost_item
 const targetLabel = computed(() => props.kind === 'cost_package' ? '成本项' : props.kind === 'product' ? '成本包' : '产品');
 const visible = (field: string) => ['is_query','is_create','is_update'].some(mode => props.permissions?.[field]?.[mode]);
 const writable = (field: string, row: any) => !props.disabled && !!props.permissions?.[field]?.[row.id ? 'is_update' : 'is_create'];
-const total = computed(() => sum(rows.value.map(row => multiply(row.unit_cost, row.quantity)), props.kind === 'product' ? 2 : undefined));
+const total = computed(() => sum(rows.value.map(row => multiply(row.unit_cost, row.quantity, 2)), 2));
 const products = ref<Record<number, any>>({});
 const schemeCost = computed(() => sum(rows.value.map(row => products.value[row.product]?.standard_cost ?? null), 2));
 const schemePrice = computed(() => sum(rows.value.map(row => products.value[row.product]?.reference_price ?? null), 2));

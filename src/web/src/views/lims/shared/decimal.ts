@@ -16,9 +16,9 @@ function format(value: Decimal, places?: number): string {
   const digits = number.toString().padStart(scale + 1, '0');
   return scale ? digits.slice(0, -scale) + '.' + digits.slice(-scale) : digits;
 }
-export function multiply(left: unknown, right: unknown): string | null {
+export function multiply(left: unknown, right: unknown, places?: number): string | null {
   const a = parse(left), b = parse(right);
-  return a && b ? format({ value: a.value * b.value, scale: a.scale + b.scale }) : null;
+  return a && b ? format({ value: a.value * b.value, scale: a.scale + b.scale }, places) : null;
 }
 export function sum(values: (string | null)[], places?: number): string | null {
   const parsed = values.map(parse);
