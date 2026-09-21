@@ -15,14 +15,14 @@ export function createCrudOptions({ context }: any) {
       columns: {
         id: { title: 'ID', type: 'number', column: { show: false }, form: { show: false } },
         name: {
-          title: '名称',
+          title: '姓名',
           type: 'input',
           column: { show: !!permissions.name?.is_query, minWidth: 150 },
           search: { show: false },
           form: {
             col: { span: 12 },
             component: { disabled: compute((scope: any) => disabled(scope, 'name')) },
-            rules: [{ required: true, message: '请填写名称' }],
+            rules: [{ required: true, message: '请填写姓名' }],
           },
           addForm: { show: !!permissions.name?.is_create },
           editForm: { show: !!permissions.name?.is_update || !!permissions.name?.is_query },
@@ -52,7 +52,11 @@ export function createCrudOptions({ context }: any) {
         customer: {
           title: '关联客户',
           type: 'input',
-          column: { show: !!permissions.customer?.is_query, minWidth: 150 },
+          column: {
+            show: !!permissions.customer_name?.is_query,
+            minWidth: 150,
+            formatter: ({ row }: any) => row.customer_name ?? '—',
+          },
           search: {
             show: !!permissions.customer?.is_query,
             render: (scope: any) =>
@@ -87,7 +91,11 @@ export function createCrudOptions({ context }: any) {
         direct_supervisor: {
           title: '直接上级',
           type: 'input',
-          column: { show: !!permissions.direct_supervisor?.is_query, minWidth: 150 },
+          column: {
+            show: !!permissions.direct_supervisor_name?.is_query,
+            minWidth: 150,
+            formatter: ({ row }: any) => row.direct_supervisor_name ?? '—',
+          },
           search: { show: false },
           form: {
             col: { span: 24 },
@@ -104,7 +112,6 @@ export function createCrudOptions({ context }: any) {
                 label: (row: any) => row.name,
                 params: { customer: scope.form.customer },
                 excludeId: scope.form.id,
-                includeDisabled: true,
               }),
           },
           addForm: { show: !!permissions.direct_supervisor?.is_create },

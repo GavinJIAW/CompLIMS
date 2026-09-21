@@ -1,4 +1,4 @@
-from rest_framework.exceptions import ValidationError
+from rest_framework import serializers
 from lims.shared.serializers import MasterSerializer
 from lims.shared.authority import reference, readable
 from .access_contract import READ, WRITE
@@ -16,6 +16,19 @@ class CustomerSerializer(MasterSerializer):
 
 class ContactSerializer(MasterSerializer):
     resource = 'contact'
+    customer_name = serializers.SerializerMethodField()
+    direct_supervisor_name = serializers.SerializerMethodField()
+
+    def get_customer_name(self, instance):
+        customer = instance.customer
+        return customer.name if readable(self.request.user, 'customer', customer, ['name']) else None
+
+    def get_direct_supervisor_name(self, instance):
+        supervisor = instance.direct_supervisor
+        if supervisor and readable(self.request.user, 'contact', supervisor, ['name']):
+            return supervisor.name
+        return None
+
     class Meta:
         model = CustomerContact
         fields = READ['contact'].split()

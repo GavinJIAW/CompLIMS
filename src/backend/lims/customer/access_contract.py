@@ -8,7 +8,7 @@ SCOPES = {'customer': 'shared_all'}
 ACTIONS = {'customer': {}}
 
 CONTACT = 'name gender customer direct_supervisor title email mobile address enabled is_default'
-READ['contact'] = 'id ' + CONTACT + ' creator creator_name modifier modifier_name dept_belong_id create_datetime update_datetime'
+READ['contact'] = 'id ' + CONTACT + ' customer_name direct_supervisor_name creator creator_name modifier modifier_name dept_belong_id create_datetime update_datetime'
 WRITE['contact'] = CONTACT
 CLASSES['contact'] = 'ContactViewSet'
 MODULES['contact'] = 'lims.customer.views'
