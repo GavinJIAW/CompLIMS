@@ -1,16 +1,18 @@
 <template>
-  <fs-page><fs-crud ref="crudRef" v-bind="crudBinding" /></fs-page
-  ><el-drawer v-model="conversionOpen" title="从报价创建合同" size="min(680px,100vw)">
-    <el-form label-position="top"
-      ><el-form-item label="合同编号" required><el-input v-model="conversion.number" /></el-form-item
-      ><el-form-item label="合同日期" required
-        ><el-date-picker v-model="conversion.contract_date" value-format="YYYY-MM-DD" /></el-form-item
-    ></el-form>
-    <template #footer
-      ><el-button @click="conversionOpen = false">取消</el-button
-      ><el-button type="primary" :loading="converting" @click="createContract">创建合同</el-button></template
-    >
-  </el-drawer>
+  <div class="h100" style="position: relative">
+    <fs-page><fs-crud ref="crudRef" v-bind="crudBinding" /></fs-page>
+    <el-drawer v-model="conversionOpen" title="从报价创建合同" size="min(680px,100vw)">
+      <el-form label-position="top"
+        ><el-form-item label="合同编号" required><el-input v-model="conversion.number" /></el-form-item
+        ><el-form-item label="合同日期" required
+          ><el-date-picker v-model="conversion.contract_date" value-format="YYYY-MM-DD" /></el-form-item
+      ></el-form>
+      <template #footer
+        ><el-button @click="conversionOpen = false">取消</el-button
+        ><el-button type="primary" :loading="converting" @click="createContract">创建合同</el-button></template
+      >
+    </el-drawer>
+  </div>
 </template>
 <script setup lang="ts" name="lims_quotation">
 import { onMounted, ref } from 'vue';

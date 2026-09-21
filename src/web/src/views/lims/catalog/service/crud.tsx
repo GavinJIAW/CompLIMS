@@ -163,7 +163,7 @@ export function createCrudOptions({ context }: any) {
       },
       actionbar: { buttons: { add: { show: auth('service:Create') && !!permissions.number?.is_create } } },
       rowHandle: {
-        width: 210,
+        width: 300,
         buttons: {
           view: { show: auth('service:Retrieve') },
           edit: { show: auth('service:Update') },

@@ -210,7 +210,7 @@ export function createCrudOptions({ context }: any) {
       },
       actionbar: { buttons: { add: { show: auth('contact:Create') && !!permissions.name?.is_create } } },
       rowHandle: {
-        width: 210,
+        width: 300,
         buttons: {
           view: { show: auth('contact:Retrieve') },
           edit: { show: auth('contact:Update') },

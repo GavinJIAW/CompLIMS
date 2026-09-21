@@ -362,7 +362,7 @@ export function createCrudOptions({ context }: any) {
       },
       actionbar: { buttons: { add: { show: auth('quotation:Create') && !!permissions.number?.is_create } } },
       rowHandle: {
-        width: 210,
+        width: 300,
         buttons: {
           view: { show: auth('quotation:Retrieve') },
           edit: { show: compute(({ row }: any) => auth('quotation:Update') && row.status === 'DRAFT') },

@@ -313,7 +313,7 @@ export function createCrudOptions({ context }: any) {
       },
       actionbar: { buttons: { add: { show: auth('contract:Create') && !!permissions.number?.is_create } } },
       rowHandle: {
-        width: 210,
+        width: 300,
         buttons: {
           view: { show: auth('contract:Retrieve') },
           edit: { show: compute(({ row }: any) => auth('contract:Update') && row.status === 'DRAFT') },

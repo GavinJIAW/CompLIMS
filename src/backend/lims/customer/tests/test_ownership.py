@@ -1,6 +1,7 @@
 """Keep module ownership and native Drawer/Tabs contracts reviewable."""
 import ast
 import re
+from html.parser import HTMLParser
 from pathlib import Path
 from django.test import SimpleTestCase
 
@@ -59,3 +60,53 @@ class OwnershipTests(SimpleTestCase):
         for key in ('phone','department','remark'):self.assertNotIn(key,READ['contact'].split())
         self.assertIn('contact_mobile_snapshot',SNAPSHOT)
         self.assertNotIn('contact_phone_snapshot',SNAPSHOT)
+
+    def test_business_operation_columns_have_room_for_three_actions(self):
+        for page in PAGES:
+            with self.subTest(page=page):
+                text=(WEB/page/'crud.tsx').read_text(encoding='utf-8')
+                width=re.search(r'rowHandle:\s*\{\s*width:\s*(\d+)',text)
+                self.assertIsNotNone(width)
+                self.assertGreaterEqual(int(width.group(1)),300)
+
+    def test_quotation_route_has_one_native_dom_root(self):
+        # Parse nesting, including the Drawer footer's nested template; a root
+        # Fragment or a component/Teleport root cannot receive route transitions.
+        class TemplateTree(HTMLParser):
+            def __init__(self):
+                super().__init__(convert_charrefs=True)
+                self.roots=[]
+                self.stack=[]
+
+            def handle_starttag(self,tag,attrs):
+                node={'tag':tag,'attrs':dict(attrs),'children':[]}
+                (self.stack[-1]['children'] if self.stack else self.roots).append(node)
+                self.stack.append(node)
+
+            def handle_endtag(self,tag):
+                if not self.stack or self.stack[-1]['tag']!=tag:
+                    raise AssertionError('Unbalanced template: '+tag)
+                self.stack.pop()
+
+            def handle_startendtag(self,tag,attrs):
+                self.handle_starttag(tag,attrs)
+                self.handle_endtag(tag)
+
+            def handle_data(self,data):
+                if data.strip() and len(self.stack)<=1:
+                    raise AssertionError('Route template has a text root')
+
+        text=(WEB/'commercial/quotation/index.vue').read_text(encoding='utf-8')
+        tree=TemplateTree()
+        tree.feed(text.split('<script',1)[0])
+        self.assertFalse(tree.stack)
+        self.assertEqual(len(tree.roots),1)
+        template=tree.roots[0]
+        self.assertEqual(template['tag'],'template')
+        self.assertEqual(len(template['children']),1)
+        root=template['children'][0]
+        self.assertEqual(root['tag'],'div')
+        self.assertIn('h100',root['attrs'].get('class','').split())
+        self.assertIn('position: relative',root['attrs'].get('style',''))
+        self.assertEqual([child['tag'] for child in root['children']],['fs-page','el-drawer'])
+        self.assertEqual(root['children'][1]['attrs'].get('v-model'),'conversionOpen')

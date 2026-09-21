@@ -84,7 +84,7 @@ export function createCrudOptions({ context }: any) {
       },
       actionbar: { buttons: { add: { show: auth('cost_type:Create') && !!permissions.number?.is_create } } },
       rowHandle: {
-        width: 210,
+        width: 300,
         buttons: {
           view: { show: auth('cost_type:Retrieve') },
           edit: { show: auth('cost_type:Update') },
