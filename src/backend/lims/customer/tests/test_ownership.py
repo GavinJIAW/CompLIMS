@@ -106,7 +106,19 @@ class OwnershipTests(SimpleTestCase):
         self.assertEqual(len(template['children']),1)
         root=template['children'][0]
         self.assertEqual(root['tag'],'div')
-        self.assertIn('h100',root['attrs'].get('class','').split())
-        self.assertIn('position: relative',root['attrs'].get('style',''))
+        self.assertIn('quotation-page',root['attrs'].get('class','').split())
+        self.assertNotIn('h100',root['attrs'].get('class','').split())
+        # The absolute fs-page contributes no height: its route wrapper must
+        # grow in layout-parent's column flex, not rely on percentage height.
+        style=re.search(r'<style\s+scoped>(.*?)</style>',text,re.S)
+        self.assertIsNotNone(style)
+        rule=re.search(r'\.quotation-page\s*\{([^}]+)\}',style.group(1))
+        self.assertIsNotNone(rule)
+        declarations=dict(re.findall(r'([\w-]+)\s*:\s*([^;]+);',rule.group(1)))
+        self.assertEqual(declarations.get('position'),'relative')
+        self.assertEqual(declarations.get('flex'),'1')
+        self.assertEqual(declarations.get('min-height'),'0')
+        self.assertEqual(declarations.get('width'),'100%')
+        self.assertNotIn('height',declarations)
         self.assertEqual([child['tag'] for child in root['children']],['fs-page','el-drawer'])
         self.assertEqual(root['children'][1]['attrs'].get('v-model'),'conversionOpen')

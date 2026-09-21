@@ -1,5 +1,5 @@
 <template>
-  <div class="h100" style="position: relative">
+  <div class="quotation-page">
     <fs-page><fs-crud ref="crudRef" v-bind="crudBinding" /></fs-page>
     <el-drawer v-model="conversionOpen" title="从报价创建合同" size="min(680px,100vw)">
       <el-form label-position="top"
@@ -55,3 +55,14 @@ onMounted(async () => {
   await crudExpose.doRefresh();
 });
 </script>
+
+<style scoped>
+/* The route parent allocates height with flex. The absolute fs-page cannot
+   provide an intrinsic height for this containing block. */
+.quotation-page {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+</style>
