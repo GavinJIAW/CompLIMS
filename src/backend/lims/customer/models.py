@@ -1,5 +1,7 @@
 from django.db import models
 from lims.shared.base import Master
+from coreadmin.utils.models import CoreModel
+from django.conf import settings
 
 
 class Customer(Master):
@@ -13,21 +15,22 @@ class Customer(Master):
         verbose_name_plural = verbose_name
 
 
-class CustomerContact(models.Model):
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='contacts', verbose_name='客户', help_text='联系人所属客户，随未被引用的客户一起删除')
+class CustomerContact(CoreModel):
+    description = None
+    creator = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name='+')
+    gender = models.IntegerField(choices=((0, '未知'), (1, '男'), (2, '女')), default=0, verbose_name='性别', help_text='联系人性别：未知、男或女')
+    direct_supervisor = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='direct_reports', verbose_name='直接上级', help_text='同客户中的直接上级联系人，不得指向自身或构成循环')
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name='contacts', verbose_name='客户', help_text='联系人所属客户，存在联系人时禁止删除客户')
     name = models.CharField(max_length=255, verbose_name='联系人姓名', help_text='供选择联系人和初始化商务联系信息使用')
-    department = models.CharField(max_length=255, blank=True, default='', verbose_name='联系人部门', help_text='联系人在客户组织中所属的部门')
     title = models.CharField(max_length=255, blank=True, default='', verbose_name='职务', help_text='联系人在客户组织中承担的职务')
-    phone = models.CharField(max_length=64, blank=True, default='', verbose_name='电话', help_text='商务沟通使用的固定联系电话')
     mobile = models.CharField(max_length=64, blank=True, default='', verbose_name='手机', help_text='商务沟通使用的移动电话号码')
     email = models.EmailField(blank=True, default='', verbose_name='电子邮箱', help_text='商务联系使用的电子邮件地址')
     address = models.TextField(blank=True, default='', verbose_name='联系地址', help_text='联系人使用的通讯或收件地址')
     is_default = models.BooleanField(default=False, verbose_name='默认联系人', help_text='每个客户最多有一个启用的默认联系人')
     enabled = models.BooleanField(default=True, verbose_name='启用', help_text='停用联系人不占用启用默认联系人的唯一名额')
-    remark = models.TextField(blank=True, default='', verbose_name='备注', help_text='补充与此联系人有关的商务沟通说明')
 
     class Meta:
         ordering = ('id',)
         verbose_name = '客户联系人'
         verbose_name_plural = verbose_name
-        constraints = [models.UniqueConstraint(fields=['customer'], condition=models.Q(enabled=True, is_default=True), name='customer_enabled_default_unique')]
+        constraints = [models.CheckConstraint(check=models.Q(gender__in=[0, 1, 2]), name='contact_gender_valid'), models.CheckConstraint(check=~models.Q(direct_supervisor=models.F('id')), name='contact_supervisor_not_self'), models.UniqueConstraint(fields=['customer'], condition=models.Q(enabled=True, is_default=True), name='customer_enabled_default_unique')]

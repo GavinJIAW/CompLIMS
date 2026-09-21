@@ -14,7 +14,7 @@ class Document(CoreModel):
     customer_tax_number_snapshot = models.CharField(max_length=100, blank=True, default='', verbose_name='客户税号快照', help_text='本单据正式使用的客户纳税识别信息')
     customer_address_snapshot = models.TextField(blank=True, default='', verbose_name='客户地址快照', help_text='本单据保存时确认的客户地址')
     contact_name_snapshot = models.CharField(max_length=255, blank=True, default='', verbose_name='联系人快照', help_text='本单据独立保存的联系人姓名，不建立联系人外键')
-    contact_phone_snapshot = models.CharField(max_length=64, blank=True, default='', verbose_name='联系电话快照', help_text='本单据确认的联系电话')
+    contact_mobile_snapshot = models.CharField(max_length=64, blank=True, default='', verbose_name='手机号码快照', help_text='本单据确认的联系人手机号码')
     contact_email_snapshot = models.EmailField(blank=True, default='', verbose_name='联系邮箱快照', help_text='本单据确认的商务联系邮箱')
     adjustment_amount = models.DecimalField(max_digits=20, decimal_places=2, default=Decimal('0'), verbose_name='调整金额', help_text='人民币含税总额调整，可正可负，但调整后总额不得为负')
     subtotal = models.DecimalField(max_digits=20, decimal_places=2, default=Decimal('0'), editable=False, verbose_name='小计', help_text='服务端逐行舍入后的人民币含税行金额之和')

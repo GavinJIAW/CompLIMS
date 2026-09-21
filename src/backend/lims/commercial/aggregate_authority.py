@@ -5,7 +5,7 @@ from coreadmin.system.models import FieldPermission
 from coreadmin.access.context import AccessContext
 from coreadmin.access.registry import REGISTRY
 from coreadmin.access.fields import FieldPolicy
-from lims.shared.m2_contract import CHILD_READ, CHILD_CREATE, CHILD_UPDATE
+from lims.commercial.access_contract import CHILD_READ, CHILD_CREATE, CHILD_UPDATE
 
 
 def proposed(context):

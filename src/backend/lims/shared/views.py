@@ -12,6 +12,7 @@ class ReferencedMaster(APIException):
 
 
 class MasterViewSet(FieldPermissionMixin, CustomModelViewSet):
+    save_master = staticmethod(save_aggregate)
     filter_fields = ['number', 'name', 'enabled']
     ordering_fields = ['number', 'name', 'enabled', 'create_datetime', 'update_datetime']
     search_fields = ['number', 'name']
@@ -31,7 +32,7 @@ class MasterViewSet(FieldPermissionMixin, CustomModelViewSet):
             for name, method, mode, flag in [('retrieve', 'GET', 'read', 'is_query'), ('create', 'POST', 'create', 'is_create'), ('update', 'PUT', 'update', 'is_update')]:
                 context = AccessContext(request.user, REGISTRY[resource, name, method])
                 if context.allowed():
-                    for key in row_fields(context, row_model, mode):
+                    for key in row_fields(context, row_model, mode, self.serializer_class.row_fields):
                         result['_rows'].setdefault(key, {})[flag] = True
         return DetailResponse(data=result)
 
@@ -58,7 +59,7 @@ class MasterViewSet(FieldPermissionMixin, CustomModelViewSet):
         return super().get_serializer(*args, **kwargs)
 
     def perform_create(self, serializer):
-        save_aggregate(serializer, **self.access_context.create_attribution())
+        self.save_master(serializer, **self.access_context.create_attribution())
 
     def perform_update(self, serializer):
-        save_aggregate(serializer, modifier=str(self.request.user.pk))
+        self.save_master(serializer, modifier=str(self.request.user.pk))

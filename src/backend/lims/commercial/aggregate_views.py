@@ -7,8 +7,8 @@ from coreadmin.utils.json_response import DetailResponse, ErrorResponse
 from coreadmin.access.context import AccessContext
 from coreadmin.access.registry import REGISTRY
 from coreadmin.access.projection import field_metadata
-from lims.shared.aggregate_authority import child_fields
-from lims.shared.m2_contract import CHILDREN
+from lims.commercial.aggregate_authority import child_fields
+from lims.commercial.access_contract import CHILDREN
 
 
 class Conflict(APIException):
@@ -35,7 +35,7 @@ class AggregateViewSet(CustomModelViewSet):
         result['_children'] = {}
         # Projection is a UI hint; actual object writes/read use contributing grants.
         from coreadmin.system.models import FieldPermission
-        from lims.shared.m2_contract import CHILD_READ, CHILD_CREATE, CHILD_UPDATE
+        from lims.commercial.access_contract import CHILD_READ, CHILD_CREATE, CHILD_UPDATE
         for model in CHILDREN[resource]:
             metadata = result['_children'][model] = {}
             for name, method, mode, flag in [('retrieve', 'GET', 'read', 'is_query'), ('create', 'POST', 'create', 'is_create'), ('update', 'PUT', 'update', 'is_update')]:

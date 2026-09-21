@@ -3,7 +3,11 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from coreadmin.system.fixtures.initSerializer import MenuInitSerializer
 from coreadmin.system.models import Menu, MenuField, Role, RoleMenuPermission, RoleMenuButtonPermission, FieldPermission
-from lims.shared.contract import READ, WRITE, ROW_FIELDS
+from lims.costing.access_contract import READ as COST_READ, WRITE as COST_WRITE, ROW_FIELDS as COST_ROWS
+from lims.catalog.access_contract import READ as CAT_READ, WRITE as CAT_WRITE, ROW_FIELDS as CAT_ROWS
+READ = {**COST_READ, **CAT_READ}
+WRITE = {**COST_WRITE, **CAT_WRITE}
+ROW_FIELDS = {**COST_ROWS, **CAT_ROWS}
 
 RESOURCES = [('cost_type', 'CostType', '成本类型'), ('service', 'Service', '技术服务'), ('cost_item', 'CostItem', '成本项'),
              ('cost_package', 'CostPackage', '成本包'), ('product', 'Product', '产品'), ('scheme', 'Scheme', '技术方案')]
@@ -61,6 +65,8 @@ class Command(BaseCommand):
                         'is_query': True, 'is_create': writable and field.field_name != 'id',
                         'is_update': writable and field.field_name not in ('id', 'number')})
         self.stdout.write(self.style.SUCCESS('M1 menu configuration ready; role grants applied only if explicitly requested.'))
-        from lims.shared.m2_menus import initialize_m2
-        initialize_m2()
+        from lims.customer.menus import initialize_customer
+        from lims.commercial.menus import initialize_commercial
+        initialize_customer()
+        initialize_commercial()
         self.stdout.write(self.style.SUCCESS('M2 metadata ready; no M2 role grants applied.'))

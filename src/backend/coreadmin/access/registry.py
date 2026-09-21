@@ -179,8 +179,7 @@ ALIASES.update({
 })
 
 
-# M1 domain apps use exact class identities and the same policies.
-from lims.shared.contract import CLASSES as LIMS_CLASSES, MODULES as LIMS_MODULES
+from lims.access_registry import CLASSES as LIMS_CLASSES, MODULES as LIMS_MODULES, ACTIONS as LIMS_ACTIONS
 for resource, cls in LIMS_CLASSES.items():
     CLASS_RESOURCES[(LIMS_MODULES[resource], cls)] = resource
     register(resource, 'list retrieve', R, 'GET HEAD')
@@ -192,26 +191,9 @@ for resource, cls in LIMS_CLASSES.items():
     register(resource, 'multiple_delete', X, 'DELETE')
     register(resource, 'import_data', X, 'GET HEAD POST')
     register(resource, 'export_data update_template', X, 'GET HEAD')
-    for suffix, name in {'Search': 'list', 'Retrieve': 'retrieve', 'Create': 'create',
-                         'Update': 'update', 'Delete': 'destroy'}.items():
-        ALIASES[f'{resource}:{suffix}'] = f'{resource}.{name}'
-
-
-from lims.shared.m2_contract import CLASSES as M2_CLASSES, MODULES as M2_MODULES, ACTIONS as M2_ACTIONS
-for resource, cls in M2_CLASSES.items():
-    CLASS_RESOURCES[(M2_MODULES[resource], cls)] = resource
-    register(resource, 'list retrieve', R, 'GET HEAD')
-    register(resource, 'create', R, 'POST')
-    register(resource, 'update', R, 'PUT PATCH')
-    register(resource, 'destroy', R, 'DELETE')
-    register(resource, 'metadata', O, 'OPTIONS')
-    register(resource, 'field_permission', O, 'GET HEAD')
-    register(resource, 'multiple_delete', X, 'DELETE')
-    register(resource, 'import_data', X, 'GET HEAD POST')
-    register(resource, 'export_data update_template', X, 'GET HEAD')
     for suffix, name in {'Search': 'list', 'Retrieve': 'retrieve', 'Create': 'create', 'Update': 'update', 'Delete': 'destroy'}.items():
         ALIASES[f'{resource}:{suffix}'] = f'{resource}.{name}'
-    for suffix, name in M2_ACTIONS[resource].items():
+    for suffix, name in LIMS_ACTIONS[resource].items():
         register(resource, name, R, 'POST')
         ALIASES[f'{resource}:{suffix}'] = f'{resource}.{name}'
 

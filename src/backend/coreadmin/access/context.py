@@ -40,10 +40,8 @@ SCOPE_PROVIDERS = {
     'role_menu_permission': 'attribution', 'column': 'attribution',
     'login_log': 'attribution', 'download_center': 'attribution',
 }
-from lims.shared.contract import CLASSES as LIMS_CLASSES
-SCOPE_PROVIDERS.update({resource: 'shared_all' for resource in LIMS_CLASSES})
-from lims.shared.m2_contract import SCOPES as M2_SCOPES
-SCOPE_PROVIDERS.update(M2_SCOPES)
+from lims.access_registry import SCOPES as LIMS_SCOPES
+SCOPE_PROVIDERS.update(LIMS_SCOPES)
 
 
 class AccessContext:

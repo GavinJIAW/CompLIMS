@@ -19,3 +19,9 @@ def package_cost(package):
         context.prec = 80
         return money(sum((line_cost(row.item.unit_cost, row.quantity)
                           for row in package.items.all()), Decimal('0.00')))
+
+
+from lims.shared.services import save_aggregate
+
+def save_master(serializer, **audit):
+    return save_aggregate(serializer, **audit)

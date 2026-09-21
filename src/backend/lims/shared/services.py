@@ -1,8 +1,6 @@
 """Atomic current-master writes, including compatibility and aggregate replacement."""
 from contextlib import contextmanager
 from django.db import connection, transaction
-from lims.catalog.models import Service, Product
-from lims.catalog.templates import validate_compatibility, validate_values
 
 
 @contextmanager
@@ -16,16 +14,7 @@ def master_command():
         yield
 
 
-def validate_dependencies(instance, data):
-    if isinstance(instance, Service) and 'requirement_template' in data:
-        validate_compatibility(instance, data['requirement_template'])
-    if isinstance(instance, Product) and 'service' in data:
-        template = data['service'].requirement_template
-        for row in instance.scheme_items.all():
-            validate_values(template, row.requirement_override, f'items.{row.pk}.requirement_override')
-
-
-def save_aggregate(serializer, **audit):
+def save_aggregate(serializer, validate_dependencies=lambda instance, data: None, **audit):
     """Invoked inside master_command after serializer/authority validation."""
     data = dict(serializer.validated_data)
     row_name = getattr(serializer, 'row_name', None)

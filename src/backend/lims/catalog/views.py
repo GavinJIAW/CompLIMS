@@ -1,8 +1,13 @@
 from lims.catalog import models, serializers
 from lims.shared.views import MasterViewSet
+from .services import save_master
 
 
-class ServiceViewSet(MasterViewSet):
+class AppMasterViewSet(MasterViewSet):
+    save_master = staticmethod(save_master)
+
+
+class ServiceViewSet(AppMasterViewSet):
     queryset = models.Service.objects.all()
     serializer_class = serializers.ServiceSerializer
     filter_fields = MasterViewSet.filter_fields + ['service_type', 'internal_name', 'name_en']
@@ -10,7 +15,7 @@ class ServiceViewSet(MasterViewSet):
     ordering_fields = MasterViewSet.ordering_fields + ['internal_name', 'name_en']
 
 
-class ProductViewSet(MasterViewSet):
+class ProductViewSet(AppMasterViewSet):
     queryset = models.Product.objects.select_related('service').prefetch_related('packages__package__items__item').all()
     serializer_class = serializers.ProductSerializer
     filter_fields = MasterViewSet.filter_fields + ['service', 'internal_name', 'name_en']
@@ -18,7 +23,7 @@ class ProductViewSet(MasterViewSet):
     ordering_fields = ServiceViewSet.ordering_fields + ['reference_price']
 
 
-class SchemeViewSet(MasterViewSet):
+class SchemeViewSet(AppMasterViewSet):
     queryset = models.Scheme.objects.prefetch_related('items__product__service', 'items__product__packages__package__items__item').all()
     serializer_class = serializers.SchemeSerializer
     filter_fields = MasterViewSet.filter_fields + ['internal_name', 'name_en']

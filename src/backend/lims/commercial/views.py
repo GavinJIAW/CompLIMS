@@ -1,6 +1,6 @@
 from rest_framework.decorators import action
 from coreadmin.utils.json_response import DetailResponse
-from lims.shared.aggregate_views import AggregateViewSet
+from lims.commercial.aggregate_views import AggregateViewSet
 from .models import Quotation, Contract
 from .serializers import QuotationSerializer, ContractSerializer
 from .services import transition, convert

@@ -2,12 +2,13 @@ from decimal import Decimal, localcontext
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from coreadmin.utils.serializers import CustomModelSerializer
-from lims.shared.contract import READ, ROW_FIELDS
-from lims.catalog.templates import validate_template, validate_values
+from .access_contract import READ, ROW_FIELDS
 from lims.shared.authority import reference, readable, row_fields
-from lims.costing.services import package_cost
+from lims.costing.services import package_cost, money, line_cost
 from lims.costing.models import CostType, CostItem, CostPackage, CostPackageItem
-from lims.shared.serializers import StrictRow, MasterSerializer, package_visible
+from lims.shared.serializers import StrictRow, MasterSerializer
+from lims.shared.composition import CompositionSerializer
+from lims.costing.authority import package_visible
 
 
 class PackageRow(StrictRow):
@@ -28,6 +29,8 @@ class CostItemSerializer(MasterSerializer):
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
+        if 'basis_data' in attrs and not isinstance(attrs['basis_data'], dict):
+            raise ValidationError({'basis_data': 'Expected an object.'})
         if 'cost_type' in attrs:
             target = attrs['cost_type']
             reference(self.request.user, 'cost_type', target,
@@ -46,11 +49,16 @@ class CostItemSerializer(MasterSerializer):
         read_only_fields = ['id', 'creator', 'modifier', 'dept_belong_id']
 
 
-class CostPackageSerializer(MasterSerializer):
+class CostPackageSerializer(CompositionSerializer):
+    row_fields = ROW_FIELDS['CostPackageItem']
     resource, row_name, row_serializer, row_model = 'cost_package', 'items', PackageRow, CostPackageItem
     target, target_resource = 'item', 'cost_item'
     items = serializers.SerializerMethodField()
     current_cost = serializers.SerializerMethodField()
+    def project_cost(self, actor, row, values, allowed):
+        if 'quantity' in allowed and readable(actor, 'cost_item', row.item, ['unit_cost']):
+            values.update(unit_cost=str(money(row.item.unit_cost)), line_cost=str(line_cost(row.item.unit_cost, row.quantity)))
+
     def get_items(self, obj):
         return []  # Explicit projection below, never automatic nested fields.
     def get_current_cost(self, obj):

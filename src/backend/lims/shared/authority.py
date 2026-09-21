@@ -4,12 +4,6 @@ from coreadmin.access.context import AccessContext
 from coreadmin.access.registry import REGISTRY
 from coreadmin.access.fields import FieldPolicy
 from coreadmin.system.models import FieldPermission
-from lims.shared.contract import ROW_FIELDS
-from lims.costing.models import CostType, CostItem, CostPackage, CostPackageItem
-from lims.catalog.models import Service, Product, ProductCostPackage, Scheme, SchemeItem
-
-MODELS = {'cost_type': CostType, 'service': Service, 'cost_item': CostItem,
-          'cost_package': CostPackage, 'product': Product, 'scheme': Scheme}
 
 
 def read_context(actor, resource):
@@ -20,7 +14,7 @@ def reference(actor, resource, obj, existing=False):
     context = read_context(actor, resource)
     if not context.allowed():
         raise PermissionDenied('Target resource cannot be referenced.')
-    if not context.scope(MODELS[resource].objects.all()).filter(pk=obj.pk).exists():
+    if not context.scope(type(obj).objects.all()).filter(pk=obj.pk).exists():
         raise NotFound()
     if not existing and not obj.enabled:
         raise ValidationError({'reference': 'Disabled masters cannot be added to a new relationship.'})
@@ -31,8 +25,8 @@ def readable(actor, resource, obj, fields):
     return context.allowed() and set(fields) <= FieldPolicy(context, type(obj)).allowed(obj)
 
 
-def row_fields(context, model, mode):
-    ceiling = set(ROW_FIELDS[model.__name__].split())
+def row_fields(context, model, mode, fields):
+    ceiling = set(fields.split())
     if context.admin:
         return ceiling
     result = {'id'} if mode == 'read' else set()

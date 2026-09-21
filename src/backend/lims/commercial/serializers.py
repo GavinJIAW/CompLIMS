@@ -2,8 +2,8 @@ from decimal import Decimal
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from coreadmin.utils.serializers import CustomModelSerializer
-from lims.shared.m2_contract import READ, WRITE
-from lims.shared.aggregate_authority import child_fields
+from lims.commercial.access_contract import READ, WRITE
+from lims.commercial.aggregate_authority import child_fields
 from .models import Quotation, Contract
 from .services import save_document
 

@@ -11,10 +11,11 @@ from coreadmin.utils.log_targets import record_targets
 from lims.catalog.models import Product, Scheme, Service
 from lims.catalog.templates import validate_template, validate_value
 from lims.shared.authority import row_fields
-from lims.shared.aggregate_authority import source, proposed, check_child, child_fields
-from lims.shared.aggregate_rows import collection, unique_sequences, validate_row
-from lims.shared.aggregate_views import Conflict
-from lims.shared.m2_contract import SNAPSHOT, CHILD_CREATE, CHILD_READ
+from lims.catalog.access_contract import ROW_FIELDS as CATALOG_ROWS
+from lims.commercial.aggregate_authority import source, proposed, check_child, child_fields
+from lims.commercial.aggregate_rows import collection, unique_sequences, validate_row
+from lims.commercial.aggregate_views import Conflict
+from lims.commercial.access_contract import SNAPSHOT, CHILD_CREATE, CHILD_READ
 from lims.customer.models import Customer
 from .models import Quotation, Contract, QuotationScheme, ContractScheme, QuotationSchemeItem, ContractSchemeItem
 
@@ -113,7 +114,7 @@ def prepare_groups(ctx, parent, model, item_model, raw, instance=None):
             template = source(ctx, 'scheme', Scheme, values['source_scheme'], ['name', 'name_en', 'description', 'items'])
             read = AccessContext(ctx.user, REGISTRY['scheme', 'retrieve', 'GET'])
             from lims.catalog.models import SchemeItem
-            if not {'product', 'sequence', 'requirement_override', 'remark'} <= row_fields(read, SchemeItem, 'read'):
+            if not {'product', 'sequence', 'requirement_override', 'remark'} <= row_fields(read, SchemeItem, 'read', CATALOG_ROWS['SchemeItem']):
                 raise PermissionDenied('Scheme item snapshot fields are not readable.')
             if 'items' in data:
                 raise ValidationError('A new Scheme import supplies its own items; edit them after saving.')
