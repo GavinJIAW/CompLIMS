@@ -3,7 +3,7 @@ from rest_framework.test import APIClient
 from coreadmin.system.models import Users, FieldPermission, MenuField
 from coreadmin.foundation_tests.access_fixtures import grant
 from coreadmin.access.registry import resolve
-from lims.shared.contract import READ, WRITE, ROW_FIELDS
+from lims.access_registry import READ, WRITE, ROW_FIELDS
 from lims.costing.models import CostType, CostItem, CostPackage, CostPackageItem
 from lims.catalog.models import Service, Product, ProductCostPackage, Scheme, SchemeItem
 from lims.catalog.tests import test_models

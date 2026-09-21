@@ -4,7 +4,7 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 from coreadmin.system.models import Users, FieldPermission
 from coreadmin.foundation_tests.access_fixtures import grant
-from lims.shared.contract import READ, WRITE
+from lims.access_registry import READ, WRITE
 from lims.costing.models import CostType, CostItem, CostPackage, CostPackageItem
 from lims.catalog.models import Service, Product, ProductCostPackage, Scheme, SchemeItem
 from lims.costing.services import package_cost

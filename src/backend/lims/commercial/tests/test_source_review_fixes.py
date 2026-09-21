@@ -8,7 +8,7 @@ from rest_framework.test import APIClient
 
 from lims.customer.models import Customer
 from lims.commercial.models import Contract, Quotation
-from lims.shared.aggregate_views import AggregateViewSet
+from lims.commercial.aggregate_views import AggregateViewSet
 from . import test_workflow as workflow
 
 

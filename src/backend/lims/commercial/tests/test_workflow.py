@@ -7,8 +7,8 @@ from coreadmin.system.models import Users, Dept, MenuField, FieldPermission, Rol
 from coreadmin.foundation_tests.access_fixtures import grant
 from lims.customer.models import Customer
 from lims.catalog.models import Service, Product, Scheme, SchemeItem
-from lims.shared.m2_contract import READ, WRITE, CHILDREN, CHILD_READ, CHILD_CREATE, CHILD_UPDATE
-from lims.shared.contract import READ as M1_READ
+from lims.access_registry import READ, WRITE, CHILDREN, CHILD_READ, CHILD_CREATE, CHILD_UPDATE
+from lims.access_registry import READ as M1_READ
 from lims.commercial.models import Quotation, Contract
 
 
@@ -40,7 +40,7 @@ class WorkflowTests(TestCase):
     def permit(self, resource, suffix, scope=3, user=None):
         names = {'customer': 'Customer', 'quotation': 'Quotation', 'contract': 'Contract'}
         permission = grant(user or self.actor, f'{resource}:{suffix}', names[resource], fields=READ[resource].split(), create=WRITE[resource].split(), update=WRITE[resource].split(), scope=scope)
-        for child in CHILDREN[resource]:
+        for child in CHILDREN.get(resource, []):
             for key in CHILD_READ[child].split():
                 field, _ = MenuField.objects.get_or_create(menu=permission.menu_button.menu, model=child, field_name=key, defaults={'title': key})
                 FieldPermission.objects.update_or_create(role=permission.role, field=field, defaults={'is_query': True, 'is_create': key in CHILD_CREATE[child].split(), 'is_update': key in CHILD_UPDATE[child].split()})
@@ -258,3 +258,22 @@ class WorkflowTests(TestCase):
         root = Menu.objects.get(component_name='lims_customer_root')
         page = Menu.objects.get(component_name='lims_customer')
         self.assertNotEqual(root.web_path, page.web_path)
+
+
+    def test_standalone_contact_snapshot_independence_and_conversion(self):
+        from lims.customer.models import CustomerContact
+        contact=CustomerContact.objects.create(customer=self.customer,name='Contact',mobile='123',email='first@example.com')
+        q=self.create(contact_name_snapshot=contact.name,contact_mobile_snapshot=contact.mobile,contact_email_snapshot=contact.email)
+        self.api('patch','contact',{'name':'Changed','mobile':'999','email':'changed@example.com'},contact.pk)
+        q=self.api('get','quotation',pk=q['id'])
+        self.assertEqual((q['contact_name_snapshot'],q['contact_mobile_snapshot'],q['contact_email_snapshot']),('Contact','123','first@example.com'))
+        for action in ('send','accept'):self.api('post','quotation',{},q['id'],action)
+        contract=self.api('post','quotation',{'number':'SNAP-C','contract_date':'2026-09-21'},q['id'],'create_contract')
+        contract=self.api('get','contract',pk=contract['id'])
+        self.assertEqual(contract['contact_mobile_snapshot'],'123')
+        self.api('delete','contact',pk=contact.pk)
+        self.assertEqual(self.api('get','contract',pk=contract['id'])['contact_name_snapshot'],'Contact')
+
+    def test_retired_phone_snapshot_rejected(self):
+        self.api('post','quotation',{'number':'Q-OLD','customer':self.customer.pk,'quotation_date':'2026-09-21','contact_phone_snapshot':'old'},status=400)
+        self.api('post','contract',{'number':'C-OLD','customer':self.customer.pk,'contract_date':'2026-09-21','contact_phone_snapshot':'old'},status=400)
