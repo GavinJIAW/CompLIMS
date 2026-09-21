@@ -162,7 +162,7 @@ export function createCrudOptions({ context }: any) {
           viewForm: { show: !!permissions.address?.is_query },
         },
         enabled: {
-          title: '启用',
+          title: '启用状态',
           column: { show: !!permissions.enabled?.is_query, minWidth: 150 },
           search: { show: !!permissions.enabled?.is_query, component: { clearable: true } },
           form: {
@@ -182,7 +182,7 @@ export function createCrudOptions({ context }: any) {
           }),
         },
         is_default: {
-          title: '默认联系人',
+          title: '是否默认联系人',
           column: { show: !!permissions.is_default?.is_query, minWidth: 150 },
           search: { show: !!permissions.is_default?.is_query, component: { clearable: true } },
           form: {

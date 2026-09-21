@@ -137,6 +137,8 @@ class ContactProjectionFrontendTests(SimpleTestCase):
     def test_contact_labels_names_and_pk_bindings(self):
         text = (self.root / 'customer/contact/crud.tsx').read_text(encoding='utf-8')
         self.assertIn("title: '姓名'", text)
+        self.assertIn("title: '启用状态'", text)
+        self.assertIn("title: '是否默认联系人'", text)
         self.assertIn("message: '请填写姓名'", text)
         for relation in ('customer', 'direct_supervisor'):
             self.assertIn(f"formatter: ({{ row }}: any) => row.{relation}_name ?? '—'", text)
